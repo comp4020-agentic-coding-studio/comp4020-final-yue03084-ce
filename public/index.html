@@ -89,6 +89,18 @@
       svg [data-part]:hover {
         filter: brightness(1.15);
       }
+      svg.done [data-part] {
+        cursor: default;
+      }
+      svg .reveal {
+        filter: drop-shadow(0 0 6px #fff200) drop-shadow(0 0 3px #fff200);
+        animation: pulse 0.8s ease-in-out 4;
+      }
+      @keyframes pulse {
+        50% {
+          opacity: 0.4;
+        }
+      }
       #feedback {
         min-height: 1.5em;
         font-weight: 600;
@@ -215,6 +227,7 @@
           const li = document.createElement("li");
           const status = l.solved
             ? "✓ found"
+            : l.revealed ? "answer shown"
             : l.my_clicks > 0 ? `${l.my_clicks} tries so far` : "not tried";
           li.innerHTML = `<span><strong>Level ${l.id}</strong> · ${l.show} · ${l.scene}<br>
             <span class="muted">${status} · ${l.solvers} ${l.solvers === 1 ? "person has" : "people have"} found it</span></span>`;
@@ -234,13 +247,24 @@
         $("feedback").textContent = "";
         $("scene").innerHTML = `<svg viewBox="0 0 800 450" role="img" aria-label="Monica's apartment">
           ${ORDER.map((p) => ART[p](level.swaps[p])).join("")}</svg>`;
+        if (level.answer) reveal(level.answer);
         show("play");
+      }
+
+      // after too many misses: highlight the swapped part and stop taking clicks
+      function reveal(part) {
+        const svg = $("scene").querySelector("svg");
+        svg.classList.add("done");
+        svg.querySelector(`[data-part="${part}"]`).classList.add("reveal");
+        $("feedback").className = "bad";
+        $("feedback").textContent = "Five misses. Here's the swapped piece.";
       }
 
       $("scene").addEventListener("click", async (e) => {
         const el = e.target.closest("[data-part]");
-        if (!el || current === null) return;
-        const { correct } = await api(`/api/levels/${current}/click`, { part: el.dataset.part });
+        if (!el || current === null || $("scene").querySelector("svg.done")) return;
+        const { correct, answer } = await api(`/api/levels/${current}/click`, { part: el.dataset.part });
+        if (answer) return reveal(answer);
         $("feedback").className = correct ? "ok" : "bad";
         $("feedback").textContent = correct
           ? "Found it! That's the swapped piece."

@@ -55,6 +55,8 @@ db.exec(`
     (3, 'monica', 'door', 'green');
 `);
 const PARTS = ["window", "fridge", "table", "couch", "door", "frame"];
+// wrong clicks on a level before its answer is shown to that person
+const REVEAL_AFTER = 5;
 
 function cookie(req: IncomingMessage, name: string): string | undefined {
   for (const pair of (req.headers.cookie ?? "").split(";")) {
@@ -97,11 +99,25 @@ function levelList(person: Person | undefined) {
       `SELECT l.id, s.name AS scene, sh.name AS show,
          (SELECT COUNT(DISTINCT person_id) FROM clicks WHERE level_id = l.id AND correct = 1) AS solvers,
          (SELECT COUNT(*) FROM clicks WHERE level_id = l.id AND person_id = ?) AS my_clicks,
-         (SELECT COUNT(*) FROM clicks WHERE level_id = l.id AND person_id = ? AND correct = 1) > 0 AS solved
+         (SELECT COUNT(*) FROM clicks WHERE level_id = l.id AND person_id = ? AND correct = 1) > 0 AS solved,
+         (SELECT COUNT(*) FROM clicks WHERE level_id = l.id AND person_id = ? AND correct = 0) AS my_wrong
        FROM levels l JOIN scenes s ON s.id = l.scene_id JOIN shows sh ON sh.id = s.show_id
        ORDER BY l.id`,
     )
-    .all(person?.id ?? "", person?.id ?? "");
+    .all(person?.id ?? "", person?.id ?? "", person?.id ?? "")
+    .map((l) => ({ ...l, revealed: !l.solved && Number(l.my_wrong) >= REVEAL_AFTER }));
+}
+
+// The answer, once this person has missed REVEAL_AFTER times without finding it
+function revealedAnswer(levelId: number, part: string, person: Person | undefined): string | undefined {
+  if (!person) return undefined;
+  const { wrong, right } = db
+    .prepare(
+      `SELECT SUM(correct = 0) AS wrong, SUM(correct = 1) AS right
+       FROM clicks WHERE level_id = ? AND person_id = ?`,
+    )
+    .get(levelId, person.id) as { wrong: number | null; right: number | null };
+  return !right && (wrong ?? 0) >= REVEAL_AFTER ? part : undefined;
 }
 
 const escapeHtml = (s: string): string =>
@@ -210,7 +226,11 @@ const server = createServer(async (req, res) => {
         | undefined;
       if (!row) return json(res, 404, { error: "no such level" });
       if (!level[2] && req.method === "GET") {
-        return json(res, 200, { id: row.id, swaps: { [row.part]: row.variant } });
+        return json(res, 200, {
+          id: row.id,
+          swaps: { [row.part]: row.variant },
+          answer: revealedAnswer(row.id, row.part, currentPerson(req)),
+        });
       }
       if (level[2] && req.method === "POST") {
         const person = currentPerson(req);
@@ -224,7 +244,7 @@ const server = createServer(async (req, res) => {
           part,
           correct ? 1 : 0,
         );
-        return json(res, 200, { correct });
+        return json(res, 200, { correct, answer: revealedAnswer(row.id, row.part, person) });
       }
     }
     json(res, 404, { error: "not found" });
