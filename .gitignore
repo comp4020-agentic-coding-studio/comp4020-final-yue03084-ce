@@ -21,9 +21,6 @@ mise.local.toml
 # harness is CLAUDE.md (and any AGENTS.md), not this directory.
 .claude/
 
-# AI art experiments (raw generations, not yet chosen)
-art-trial/
-
 # Early discussion snapshot, kept locally
 notes/
 
