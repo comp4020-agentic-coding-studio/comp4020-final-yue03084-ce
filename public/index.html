@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spot the Swap</title>
+    <style>
+      :root {
+        --bg: #fdfbf7;
+        --fg: #222;
+        --muted: #666;
+        --accent: #6a4fa0;
+        --ok: #2e7d32;
+        --bad: #c62828;
+        --card: #fff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1b1a1f;
+          --fg: #eee;
+          --muted: #aaa;
+          --accent: #b39ddb;
+          --card: #26242c;
+        }
+      }
+      body {
+        font: 16px/1.5 system-ui, sans-serif;
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+      }
+      main {
+        max-width: 52rem;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      h1 {
+        margin: 0.2em 0;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      a {
+        color: var(--accent);
+      }
+      button,
+      input {
+        font: inherit;
+        padding: 0.4em 0.8em;
+      }
+      button {
+        cursor: pointer;
+        border: 1px solid var(--accent);
+        background: var(--accent);
+        color: #fff;
+        border-radius: 4px;
+      }
+      button.ghost {
+        background: transparent;
+        color: var(--accent);
+      }
+      ul.levels {
+        list-style: none;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+      }
+      ul.levels li {
+        background: var(--card);
+        border-radius: 6px;
+        padding: 10px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      svg {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 6px;
+        image-rendering: pixelated;
+        shape-rendering: crispEdges;
+      }
+      svg [data-part] {
+        cursor: pointer;
+      }
+      svg [data-part]:hover {
+        filter: brightness(1.15);
+      }
+      #feedback {
+        min-height: 1.5em;
+        font-weight: 600;
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .bad {
+        color: var(--bad);
+      }
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Spot the Swap</h1>
+      <p class="muted">
+        A scene you know by heart, with one thing swapped out. Click what's different.
+        <a href="/readme/">About this app</a>
+      </p>
+
+      <section id="join" hidden>
+        <form id="join-form">
+          <label>Pick a nickname to play: <input id="nickname" maxlength="40" required /></label>
+          <button>Start</button>
+        </form>
+      </section>
+
+      <section id="lobby" hidden>
+        <p id="welcome"></p>
+        <ul class="levels" id="levels"></ul>
+      </section>
+
+      <section id="play" hidden>
+        <p>
+          <button class="ghost" id="back">← All levels</button>
+          <strong id="level-title"></strong>
+        </p>
+        <p class="muted">Something in Monica's apartment isn't how you remember it. Click it.</p>
+        <div id="scene"></div>
+        <p id="feedback" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <script>
+      // Placeholder art: flat shapes standing in for the AI pixel-art parts.
+      // Each part has an "original" drawing and the variants a level can swap in.
+      const ART = {
+        background: () => `
+          <rect data-part="background" x="0" y="0" width="800" height="450" fill="#8e6cc0"/>
+          <rect data-part="background" x="0" y="370" width="800" height="80" fill="#a0764a"/>`,
+        window: () => `
+          <g data-part="window">
+            <rect x="60" y="60" width="220" height="200" fill="#3d2b1f"/>
+            <rect x="70" y="70" width="200" height="180" fill="#9fd3f0"/>
+            <rect x="166" y="70" width="8" height="180" fill="#3d2b1f"/>
+            <rect x="70" y="156" width="200" height="8" fill="#3d2b1f"/>
+          </g>`,
+        fridge: (v) => `
+          <g data-part="fridge">
+            <rect x="420" y="140" width="90" height="230" fill="${v === "red" ? "#d32f2f" : "#e8e4d8"}"/>
+            <rect x="420" y="220" width="90" height="4" fill="#888"/>
+            <rect x="496" y="160" width="6" height="40" fill="#888"/>
+            <rect x="496" y="240" width="6" height="50" fill="#888"/>
+          </g>`,
+        table: () => `
+          <g data-part="table">
+            <rect x="300" y="300" width="110" height="12" fill="#c9a36b"/>
+            <rect x="308" y="312" width="8" height="58" fill="#8a6a3c"/>
+            <rect x="394" y="312" width="8" height="58" fill="#8a6a3c"/>
+            <rect x="285" y="270" width="10" height="100" fill="#2e7d32"/>
+            <rect x="415" y="270" width="10" height="100" fill="#f9a825"/>
+          </g>`,
+        couch: () => `
+          <g data-part="couch">
+            <rect x="80" y="300" width="190" height="70" fill="#d7c4a3"/>
+            <rect x="80" y="280" width="190" height="30" fill="#c8b38f"/>
+            <rect x="70" y="290" width="20" height="80" fill="#bfa880"/>
+            <rect x="260" y="290" width="20" height="80" fill="#bfa880"/>
+          </g>`,
+        door: (v) => `
+          <g data-part="door">
+            <rect x="600" y="110" width="120" height="260" fill="${v === "green" ? "#3f8f4f" : "#5e3f96"}"/>
+            <rect x="700" y="240" width="10" height="10" fill="#d4af37"/>
+          </g>`,
+        frame: (v) =>
+          v === "square"
+            ? `<g data-part="frame">
+                 <rect x="626" y="132" width="68" height="68" fill="none" stroke="#f2c230" stroke-width="10"/>
+                 <rect x="656" y="162" width="8" height="8" fill="#222"/>
+               </g>`
+            : `<g data-part="frame">
+                 <ellipse cx="660" cy="166" rx="34" ry="42" fill="none" stroke="#f2c230" stroke-width="10"/>
+                 <rect x="656" y="162" width="8" height="8" fill="#222"/>
+               </g>`,
+      };
+      const ORDER = ["background", "window", "couch", "table", "fridge", "door", "frame"];
+
+      const $ = (id) => document.getElementById(id);
+      const api = async (path, data) => {
+        const res = await fetch(path, data === undefined ? {} : {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        return res.json();
+      };
+      const show = (id) => {
+        for (const s of ["join", "lobby", "play"]) $(s).hidden = s !== id;
+      };
+
+      let me = null;
+      let current = null;
+
+      async function lobby() {
+        const { levels } = await api("/api/levels");
+        const solved = levels.filter((l) => l.solved).length;
+        $("welcome").textContent =
+          `Hi ${me.nickname}. You've found ${solved} of ${levels.length} swaps.`;
+        $("levels").innerHTML = "";
+        for (const l of levels) {
+          const li = document.createElement("li");
+          const status = l.solved
+            ? "✓ found"
+            : l.my_clicks > 0 ? `${l.my_clicks} tries so far` : "not tried";
+          li.innerHTML = `<span><strong>Level ${l.id}</strong> · ${l.show} · ${l.scene}<br>
+            <span class="muted">${status} · ${l.solvers} ${l.solvers === 1 ? "person has" : "people have"} found it</span></span>`;
+          const b = document.createElement("button");
+          b.textContent = l.solved ? "Look again" : "Play";
+          b.onclick = () => play(l.id);
+          li.append(b);
+          $("levels").append(li);
+        }
+        show("lobby");
+      }
+
+      async function play(id) {
+        const level = await api(`/api/levels/${id}`);
+        current = id;
+        $("level-title").textContent = `Level ${id}`;
+        $("feedback").textContent = "";
+        $("scene").innerHTML = `<svg viewBox="0 0 800 450" role="img" aria-label="Monica's apartment">
+          ${ORDER.map((p) => ART[p](level.swaps[p])).join("")}</svg>`;
+        show("play");
+      }
+
+      $("scene").addEventListener("click", async (e) => {
+        const el = e.target.closest("[data-part]");
+        if (!el || current === null) return;
+        const { correct } = await api(`/api/levels/${current}/click`, { part: el.dataset.part });
+        $("feedback").className = correct ? "ok" : "bad";
+        $("feedback").textContent = correct
+          ? "Found it! That's the swapped piece."
+          : "Not that one. Look again.";
+      });
+
+      $("back").onclick = lobby;
+
+      $("join-form").onsubmit = async (e) => {
+        e.preventDefault();
+        ({ person: me } = await api("/api/me", { nickname: $("nickname").value }));
+        lobby();
+      };
+
+      (async () => {
+        ({ person: me } = await api("/api/me"));
+        if (me) lobby();
+        else show("join");
+      })();
+    </script>
+  </body>
+</html>
