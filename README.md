@@ -1,9 +1,26 @@
-# Your app
+# Spot the Swap
 
-<!-- TEMPLATE: this file is yours, and the deployed app publishes it in full at
-     /readme/, where visitors and markers read it. The final project brief says
-     what it covers. Replace everything in it, this comment included. -->
+<!-- One or two sentences: what it is, and who it's for. -->
 
-Images are committed to the repo and linked relatively ---
-`![alt](docs/before.png)` --- so they render on GitHub; making them resolve at
-`/readme/` too is your app's job.
+## What good means
+
+- the scene are familiars and full of memories
+- the scene can not be too tricky that not a fan can recognize 
+- when multiples player in the game at the same time, they can choose to cooperate or start a completion
+
+
+## What's there now
+
+- What actually works today: a nickname, three levels, clicking parts, your
+record still there when you come back.
+
+## Where the idea came from
+
+- From film-location check-ins to the moment of recognition, and what you
+read (Sloan, "An app can be a home-cooked meal"; Shirky, "Situated Software").
+
+## Honest notes
+
+- Fan work.
+- AI-generated pixel art is planned; it's still flat-colour placeholders.
+- The answer can be seen in the browser's developer tools. 
