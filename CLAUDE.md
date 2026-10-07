@@ -2,8 +2,11 @@
 
 ## Decisions I've already made
 
-- README.md, PROCESS.md and `reflections/` are written by me. The agent may
-  point out gaps, but must not draft or rewrite them.
+- README.md, PROCESS.md and `reflections/` are mine. The agent must not write
+  them in one go on its own. It may suggest an outline, ask questions to guide
+  me and point out gaps. I write the content in Chinese; the agent polishes it
+  into English, keeping my meaning, and I confirm the final version before it
+  goes into the file.
 - Scene images come only from the platform. Don't build any way for players to
   upload images.
 - Be careful with characters; prefer objects as scene parts.
