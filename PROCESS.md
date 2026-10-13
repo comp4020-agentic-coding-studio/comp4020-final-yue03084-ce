@@ -1,46 +1,56 @@
 # Process overview
 
-## From the brief to the idea
+## From the Friends game to a new direction
 
-My first idea was a film-location check-in app. I dropped it because it was
-really a single-player lookup tool: whether anyone else was there made no
-difference, and I'm not that into visiting filming locations myself. I also
-considered a discussion space you could only enter after watching something,
-but a single social media post could do the same job.
+My first direction was a spot-the-difference game set in Monica's apartment
+from *Friends*. Building it showed me the scene was too detailed: too hard to
+build, and too hard to play ([e452c10](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/e452c10)). I also realised I wanted
+to make something useful rather than a game. Giving it up didn't feel like
+much, because I knew that road was closed. The hardest part was the time
+after, with no new direction, when I kept thinking about it. Once I found one,
+I felt much better.
 
-What I actually enjoy is the moment of recognition: coming across a place that
-looks like something from a show I know well. I wanted to build for people who
-feel the same way. Sitcoms suit this because they have fixed sets, which are
-easy to set up as scenes, and most of the story happens in them, so fans
-remember them well. I chose Monica's apartment from *Friends* because I like it
-myself, and it's a classic that I expect many people would recognise
-([bd31b3e](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/bd31b3e)).
+The new direction came from my own life. I've used Notion, a Pomodoro timer and
+Forest, and they all look forward: they record what you plan to do and push you
+to do it. What I struggle with is the other side. With AI-assisted work I keep
+reopening and rechecking things, never sure they're good enough. On my bedroom
+wall there's a note, "Live with imperfection" (与不完美共存), and seeing it
+pulls me out of that loop. So the app is about learning to stop and rest.
 
-For playing together, I leaned towards cooperation and competition, because
-they give the most sense of interaction.
+## How the idea changed
+
+At first I thought the core was being witnessed: other people telling you
+"that's enough". Talking it through, I realised I pace myself by the people
+around me. If they put their work down, I can rest with a clear conscience. So
+the core became seeing others stop.
+
+That moved it from small fixed circles to one public, anonymous space, and it
+set the rule for what people see: only the stopping, never how much someone
+finished or how long it took. Time spent, how it felt and what you checked stay
+private, as evidence for when your mind says you haven't done enough. I wrote
+this decision down in [ADR 0002](docs/adr/0002-what-others-see.md)
+([8791f7a](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/8791f7a)).
 
 ## Stack and workflow
 
-The agent suggested Node with SQLite
-([bd31b3e](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/bd31b3e),
-[8ef3b53](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/8ef3b53)).
-I'm not familiar with choosing a stack, so I went with its suggestion. I don't
-yet know how I'll build the next step.
+In crit 8 I went with the agent's suggestion because I didn't know how to
+choose. This time I chose myself: Astro and SQLite, because organising pages
+and adjusting the design went smoothly in crit 7, and I expect to polish this
+app many times ([ADR 0001](docs/adr/0001-stack.md), [55f87d5](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/55f87d5)). The
+agent then built the first real-time version ([0c23536](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/0c23536)).
 
-Because this was my first time using an agent to generate a lot of fairly
-complex images, I wanted to see what the results looked like before building
-anything else
-([bb23baf](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/bb23baf)).
-I tried three or four rounds, giving the agent photos from different angles as
-references, but the results were quite average. Individual parts came out well,
-but when they were combined, the proportions were completely wrong.
+## Directing and correcting the agent
 
-I was in charge of the idea and its overall direction, and wrote my decisions
-into `CLAUDE.md` as rules for the agent
-([bd31b3e](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/bd31b3e),
-[dc95eee](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/dc95eee)).
-The agent handled the code and the technical decisions I'm not familiar with.
+I rewrote `CLAUDE.md` for the new direction: I dropped the *Friends* rules,
+picked which crit 7 rules to carry over, and added four product rules, such as
+"show stopping, never finishing" ([e34cc4a](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/e34cc4a)). The tests check the
+ones that can be checked: nothing private reaches anyone else.
 
-The scene turned out to be too complex. That made it too hard both to build and
-to play, so I don't think it's realistic. I'm planning to change direction for
-the next crit.
+I corrected the agent several times. It read my dislike of anxious
+record-keeping as being against records altogether; I explained I only reject
+records that magnify anxiety. It suggested scoring your attention, and I
+changed that to how you felt about your effort. When I wanted the list of what
+you did to be public, it pointed out the clash with my own rule, and I kept it
+private. For the look, the design skill first proposed a purple landing page; I
+asked for something quiet and imperfect, and chose the looping scene of figures
+who build a crooked tower, then rest ([10e3f24](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/10e3f24)).
