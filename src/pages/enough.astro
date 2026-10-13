@@ -1,0 +1,75 @@
+---
+import Page from "../layouts/Page.astro";
+import { declareEnough, publicEnough } from "../lib/db";
+import { bus } from "../lib/events";
+import { DESCRIPTION_MAX, FEELINGS } from "../lib/limits";
+import { ensurePerson } from "../lib/person";
+
+// Say something is enough. The description is the only part that can be
+// public, and only if shared is ticked; the rest is the person's own.
+let refused: string | null = null;
+let values = { description: "", shared: true, hours: "", feeling: "", notes: "" };
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const field = (name: string) => String(form.get(name) ?? "");
+  values = {
+    description: field("description"),
+    shared: form.get("shared") === "on",
+    hours: field("hours"),
+    feeling: field("feeling"),
+    notes: field("notes"),
+  };
+  const person = ensurePerson(Astro.cookies, Astro.url.protocol === "https:");
+  const outcome = declareEnough(person.id, values);
+  if (outcome.ok) {
+    // only a shared one goes on the bus, and only its public shape
+    const shown = outcome.value.shared ? publicEnough(outcome.value.id) : undefined;
+    if (shown) bus.emit("enough", shown);
+    return Astro.redirect(outcome.value.shared ? "/" : "/mine/", 303);
+  }
+  refused = outcome.reason;
+  Astro.response.status = 400;
+}
+---
+
+<Page title="Say enough">
+  <h1>Say something is enough</h1>
+  {refused && <p class="refused" role="alert">{refused}</p>}
+  <form method="post" class="stack">
+    <label>
+      What was it? <small>(up to {DESCRIPTION_MAX} characters)</small>
+      <input name="description" required maxlength={DESCRIPTION_MAX} value={values.description} placeholder="A course report" />
+    </label>
+    <label class="inline">
+      <input type="checkbox" name="shared" checked={values.shared} />
+      Share it on the feed (only this line is shown)
+    </label>
+
+    <fieldset>
+      <legend>Just for you</legend>
+      <p class="hint">Nobody else ever sees these. They're here for when your mind tells you it wasn't enough.</p>
+      <label>
+        How long did you spend on it? <small>(hours, roughly)</small>
+        <input name="hours" inputmode="decimal" value={values.hours} placeholder="3" />
+      </label>
+      <fieldset class="choices">
+        <legend>Do you feel you put in enough?</legend>
+        {
+          FEELINGS.map((f) => (
+            <label class="inline">
+              <input type="radio" name="feeling" value={f} checked={values.feeling === f} />
+              {f}
+            </label>
+          ))
+        }
+      </fieldset>
+      <label>
+        What did you do, and what did you check?
+        <textarea name="notes" rows="4">{values.notes}</textarea>
+      </label>
+    </fieldset>
+
+    <button type="submit">That's enough</button>
+  </form>
+</Page>

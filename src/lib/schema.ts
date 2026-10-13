@@ -1,0 +1,50 @@
+import { sql } from "drizzle-orm";
+import { integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+
+const createdAt = () =>
+  text("created_at")
+    .notNull()
+    .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`);
+
+// Anyone who has written something. No account: the token lives in a cookie,
+// and the public name is derived from the id (see displayName in people.ts).
+export const people = sqliteTable("people", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  token: text("token").notNull().unique(),
+  createdAt: createdAt(),
+});
+
+// One "enough": the description is the only part that can ever be public, and
+// only when shared is true. hours, feeling and notes are the owner's alone.
+export const enoughs = sqliteTable("enoughs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  personId: integer("person_id")
+    .notNull()
+    .references(() => people.id),
+  description: text("description").notNull(),
+  shared: integer("shared", { mode: "boolean" }).notNull(),
+  hours: real("hours"),
+  feeling: text("feeling"),
+  notes: text("notes"),
+  createdAt: createdAt(),
+});
+
+// A preset reply to a shared enough. One of each preset per person per enough.
+export const replies = sqliteTable(
+  "replies",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    enoughId: integer("enough_id")
+      .notNull()
+      .references(() => enoughs.id),
+    personId: integer("person_id")
+      .notNull()
+      .references(() => people.id),
+    preset: text("preset").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("replies_once").on(t.enoughId, t.personId, t.preset)],
+);
+
+export type Person = typeof people.$inferSelect;
+export type Enough = typeof enoughs.$inferSelect;

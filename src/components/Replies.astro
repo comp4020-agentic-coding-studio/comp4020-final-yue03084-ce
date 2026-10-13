@@ -1,0 +1,24 @@
+---
+import { PRESET_REPLIES, type PresetKey } from "../lib/limits";
+
+// The preset reply buttons with their counts. A plain form, so it works
+// without script; the feed's script sends it with fetch instead.
+interface Props {
+  enoughId: number;
+  counts: Partial<Record<PresetKey, number>>;
+  canReply: boolean;
+}
+const { enoughId, counts, canReply } = Astro.props;
+const presets = Object.entries(PRESET_REPLIES) as [PresetKey, string][];
+---
+
+<form class="replies" method="post" action="/reply/" data-replies={enoughId}>
+  <input type="hidden" name="enough" value={enoughId} />
+  {
+    presets.map(([key, label]) => (
+      <button type="submit" name="preset" value={key} disabled={!canReply} data-preset={key}>
+        {label} <span class="count" data-count={key}>{counts[key] ?? 0}</span>
+      </button>
+    ))
+  }
+</form>

@@ -1,0 +1,15 @@
+---
+// README.md, rendered on the server: no script runs here, and
+// spec/invariants.test.ts checks every heading arrives in the HTML.
+import * as readme from "../../README.md";
+import Page from "../layouts/Page.astro";
+
+const title = readme.getHeadings().find((h) => h.depth === 1)?.text ?? "README";
+// README images are committed to public/ and linked relatively (public/x.png)
+// so they render on GitHub; here they're served from the site root.
+const html = (await readme.compiledContent()).replace(/(src|href)="public\//g, '$1="/');
+---
+
+<Page title={title}>
+  <article set:html={html} />
+</Page>

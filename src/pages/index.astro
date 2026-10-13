@@ -1,0 +1,121 @@
+---
+import Replies from "../components/Replies.astro";
+import Page from "../layouts/Page.astro";
+import { sharedFeed } from "../lib/db";
+import { PRESET_REPLIES } from "../lib/limits";
+
+// The public feed: moments when someone stopped. Only shared enoughs, and only
+// their one-line description (CLAUDE.md: "Show stopping, never finishing").
+// New ones and new replies arrive over /api/events without a reload.
+const feed = sharedFeed();
+const when = (iso: string) =>
+  new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Sydney", dateStyle: "medium", timeStyle: "short" });
+---
+
+<Page title="Enough">
+  <h1>Stopping now</h1>
+  <p>People who decided something was enough, and put it down.</p>
+  <p><a class="button" href="/enough/">Say something is enough</a></p>
+
+  <ol class="feed" id="feed" data-presets={JSON.stringify(PRESET_REPLIES)}>
+    {
+      feed.map((e) => (
+        <li class="card" data-enough={e.id}>
+          <p>
+            <span class="who">{e.name}</span> put down <q>{e.description}</q>
+          </p>
+          <p class="when">
+            <time datetime={e.createdAt}>{when(e.createdAt)}</time>
+          </p>
+          <Replies enoughId={e.id} counts={e.replies} canReply />
+        </li>
+      ))
+    }
+  </ol>
+  {feed.length === 0 && <p id="empty">Nobody has stopped yet. You could be the first.</p>}
+
+  <script>
+    import type { PublicEnough } from "../lib/db";
+
+    const feed = document.getElementById("feed") as HTMLOListElement;
+    const presets: Record<string, string> = JSON.parse(feed.dataset.presets ?? "{}");
+
+    const when = (iso: string) =>
+      new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Sydney", dateStyle: "medium", timeStyle: "short" });
+
+    // the same markup Replies.astro and the card above render, built from a
+    // PublicEnough; textContent throughout, so nobody's words become markup
+    function card(e: PublicEnough): HTMLLIElement {
+      const li = document.createElement("li");
+      li.className = "card";
+      li.dataset.enough = String(e.id);
+      const line = document.createElement("p");
+      const who = document.createElement("span");
+      who.className = "who";
+      who.textContent = e.name;
+      const q = document.createElement("q");
+      q.textContent = e.description;
+      line.append(who, " put down ", q);
+      const meta = document.createElement("p");
+      meta.className = "when";
+      const time = document.createElement("time");
+      time.dateTime = e.createdAt;
+      time.textContent = when(e.createdAt);
+      meta.append(time);
+      const form = document.createElement("form");
+      form.className = "replies";
+      form.method = "post";
+      form.action = "/reply/";
+      form.dataset.replies = String(e.id);
+      const hidden = document.createElement("input");
+      hidden.type = "hidden";
+      hidden.name = "enough";
+      hidden.value = String(e.id);
+      form.append(hidden);
+      for (const [key, label] of Object.entries(presets)) {
+        const button = document.createElement("button");
+        button.type = "submit";
+        button.name = "preset";
+        button.value = key;
+        button.dataset.preset = key;
+        const count = document.createElement("span");
+        count.className = "count";
+        count.dataset.count = key;
+        count.textContent = String(e.replies[key as keyof typeof e.replies] ?? 0);
+        button.append(`${label} `, count);
+        form.append(button);
+      }
+      li.append(line, meta, form);
+      return li;
+    }
+
+    function updateCounts(e: PublicEnough) {
+      const form = feed.querySelector<HTMLFormElement>(`form[data-replies="${e.id}"]`);
+      if (!form) return;
+      for (const span of form.querySelectorAll<HTMLElement>("[data-count]")) {
+        span.textContent = String(e.replies[span.dataset.count as keyof typeof e.replies] ?? 0);
+      }
+    }
+
+    // replies go up with fetch, so the page doesn't reload; the new counts
+    // come back on the stream like everyone else's
+    feed.addEventListener("submit", async (event) => {
+      const form = event.target as HTMLFormElement;
+      const button = (event as SubmitEvent).submitter as HTMLButtonElement | null;
+      if (!form.matches("form.replies") || !button) return;
+      event.preventDefault();
+      const body = new URLSearchParams({ enough: form.dataset.replies ?? "", preset: button.value });
+      const res = await fetch("/reply/", { method: "POST", body, headers: { accept: "application/json" } });
+      if (res.ok) updateCounts(await res.json());
+    });
+
+    const source = new EventSource("/api/events");
+    source.addEventListener("enough", (event) => {
+      const e: PublicEnough = JSON.parse(event.data);
+      if (feed.querySelector(`[data-enough="${e.id}"]`)) return;
+      document.getElementById("empty")?.remove();
+      feed.prepend(card(e));
+    });
+    source.addEventListener("reply", (event) => updateCounts(JSON.parse(event.data)));
+  </script>
+</Page>

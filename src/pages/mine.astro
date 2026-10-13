@@ -1,0 +1,61 @@
+---
+import Page from "../layouts/Page.astro";
+import { displayName, mine } from "../lib/db";
+import { PRESET_REPLIES, type PresetKey } from "../lib/limits";
+import { currentPerson } from "../lib/person";
+
+// Everything this person has said was enough, private fields included. It
+// reads only their own rows, by their cookie.
+const person = currentPerson(Astro.cookies);
+const rows = person ? mine(person.id) : [];
+const when = (iso: string) =>
+  new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Sydney", dateStyle: "medium", timeStyle: "short" });
+---
+
+<Page title="Mine">
+  <h1>What you put down</h1>
+  {person && <p>On the feed you show as {displayName(person.id)}. Only you can see this page.</p>}
+  {rows.length === 0 && <p>Nothing yet. <a href="/enough/">Say something is enough.</a></p>}
+  <ol class="feed mine">
+    {
+      rows.map((e) => (
+        <li class="card" data-enough={e.id}>
+          <p>
+            <q>{e.description}</q> <span class="tag">{e.shared ? "shared" : "just you"}</span>
+          </p>
+          <p class="when">
+            <time datetime={e.createdAt}>{when(e.createdAt)}</time>
+          </p>
+          <dl>
+            {e.hours !== null && (
+              <>
+                <dt>Time spent</dt>
+                <dd>{e.hours} {e.hours === 1 ? "hour" : "hours"}</dd>
+              </>
+            )}
+            {e.feeling && (
+              <>
+                <dt>How it felt</dt>
+                <dd>{e.feeling}</dd>
+              </>
+            )}
+            {e.notes && (
+              <>
+                <dt>What you did and checked</dt>
+                <dd class="notes">{e.notes}</dd>
+              </>
+            )}
+          </dl>
+          {e.shared && (
+            <p class="replies-got">
+              {(Object.entries(PRESET_REPLIES) as [PresetKey, string][])
+                .filter(([key]) => e.replies[key])
+                .map(([key, label]) => `${label} ×${e.replies[key]}`)
+                .join(" · ") || "No replies yet."}
+            </p>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</Page>

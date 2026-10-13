@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 // Every test in spec/ runs against the running app, which spec/global-setup.ts
-// finds. Only spec/ runs: a test anywhere else needs adding to `include`.
+// finds or boots. Only spec/ runs: a test anywhere else needs adding to `include`.
 export default defineConfig({
   test: {
     include: ["spec/**/*.test.ts"],

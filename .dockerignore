@@ -14,3 +14,8 @@ mise.local.toml
 
 # AI art trial: kept in the repo as evidence, never part of the app
 art-trial
+
+# Astro's generated types and the local database
+.astro
+.data
+notes

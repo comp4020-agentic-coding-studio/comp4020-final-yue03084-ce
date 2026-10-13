@@ -25,3 +25,7 @@ mise.local.toml
 notes/
 
 .DS_Store
+
+# Astro's generated types and the local database
+.astro/
+.data/

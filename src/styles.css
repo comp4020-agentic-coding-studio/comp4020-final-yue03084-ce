@@ -1,0 +1,190 @@
+:root {
+  --bg: #faf8f4;
+  --fg: #2b2a28;
+  --muted: #6b675f;
+  --card: #ffffff;
+  --line: #e4dfd5;
+  --accent: #6a5a3f;
+  --accent-fg: #ffffff;
+  --warn: #9a3412;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1d1c1a;
+    --fg: #ece8e1;
+    --muted: #a8a299;
+    --card: #282724;
+    --line: #3a3833;
+    --accent: #d9c7a3;
+    --accent-fg: #1d1c1a;
+    --warn: #fca5a5;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 1rem;
+  font-family: system-ui, sans-serif;
+  line-height: 1.6;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+nav,
+main {
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-block: 0.5rem 1rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+nav a[aria-current="page"] {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.button,
+button[type="submit"] {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 0.4rem;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.feed {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.card {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--card);
+}
+
+.card p {
+  margin: 0.25rem 0;
+  overflow-wrap: anywhere;
+}
+
+.who {
+  color: var(--muted);
+}
+
+.when,
+.hint,
+small,
+.replies-got {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.replies button {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  font-size: 0.875rem;
+}
+
+.count {
+  color: var(--muted);
+}
+
+.tag {
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 0 0.5rem;
+}
+
+.stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.stack label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.stack label.inline {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+input:not([type="checkbox"], [type="radio"]),
+textarea {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  color: var(--fg);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+}
+
+fieldset {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+fieldset.choices {
+  border: none;
+  padding: 0;
+  gap: 0.25rem;
+}
+
+.refused {
+  color: var(--warn);
+}
+
+dl {
+  margin: 0.5rem 0 0;
+}
+
+dt {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+dd {
+  margin: 0 0 0.25rem;
+}
+
+.notes {
+  white-space: pre-wrap;
+}

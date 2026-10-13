@@ -1,10 +1,42 @@
 # syntax = docker/dockerfile:1
 
-# One Node process; node runs server.ts directly (type stripping) and keeps its
-# SQLite file on the /data volume. No npm dependencies, so nothing to install.
-FROM docker.io/library/node:24.21.0-alpine
+# The image Fly builds and runs: install, build, then keep only the built
+# server and its production dependencies. The database lives on the /data
+# volume (DATA_DIR), never in the image.
+
+ARG NODE_VERSION=24.21.0
+FROM node:${NODE_VERSION}-slim AS base
+
 WORKDIR /app
-COPY server.ts README.md ./
-COPY public/ public/
+ENV NODE_ENV=production
+
+ARG PNPM_VERSION=11.9.0
+RUN npm install -g pnpm@$PNPM_VERSION
+
+# --- build stage: install everything, build, then prune to prod deps -------
+FROM base AS build
+
+# toolchain for better-sqlite3, in case no prebuilt binary matches
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y build-essential pkg-config python-is-python3
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --prod=false
+
+COPY . .
+RUN pnpm run build
+RUN pnpm prune --prod
+
+# --- runtime stage: just the built server and its production deps ----------
+FROM base
+
+COPY --from=build /app/node_modules /app/node_modules
+COPY --from=build /app/dist /app/dist
+# the committed migrations, applied at boot (see src/lib/db.ts)
+COPY --from=build /app/drizzle /app/drizzle
+
+ENV HOST=0.0.0.0
+ENV PORT=8080
 ENV DATA_DIR=/data
-CMD ["node", "server.ts"]
+EXPOSE 8080
+CMD ["node", "./dist/server/entry.mjs"]
