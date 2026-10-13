@@ -66,12 +66,12 @@ with `curl` on 2026-10-12.
   `pnpm` fails loudly. *(from crit 7; on 2026-10-12 a `cd notes` left the
   session's working directory in the wrong place.)*
 - **Before trusting a measurement, know which build and which database it
-  read.** Here that's the local server (`node server.ts`, database under
-  `DATA_DIR`), whatever app `pnpm check` finds at `APP_URL` (default
-  `http://localhost:8080`; the spec checks a running app, not a fresh one), and
-  Fly (database on the `/data` volume). A probe prints what it measured. If it
-  says nothing changed, suspect the probe before the code. *(from crit 7, where
-  a stale build and a reused browser tab each reported a working fix as
+  read.** There are three: `pnpm dev` (database in `.data/`), the built server
+  that `pnpm test` boots on a free port with a throwaway `DATA_DIR` (or
+  whatever app `APP_URL` points at, as in CI), and Fly (database
+  `/data/enough.db` on the volume). A probe prints what it measured. If it
+  says nothing changed, suspect the probe before the code. *(from crit 7,
+  where a stale build and a reused browser tab each reported a working fix as
   broken.)*
 - **Look at the page in a real browser**, not just at whether it built.
   *(from crit 7.)* `agent-browser` isn't installed on this machine (checked
@@ -87,6 +87,25 @@ with `curl` on 2026-10-12.
 - **When a check fails, read its output before changing anything**; the
   message names the file, the line or the contract. A red check is
   authoritative. **Never commit a red state.** *(from crit 7.)*
+
+## The checks (verified against package.json on 2026-10-13)
+
+- `pnpm check` is `pnpm typecheck && pnpm test`; `typecheck` is `astro check`
+  and `test` is `astro build && vitest run`. Because of the `&&`, a type error
+  means the build and the spec never run.
+- `vitest` runs `spec/**/*.test.ts` against the running app.
+  `spec/global-setup.ts` boots the built server (`dist/server/entry.mjs`)
+  with a throwaway `DATA_DIR` unless `APP_URL` is set; CI sets it to the
+  Docker image it built.
+- `spec/invariants.test.ts` is the course's (`/` answers, `/readme/` has every
+  README heading in the server's HTML): keep it. `spec/enough.test.ts` is
+  ours: the live push, what stays private, the description limit.
+- Astro refuses a cross-site form POST (403). A bare `fetch` in a spec has to
+  send `sec-fetch-site: same-origin`, as a browser would, or it gets 403 for
+  the wrong reason. *(The first run of the spec failed this way, not because
+  the app was wrong.)*
+- Schema changes: edit `src/lib/schema.ts`, `pnpm db:generate`, commit what it
+  writes to `drizzle/`. Migrations run at boot.
 
 ## Process
 
