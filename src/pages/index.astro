@@ -1,4 +1,5 @@
 ---
+import BlocksScene from "../components/BlocksScene.astro";
 import Replies from "../components/Replies.astro";
 import Page from "../layouts/Page.astro";
 import { sharedFeed } from "../lib/db";
@@ -13,6 +14,7 @@ const when = (iso: string) =>
 ---
 
 <Page title="Enough">
+  <BlocksScene />
   <h1>Stopping now</h1>
   <p>People who decided something was enough, and put it down.</p>
   <p><a class="button" href="/enough/">Say something is enough</a></p>

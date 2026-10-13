@@ -1,0 +1,204 @@
+---
+import { NOTE_COLOURS } from "../lib/limits";
+
+// The home page's scene: two little figures stack uneven blocks into a
+// crooked tower that's tall enough, then put them down and go and rest, and
+// after a while start again. Decoration only, so it's hidden from screen
+// readers; with reduced motion it shows the resting moment and stays there.
+// The blocks use the note palette (NOTE_COLOURS), so the site has one set of
+// colours.
+const c = Object.fromEntries(Object.entries(NOTE_COLOURS).map(([k, v]) => [k, v.light]));
+// each block: x, y, width, height, a small tilt and colour; the moment in the
+// loop it lands (as a share of the cycle)
+// loop it lands is set per block in the keyframes below
+const blocks = [
+  { x: 150, y: 150, w: 70, h: 26, r: -2, fill: c.clay },
+  { x: 158, y: 124, w: 56, h: 26, r: 4, fill: c.sage },
+  { x: 146, y: 98, w: 62, h: 26, r: -5, fill: c.mist },
+  { x: 162, y: 73, w: 44, h: 25, r: 7, fill: c.rose },
+  { x: 152, y: 49, w: 52, h: 24, r: -3, fill: c.clay },
+];
+---
+
+<figure class="scene" aria-hidden="true">
+  <svg viewBox="0 0 380 190" role="presentation" focusable="false">
+    <line class="ground" x1="10" y1="176.5" x2="370" y2="176.5" />
+    {
+      blocks.map((b) => (
+        <g class="block">
+          <rect
+            x={b.x}
+            y={b.y}
+            width={b.w}
+            height={b.h}
+            rx="3"
+            fill={b.fill}
+            transform={`rotate(${b.r} ${b.x + b.w / 2} ${b.y + b.h / 2})`}
+          />
+        </g>
+      ))
+    }
+
+    <!-- the builder on the left: stacks, then sits down with a cup of tea -->
+    <g class="figure left">
+      <g class="working">
+        <circle cx="112" cy="122" r="9" />
+        <path d="M112 131 L112 156 M112 156 L104 175 M112 156 L120 175 M112 138 L128 128 M112 138 L100 148" />
+      </g>
+      <g class="resting">
+        <circle cx="62" cy="142" r="9" />
+        <path d="M62 151 L62 168 M62 168 L80 168 L82 175 M62 168 L50 175 M62 156 L74 160" />
+        <path class="cup" d="M74 156 h8 v7 a3 3 0 0 1 -3 3 h-2 a3 3 0 0 1 -3 -3 z" />
+        <path class="steam" d="M77 151 q-2 -4 0 -7 M80 152 q2 -4 0 -7" />
+      </g>
+    </g>
+
+    <!-- the builder on the right: hands blocks up, then lies down to rest -->
+    <g class="figure right">
+      <g class="working">
+        <circle cx="252" cy="122" r="9" />
+        <path d="M252 131 L252 156 M252 156 L244 175 M252 156 L260 175 M252 138 L236 126 M252 138 L264 148" />
+      </g>
+      <g class="resting">
+        <circle cx="300" cy="166" r="8" />
+        <path d="M308 168 L346 168 M346 168 L358 175 M346 168 L360 166 M318 168 L310 158" />
+        <path class="zz" d="M318 146 h7 l-7 7 h7 M330 136 h5 l-5 5 h5" />
+      </g>
+    </g>
+  </svg>
+  <figcaption class="note">Live with imperfection.</figcaption>
+</figure>
+
+<style>
+  .scene {
+    margin: 0 0 1.5rem;
+    --cycle: 22s;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 13rem;
+  }
+
+  .ground {
+    stroke: var(--line-strong);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+
+  .figure path,
+  .figure circle {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .figure circle {
+    fill: var(--bg);
+  }
+
+  .cup {
+    fill: var(--c-mist) !important;
+    stroke-width: 1.6 !important;
+  }
+
+  .steam,
+  .zz {
+    stroke: var(--muted) !important;
+    stroke-width: 1.4 !important;
+  }
+
+  /* each block drops into place at its moment, stays while everyone rests,
+     then fades so the next round can begin */
+  .block {
+    animation-duration: var(--cycle);
+    animation-timing-function: ease-out;
+    animation-iteration-count: infinite;
+    opacity: 0;
+  }
+
+  .block:nth-child(2) { animation-name: block-1; }
+  .block:nth-child(3) { animation-name: block-2; }
+  .block:nth-child(4) { animation-name: block-3; }
+  .block:nth-child(5) { animation-name: block-4; }
+  .block:nth-child(6) { animation-name: block-5; }
+
+  @keyframes block-1 { 0%, 4% { opacity: 0; transform: translateY(-30px); } 8%, 88% { opacity: 1; transform: none; } 94%, 100% { opacity: 0; transform: none; } }
+  @keyframes block-2 { 0%, 12% { opacity: 0; transform: translateY(-30px); } 16%, 88% { opacity: 1; transform: none; } 94%, 100% { opacity: 0; transform: none; } }
+  @keyframes block-3 { 0%, 20% { opacity: 0; transform: translateY(-30px); } 24%, 88% { opacity: 1; transform: none; } 94%, 100% { opacity: 0; transform: none; } }
+  @keyframes block-4 { 0%, 28% { opacity: 0; transform: translateY(-30px); } 32%, 88% { opacity: 1; transform: none; } 94%, 100% { opacity: 0; transform: none; } }
+  @keyframes block-5 { 0%, 36% { opacity: 0; transform: translateY(-30px); } 40%, 88% { opacity: 1; transform: none; } 94%, 100% { opacity: 0; transform: none; } }
+
+  /* the builders work while the tower goes up, a beat after the last block
+     they look at it, then walk off to rest; they come back as it starts again */
+  .working {
+    animation: working var(--cycle) ease-in-out infinite;
+  }
+
+  .resting {
+    animation: resting var(--cycle) ease-in-out infinite;
+    opacity: 0;
+  }
+
+  .left .working { transform-origin: 112px 175px; }
+  .right .working { transform-origin: 252px 175px; }
+
+  @keyframes working {
+    0%, 3% { opacity: 0; }
+    6% { opacity: 1; transform: translateY(0); }
+    10% { transform: translateY(-2px); }
+    14% { transform: translateY(0); }
+    18% { transform: translateY(-2px); }
+    22% { transform: translateY(0); }
+    26% { transform: translateY(-2px); }
+    30% { transform: translateY(0); }
+    34% { transform: translateY(-2px); }
+    38%, 46% { opacity: 1; transform: translateY(0); }
+    52%, 100% { opacity: 0; transform: translateY(0); }
+  }
+
+  @keyframes resting {
+    0%, 50% { opacity: 0; }
+    56%, 90% { opacity: 1; }
+    96%, 100% { opacity: 0; }
+  }
+
+  .steam,
+  .zz {
+    animation: drift 3s ease-in-out infinite;
+  }
+
+  @keyframes drift {
+    0%, 100% { transform: translateY(0); opacity: 0.6; }
+    50% { transform: translateY(-3px); opacity: 1; }
+  }
+
+  .note {
+    margin-top: 0.25rem;
+    text-align: center;
+    font-family: var(--font-hand);
+    font-size: 1.35rem;
+    color: var(--muted);
+    transform: rotate(-1.5deg);
+  }
+
+  /* reduced motion: the tower's built and everyone's resting, and it stays */
+  @media (prefers-reduced-motion: reduce) {
+    .block,
+    .resting,
+    .steam,
+    .zz {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+    .working {
+      animation: none;
+      opacity: 0;
+    }
+  }
+</style>
