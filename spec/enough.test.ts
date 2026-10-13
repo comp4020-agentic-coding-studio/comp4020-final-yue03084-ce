@@ -1,5 +1,5 @@
 import { describe, expect, inject, it } from "vitest";
-import { DESCRIPTION_MAX } from "../src/lib/limits.ts";
+import { DESCRIPTION_MAX, NOTES_MAX } from "../src/lib/limits.ts";
 
 // The product rules that can be checked, against the running app: a shared
 // enough reaches every open page live, and nothing private (an unshared
@@ -126,5 +126,35 @@ describe("limits", () => {
     const res = await browser().declare({ description: `${tag}${"x".repeat(DESCRIPTION_MAX)}`, shared: "on" });
     expect(res.status).toBe(400);
     expect(await browser().get("/")).not.toContain(tag);
+  });
+
+  it(`refuses notes over ${NOTES_MAX} characters`, async () => {
+    const tag = marker();
+    const res = await browser().declare({ description: `long ${tag}`, notes: `<p>${"x".repeat(NOTES_MAX)}</p>` });
+    expect(res.status).toBe(400);
+  });
+});
+
+// The notes editor sends HTML. The server keeps the formatting the editor can
+// make and drops anything else, so the owner's own page never runs a script.
+describe("formatted notes", () => {
+  it("keep bold, italic, lists and a palette colour, and lose everything else", async () => {
+    const tag = marker();
+    const author = browser();
+    await author.declare({
+      description: `formatted ${tag}`,
+      notes: [
+        `<p><strong>bold ${tag}</strong> <em>italic</em> <span class="c-sage">sage</span></p>`,
+        "<ol><li>first</li></ol><ul><li>point</li></ul>",
+        `<script>alert(1)</script><p><img src=x onerror="alert(2)"><span style="color:red" class="c-neon">x</span><a href="javascript:alert(3)">link</a></p>`,
+      ].join(""),
+    });
+    const html = await author.get("/mine/");
+    expect(html).toContain(`<strong>bold ${tag}</strong>`);
+    expect(html).toContain("<em>italic</em>");
+    expect(html).toContain('<span class="c-sage">sage</span>');
+    expect(html).toContain("<ol><li>first</li></ol>");
+    expect(html).toContain("<ul><li>point</li></ul>");
+    for (const gone of ["alert(1)", "onerror", "color:red", "c-neon", "javascript:"]) expect(html).not.toContain(gone);
   });
 });

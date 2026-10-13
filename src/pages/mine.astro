@@ -2,6 +2,7 @@
 import Page from "../layouts/Page.astro";
 import { displayName, mine } from "../lib/db";
 import { PRESET_REPLIES, type PresetKey } from "../lib/limits";
+import { isHtml } from "../lib/notes";
 import { currentPerson } from "../lib/person";
 
 // Everything this person has said was enough, private fields included. It
@@ -42,7 +43,8 @@ const when = (iso: string) =>
             {e.notes && (
               <>
                 <dt>What you did and checked</dt>
-                <dd class="notes">{e.notes}</dd>
+                {/* cleaned on the way in (cleanNotes), so it's safe to render as HTML */}
+                {isHtml(e.notes) ? <dd class="notes rich" set:html={e.notes} /> : <dd class="notes">{e.notes}</dd>}
               </>
             )}
           </dl>

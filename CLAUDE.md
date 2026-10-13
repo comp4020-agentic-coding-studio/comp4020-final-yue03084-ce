@@ -74,8 +74,9 @@ with `curl` on 2026-10-12.
   where a stale build and a reused browser tab each reported a working fix as
   broken.)*
 - **Look at the page in a real browser**, not just at whether it built.
-  *(from crit 7.)* `agent-browser` isn't installed on this machine (checked
-  2026-10-12); install it before relying on it.
+  *(from crit 7.)* `agent-browser` 0.39.0 is installed on this machine (via
+  npm, 2026-10-13); `agent-browser open <url>` then `agent-browser screenshot
+  <file>`.
 - **One fact, one piece of code.** A number the app enforces (a length limit,
   how many reports hide a reply) lives in one place, and both the page and any
   message about it read it. Two sources for one fact is a page that will

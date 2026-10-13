@@ -188,3 +188,107 @@ dd {
 .notes {
   white-space: pre-wrap;
 }
+
+/* The notes editor. The --c-* shades are written by src/layouts/Page.astro
+   from NOTE_COLOURS in src/lib/limits.ts, the one list of note colours. */
+.c-sage { color: var(--c-sage); }
+.c-rose { color: var(--c-rose); }
+.c-mist { color: var(--c-mist); }
+.c-clay { color: var(--c-clay); }
+
+.notes-field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--line);
+  border-bottom: none;
+  border-radius: 0.3rem 0.3rem 0 0;
+  background: var(--bg);
+}
+
+.toolbar[hidden] {
+  display: none;
+}
+
+.toolbar button {
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 0.3rem;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.toolbar button[aria-pressed="true"] {
+  border-color: var(--line);
+  background: var(--card);
+}
+
+.swatches {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.toolbar .swatch {
+  min-width: 1.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--card);
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.toolbar .swatch.c-sage { background: var(--c-sage); }
+.toolbar .swatch.c-rose { background: var(--c-rose); }
+.toolbar .swatch.c-mist { background: var(--c-mist); }
+.toolbar .swatch.c-clay { background: var(--c-clay); }
+.toolbar .swatch.none { color: var(--muted); font-size: 0.75rem; }
+
+.toolbar .swatch[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--fg);
+}
+
+.editor .tiptap {
+  min-height: 8rem;
+  padding: 0.4rem 0.6rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0 0 0.3rem 0.3rem;
+  outline: none;
+}
+
+.editor .tiptap:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.editor p,
+.notes.rich p {
+  margin: 0 0 0.4rem;
+}
+
+.editor ul,
+.editor ol,
+.notes.rich ul,
+.notes.rich ol {
+  margin: 0 0 0.4rem;
+  padding-left: 1.4rem;
+}
+
+.notes.rich {
+  white-space: normal;
+}

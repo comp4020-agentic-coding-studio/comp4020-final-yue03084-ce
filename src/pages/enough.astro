@@ -2,7 +2,7 @@
 import Page from "../layouts/Page.astro";
 import { declareEnough, publicEnough } from "../lib/db";
 import { bus } from "../lib/events";
-import { DESCRIPTION_MAX, FEELINGS } from "../lib/limits";
+import { DESCRIPTION_MAX, FEELINGS, NOTE_COLOURS } from "../lib/limits";
 import { ensurePerson } from "../lib/person";
 
 // Say something is enough. The description is the only part that can be
@@ -64,12 +64,114 @@ if (Astro.request.method === "POST") {
           ))
         }
       </fieldset>
-      <label>
-        What did you do, and what did you check?
-        <textarea name="notes" rows="4">{values.notes}</textarea>
-      </label>
+      <div class="notes-field">
+        <label for="notes" id="notes-label">What did you do, and what did you check?</label>
+        <div class="toolbar" role="toolbar" aria-label="Formatting" aria-controls="notes-editor" hidden>
+          <button type="button" data-cmd="bold" aria-label="Bold" aria-pressed="false"><strong>B</strong></button>
+          <button type="button" data-cmd="italic" aria-label="Italic" aria-pressed="false"><em>I</em></button>
+          <button type="button" data-cmd="bulletList" aria-label="Bulleted list" aria-pressed="false">• List</button>
+          <button type="button" data-cmd="orderedList" aria-label="Numbered list" aria-pressed="false">1. List</button>
+          <span class="swatches">
+            {
+              Object.entries(NOTE_COLOURS).map(([key, c]) => (
+                <button type="button" class={`swatch c-${key}`} data-colour={key} aria-label={c.label} aria-pressed="false" />
+              ))
+            }
+            <button type="button" data-colour="" aria-label="No colour" class="swatch none">✕</button>
+          </span>
+        </div>
+        <div id="notes-editor" class="editor" hidden></div>
+        <!-- without scripts this plain box still works; with them the editor writes into it -->
+        <textarea id="notes" name="notes" rows="4">{values.notes}</textarea>
+      </div>
     </fieldset>
 
     <button type="submit">That's enough</button>
   </form>
 </Page>
+
+<script>
+  import { Editor, Mark, mergeAttributes } from "@tiptap/core";
+  import StarterKit from "@tiptap/starter-kit";
+  import { NOTE_COLOURS } from "../lib/limits";
+
+  // A colour is a mark that renders as <span class="c-sage"> and so on: the
+  // class, not a hex, is what's stored, and the server keeps only these.
+  const keys = Object.keys(NOTE_COLOURS);
+  const Colour = Mark.create({
+    name: "colour",
+    addAttributes() {
+      return {
+        key: {
+          default: null,
+          parseHTML: (el) => keys.find((k) => el.classList.contains(`c-${k}`)) ?? null,
+          renderHTML: (attrs) => (attrs.key ? { class: `c-${attrs.key}` } : {}),
+        },
+      };
+    },
+    parseHTML() {
+      return keys.map((k) => ({ tag: `span.c-${k}` }));
+    },
+    renderHTML({ HTMLAttributes }) {
+      return ["span", mergeAttributes(HTMLAttributes), 0];
+    },
+  });
+
+  const textarea = document.querySelector<HTMLTextAreaElement>("#notes");
+  const mount = document.querySelector<HTMLElement>("#notes-editor");
+  const toolbar = document.querySelector<HTMLElement>(".toolbar");
+  if (textarea && mount && toolbar) {
+    const start = textarea.value;
+    const editor = new Editor({
+      element: mount,
+      extensions: [
+        StarterKit.configure({ heading: false, blockquote: false, code: false, codeBlock: false, horizontalRule: false, strike: false, link: false, underline: false }),
+        Colour,
+      ],
+      // older notes are plain text; keep their line breaks
+      content: /^<(p|ul|ol)[\s>]/.test(start)
+        ? start
+        : start
+            .split("\n")
+            .map((line) => `<p>${line.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</p>`)
+            .join(""),
+      editorProps: { attributes: { "aria-labelledby": "notes-label", "aria-multiline": "true", role: "textbox" } },
+    });
+    textarea.hidden = true;
+    mount.hidden = false;
+    toolbar.hidden = false;
+
+    const sync = () => {
+      textarea.value = editor.isEmpty ? "" : editor.getHTML();
+      for (const b of toolbar.querySelectorAll<HTMLButtonElement>("[data-cmd]")) {
+        b.setAttribute("aria-pressed", String(editor.isActive(b.dataset.cmd ?? "")));
+      }
+      const current = editor.getAttributes("colour").key ?? "";
+      for (const b of toolbar.querySelectorAll<HTMLButtonElement>("[data-colour]")) {
+        b.setAttribute("aria-pressed", String(b.dataset.colour === current && current !== ""));
+      }
+    };
+    editor.on("update", sync);
+    editor.on("selectionUpdate", sync);
+    sync();
+
+    // keep the editor's focus and cursor when a toolbar button is pressed, so
+    // "bold, then type" makes bold text rather than losing the cursor
+    toolbar.addEventListener("mousedown", (event) => {
+      if ((event.target as HTMLElement).closest("button")) event.preventDefault();
+    });
+    toolbar.addEventListener("click", (event) => {
+      const b = (event.target as HTMLElement).closest<HTMLButtonElement>("button");
+      if (!b) return;
+      const chain = editor.chain().focus();
+      if (b.dataset.cmd === "bold") chain.toggleBold().run();
+      else if (b.dataset.cmd === "italic") chain.toggleItalic().run();
+      else if (b.dataset.cmd === "bulletList") chain.toggleBulletList().run();
+      else if (b.dataset.cmd === "orderedList") chain.toggleOrderedList().run();
+      else if (b.dataset.colour !== undefined) {
+        if (b.dataset.colour) chain.setMark("colour", { key: b.dataset.colour }).run();
+        else chain.unsetMark("colour").run();
+      }
+    });
+  }
+</script>

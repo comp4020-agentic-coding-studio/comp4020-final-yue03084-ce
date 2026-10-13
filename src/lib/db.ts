@@ -3,7 +3,8 @@ import Database from "better-sqlite3";
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { DESCRIPTION_MAX, FEELINGS, type PresetKey } from "./limits";
+import { DESCRIPTION_MAX, FEELINGS, NOTES_MAX, type PresetKey } from "./limits";
+import { cleanNotes } from "./notes";
 import { type Enough, enoughs, type Person, people, replies } from "./schema";
 
 // One SQLite file is the app's whole persistent state. In production
@@ -117,7 +118,8 @@ export function declareEnough(personId: number, input: EnoughInput): Outcome<Eno
     return { ok: false, reason: "Hours should be a number, like 2 or 1.5." };
   }
   const feeling = (FEELINGS as readonly string[]).includes(input.feeling) ? input.feeling : null;
-  const notes = input.notes.trim() || null;
+  if (input.notes.length > NOTES_MAX) return { ok: false, reason: "Those notes are too long to keep." };
+  const notes = cleanNotes(input.notes) || null;
   const value = db
     .insert(enoughs)
     .values({ personId, description, shared: input.shared, hours, feeling, notes })

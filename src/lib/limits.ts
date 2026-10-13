@@ -22,3 +22,18 @@ export const isPresetKey = (key: string): key is PresetKey => Object.hasOwn(PRES
 
 // How it felt, asked towards "enough", never as a score. Private.
 export const FEELINGS = ["I gave it my all", "More than I thought", "Just enough"] as const;
+
+// The colours the notes editor offers: muted, Morandi-style, each with a light
+// and a dark shade that keep text readable on the card (4.5:1 or better). The
+// notes store the key, never a hex, so the page and the sanitiser read the
+// same list and the shade follows the theme.
+export const NOTE_COLOURS = {
+  sage: { label: "Sage", light: "#5e7360", dark: "#a9bba8" },
+  rose: { label: "Dusty rose", light: "#9a6064", dark: "#d4a5a6" },
+  mist: { label: "Mist blue", light: "#5a6f82", dark: "#a7b8c7" },
+  clay: { label: "Clay", light: "#8a6a45", dark: "#d1b48f" },
+} as const;
+export type NoteColour = keyof typeof NOTE_COLOURS;
+
+// How long the formatted notes can be, counted as stored HTML.
+export const NOTES_MAX = 20_000;
