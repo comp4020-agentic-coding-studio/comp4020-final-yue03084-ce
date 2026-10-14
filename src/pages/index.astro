@@ -23,12 +23,10 @@ const when = (iso: string) =>
     {
       feed.map((e) => (
         <li class="card" data-enough={e.id}>
-          <p>
-            <span class="who">{e.name}</span> put down <q>{e.description}</q>
-          </p>
           <p class="when">
-            <time datetime={e.createdAt}>{when(e.createdAt)}</time>
+            <span class="who">{e.name}</span> · <time datetime={e.createdAt}>{when(e.createdAt)}</time>
           </p>
+          <p class="what">{e.description}</p>
           <Replies enoughId={e.id} counts={e.replies} canReply />
         </li>
       ))
@@ -51,19 +49,18 @@ const when = (iso: string) =>
       const li = document.createElement("li");
       li.className = "card";
       li.dataset.enough = String(e.id);
-      const line = document.createElement("p");
+      const meta = document.createElement("p");
+      meta.className = "when";
       const who = document.createElement("span");
       who.className = "who";
       who.textContent = e.name;
-      const q = document.createElement("q");
-      q.textContent = e.description;
-      line.append(who, " put down ", q);
-      const meta = document.createElement("p");
-      meta.className = "when";
       const time = document.createElement("time");
       time.dateTime = e.createdAt;
       time.textContent = when(e.createdAt);
-      meta.append(time);
+      meta.append(who, " · ", time);
+      const line = document.createElement("p");
+      line.className = "what";
+      line.textContent = e.description;
       const form = document.createElement("form");
       form.className = "replies";
       form.method = "post";
@@ -87,7 +84,7 @@ const when = (iso: string) =>
         button.append(`${label} `, count);
         form.append(button);
       }
-      li.append(line, meta, form);
+      li.append(meta, line, form);
       return li;
     }
 

@@ -15,10 +15,12 @@ export const REPLY_MAX = 30;
 export const REPORTS_TO_HIDE = 3;
 
 // The preset replies, keyed so the database stores the key, not the wording.
+// The keys stay as they were when the wording changed, so replies already
+// given keep counting under the new words.
 export const PRESET_REPLIES = {
-  seen: "Seen. You can put it down.",
-  rest: "Go and rest.",
-  enough: "That's enough.",
+  seen: "You've done a lot.",
+  rest: "It's okay to stop here.",
+  enough: "Proud of you.",
 } as const;
 export type PresetKey = keyof typeof PRESET_REPLIES;
 export const isPresetKey = (key: string): key is PresetKey => Object.hasOwn(PRESET_REPLIES, key);

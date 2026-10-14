@@ -401,3 +401,11 @@ footer a[aria-current="page"] {
   font-size: 0.7rem;
   color: var(--muted);
 }
+
+/* on the feed the thing put down is the card's headline; who and when sit above it */
+.card .what {
+  margin: 0.15rem 0 0.35rem;
+  font-family: var(--font-head);
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
