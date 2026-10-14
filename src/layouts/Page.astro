@@ -19,8 +19,10 @@ const links = [
   { href: "/", label: "Put down for now" },
   { href: "/enough/", label: "Call it enough" },
   { href: "/mine/", label: "Mine" },
-  { href: "/readme/", label: "About" },
 ];
+// the README lives at /readme/ (the course's markers start there), linked from
+// the foot of every page rather than the nav
+const about = "/readme/";
 ---
 
 <!doctype html>
@@ -44,5 +46,8 @@ const links = [
     <main>
       <slot />
     </main>
+    <footer>
+      <a href={about} aria-current={here === about ? "page" : undefined}>About this project</a>
+    </footer>
   </body>
 </html>
