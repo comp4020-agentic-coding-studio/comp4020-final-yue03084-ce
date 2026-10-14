@@ -10,6 +10,16 @@ import { currentPerson } from "../lib/person";
 // reads only their own rows, by their cookie.
 const person = currentPerson(Astro.cookies);
 const rows = person ? mine(person.id) : [];
+// a small read-only copy of the time bar: from the hour before the first
+// stretch to the hour after the last, each stretch in the crayon it was drawn with
+const miniBar = (text: string) => {
+  const spans = parseSpans(text) ?? [];
+  if (spans.length === 0) return null;
+  const from = Math.floor(spans[0].from / 60) * 60;
+  const to = Math.ceil(spans[spans.length - 1].to / 60) * 60;
+  const pct = (m: number) => ((m - from) / (to - from)) * 100;
+  return { from: from / 60, to: to / 60, parts: spans.map((x) => ({ left: pct(x.from), width: pct(x.to) - pct(x.from) })) };
+};
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Sydney", dateStyle: "medium", timeStyle: "short" });
 ---
@@ -36,6 +46,25 @@ const when = (iso: string) =>
                   {e.spans
                     ? `${roughly(e.hours)}: ${(parseSpans(e.spans) ?? []).map(describeSpan).join(", ")}`
                     : `${e.hours} ${e.hours === 1 ? "hour" : "hours"}`}
+                  {e.spans &&
+                    (() => {
+                      const bar = miniBar(e.spans);
+                      return (
+                        bar && (
+                          <span class="minibar" aria-hidden="true" style={`--crayon: var(--c-${e.crayon ?? "clay"})`}>
+                            <span class="minibar-strip">
+                              {bar.parts.map((p) => (
+                                <span class="minibar-part" style={`left: ${p.left}%; width: ${p.width}%`} />
+                              ))}
+                            </span>
+                            <span class="minibar-ends">
+                              <span>{bar.from}</span>
+                              <span>{bar.to}</span>
+                            </span>
+                          </span>
+                        )
+                      );
+                    })()}
                 </dd>
               </>
             )}

@@ -177,6 +177,15 @@ describe("time spans", () => {
     expect(other).not.toContain("9:00–11:30");
   });
 
+  it("keep the crayon they were drawn with, and only a palette colour", async () => {
+    const author = browser();
+    await author.declare({ description: `sage ${marker()}`, spans: "540-600", crayon: "sage" });
+    await author.declare({ description: `neon ${marker()}`, spans: "600-660", crayon: "neon" });
+    const own = await author.get("/mine/");
+    expect(own).toContain("--crayon: var(--c-sage)");
+    expect(own).not.toContain("neon)");
+  });
+
   it("refuses times that aren't whole half-hours inside one day", async () => {
     for (const spans of ["540-555", "1400-1500", "600-540", "nine-ten"]) {
       const res = await browser().declare({ description: `bad ${marker()}`, spans });

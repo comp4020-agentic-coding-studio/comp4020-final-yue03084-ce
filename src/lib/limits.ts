@@ -37,6 +37,9 @@ export const NOTE_COLOURS = {
   clay: { label: "Clay", light: "#8a6a45", dark: "#d1b48f" },
 } as const;
 export type NoteColour = keyof typeof NOTE_COLOURS;
+export const isNoteColour = (key: string): key is NoteColour => Object.hasOwn(NOTE_COLOURS, key);
+// the crayon the time bar starts with
+export const DEFAULT_CRAYON: NoteColour = "clay";
 
 // How long the formatted notes can be, counted as stored HTML.
 export const NOTES_MAX = 20_000;

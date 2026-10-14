@@ -27,6 +27,8 @@ export const enoughs = sqliteTable("enoughs", {
   // the stretches coloured in on the time bar, "540-690,840-900" (see spans.ts);
   // when present, hours is their total
   spans: text("spans"),
+  // the crayon the time bar was coloured with, a NOTE_COLOURS key
+  crayon: text("crayon"),
   feeling: text("feeling"),
   notes: text("notes"),
   createdAt: createdAt(),

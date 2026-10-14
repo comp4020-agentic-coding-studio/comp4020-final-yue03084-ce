@@ -9,7 +9,7 @@ import { ensurePerson } from "../lib/person";
 // Call something enough. The description is the only part that can be
 // public, and only if shared is ticked; the rest is the person's own.
 let refused: string | null = null;
-let values = { description: "", shared: true, hours: "", spans: "", feeling: "", notes: "" };
+let values = { description: "", shared: true, hours: "", spans: "", crayon: "", feeling: "", notes: "" };
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
@@ -19,6 +19,7 @@ if (Astro.request.method === "POST") {
     shared: form.get("shared") === "on",
     hours: field("hours"),
     spans: field("spans"),
+    crayon: field("crayon"),
     feeling: field("feeling"),
     notes: field("notes"),
   };
@@ -51,7 +52,7 @@ if (Astro.request.method === "POST") {
     <fieldset>
       <legend>Just for you</legend>
       <p class="hint">Nobody else ever sees these. They're here for when your mind tells you it wasn't enough.</p>
-      <TimeBar hours={values.hours} spans={values.spans} />
+      <TimeBar hours={values.hours} spans={values.spans} crayon={values.crayon} />
       <fieldset class="choices">
         <legend>Do you feel you put in enough?</legend>
         {

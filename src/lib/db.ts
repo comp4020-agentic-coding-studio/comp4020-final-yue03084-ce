@@ -3,7 +3,7 @@ import Database from "better-sqlite3";
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { DESCRIPTION_MAX, FEELINGS, NOTES_MAX, type PresetKey } from "./limits";
+import { DESCRIPTION_MAX, FEELINGS, isNoteColour, NOTES_MAX, type PresetKey } from "./limits";
 import { cleanNotes } from "./notes";
 import { hoursIn, parseSpans, spansText } from "./spans";
 import { type Enough, enoughs, type Person, people, replies } from "./schema";
@@ -103,6 +103,7 @@ export interface EnoughInput {
   shared: boolean;
   hours: string;
   spans: string;
+  crayon: string;
   feeling: string;
   notes: string;
 }
@@ -122,12 +123,14 @@ export function declareEnough(personId: number, input: EnoughInput): Outcome<Eno
   if (hours !== null && !(Number.isFinite(hours) && hours >= 0 && hours <= 1000)) {
     return { ok: false, reason: "Hours should be a number, like 2 or 1.5." };
   }
+  // a crayon only means something alongside coloured-in time
+  const crayon = spans.length > 0 && isNoteColour(input.crayon) ? input.crayon : null;
   const feeling = (FEELINGS as readonly string[]).includes(input.feeling) ? input.feeling : null;
   if (input.notes.length > NOTES_MAX) return { ok: false, reason: "Those notes are too long to keep." };
   const notes = cleanNotes(input.notes) || null;
   const value = db
     .insert(enoughs)
-    .values({ personId, description, shared: input.shared, hours, spans: spans.length > 0 ? spansText(spans) : null, feeling, notes })
+    .values({ personId, description, shared: input.shared, hours, spans: spans.length > 0 ? spansText(spans) : null, crayon, feeling, notes })
     .returning()
     .get();
   return { ok: true, value };

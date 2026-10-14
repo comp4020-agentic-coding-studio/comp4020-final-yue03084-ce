@@ -1,0 +1,1 @@
+ALTER TABLE `enoughs` ADD `crayon` text;
