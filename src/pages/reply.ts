@@ -7,7 +7,8 @@ import { ensurePerson } from "../lib/person";
 // A preset reply to a shared enough. The feed sends it with fetch and wants
 // JSON back; without script it's a plain form post, sent back to the feed.
 export const POST: APIRoute = async ({ request, cookies, url, redirect }) => {
-  const form = await request.formData();
+  // a POST with no form body (not one a page sends) is just refused
+  const form = await request.formData().catch(() => new FormData());
   const preset = String(form.get("preset") ?? "");
   const enoughId = Number(form.get("enough"));
   const wantsJson = request.headers.get("accept")?.includes("application/json");

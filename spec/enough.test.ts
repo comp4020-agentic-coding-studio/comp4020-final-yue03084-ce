@@ -215,6 +215,13 @@ describe("deleting", () => {
     expect(await author.get("/mine/")).not.toContain(`gone ${tag}`);
   });
 
+  it("shrugs off a POST with no form body instead of erroring", async () => {
+    for (const path of ["/delete/", "/reply/"]) {
+      const res = await fetch(new URL(path, baseUrl), { method: "POST", headers: { "sec-fetch-site": "same-origin" }, redirect: "manual" });
+      expect(res.status, path).toBeLessThan(500);
+    }
+  });
+
   it("can't delete someone else's", async () => {
     const tag = marker();
     const author = browser();
