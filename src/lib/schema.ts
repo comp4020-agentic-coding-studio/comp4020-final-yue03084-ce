@@ -15,7 +15,7 @@ export const people = sqliteTable("people", {
 });
 
 // One "enough": the description is the only part that can ever be public, and
-// only when shared is true. hours, feeling and notes are the owner's alone.
+// only when shared is true. hours, spans, feeling and notes are the owner's alone.
 export const enoughs = sqliteTable("enoughs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   personId: integer("person_id")
@@ -24,6 +24,9 @@ export const enoughs = sqliteTable("enoughs", {
   description: text("description").notNull(),
   shared: integer("shared", { mode: "boolean" }).notNull(),
   hours: real("hours"),
+  // the stretches coloured in on the time bar, "540-690,840-900" (see spans.ts);
+  // when present, hours is their total
+  spans: text("spans"),
   feeling: text("feeling"),
   notes: text("notes"),
   createdAt: createdAt(),

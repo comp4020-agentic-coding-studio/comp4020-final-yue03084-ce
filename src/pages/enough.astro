@@ -1,4 +1,5 @@
 ---
+import TimeBar from "../components/TimeBar.astro";
 import Page from "../layouts/Page.astro";
 import { declareEnough, publicEnough } from "../lib/db";
 import { bus } from "../lib/events";
@@ -8,7 +9,7 @@ import { ensurePerson } from "../lib/person";
 // Call something enough. The description is the only part that can be
 // public, and only if shared is ticked; the rest is the person's own.
 let refused: string | null = null;
-let values = { description: "", shared: true, hours: "", feeling: "", notes: "" };
+let values = { description: "", shared: true, hours: "", spans: "", feeling: "", notes: "" };
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
@@ -17,6 +18,7 @@ if (Astro.request.method === "POST") {
     description: field("description"),
     shared: form.get("shared") === "on",
     hours: field("hours"),
+    spans: field("spans"),
     feeling: field("feeling"),
     notes: field("notes"),
   };
@@ -49,10 +51,7 @@ if (Astro.request.method === "POST") {
     <fieldset>
       <legend>Just for you</legend>
       <p class="hint">Nobody else ever sees these. They're here for when your mind tells you it wasn't enough.</p>
-      <label>
-        How long did you spend on it? <small>(hours, roughly)</small>
-        <input name="hours" inputmode="decimal" value={values.hours} placeholder="3" />
-      </label>
+      <TimeBar hours={values.hours} spans={values.spans} />
       <fieldset class="choices">
         <legend>Do you feel you put in enough?</legend>
         {

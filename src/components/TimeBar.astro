@@ -1,0 +1,281 @@
+---
+import { DAY_MINUTES, DEFAULT_RANGE, NOTE_COLOURS, SLOT_MINUTES } from "../lib/limits";
+
+// "How long did you spend on it?" as a strip of the day you colour in with a
+// crayon: drag across the half-hours you worked, drag again to rub them out.
+// It sends the spans (spans.ts parses them; the server works out the hours).
+// Without scripts, the plain hours box below still works.
+interface Props {
+  hours: string;
+  spans: string;
+}
+const { hours, spans } = Astro.props;
+const options = Array.from({ length: DAY_MINUTES / 60 + 1 }, (_, h) => h * 60);
+const label = (m: number) => (m === DAY_MINUTES ? "24:00" : `${String(m / 60).padStart(2, "0")}:00`);
+---
+
+<div class="timebar" data-slot={SLOT_MINUTES} data-crayon={NOTE_COLOURS.clay.light}>
+  <p class="timebar-q" id="timebar-q">How long did you spend on it?</p>
+
+  <div class="timebar-ui" hidden>
+    <p class="hint">Colour in when you worked. Drag again to rub it out.</p>
+    <div class="timebar-range">
+      <label>From <select class="from">{options.slice(0, -1).map((m) => <option value={m} selected={m === DEFAULT_RANGE.from}>{label(m)}</option>)}</select></label>
+      <label>to <select class="to">{options.slice(1).map((m) => <option value={m} selected={m === DEFAULT_RANGE.to}>{label(m)}</option>)}</select></label>
+    </div>
+    <div class="strip" role="group" aria-labelledby="timebar-q"></div>
+    <div class="ticks" aria-hidden="true"></div>
+    <p class="total" aria-live="polite">Nothing coloured in yet.</p>
+  </div>
+
+  <input type="hidden" name="spans" value={spans} />
+  <label class="timebar-fallback">
+    <small>Hours, roughly</small>
+    <input name="hours" inputmode="decimal" value={hours} placeholder="3" />
+  </label>
+</div>
+
+<script>
+  import { describeSpan, hoursIn, parseSpans, roughly, spansText, type Span } from "../lib/spans";
+
+  for (const root of document.querySelectorAll<HTMLElement>(".timebar")) {
+    const slot = Number(root.dataset.slot);
+    const ui = root.querySelector<HTMLElement>(".timebar-ui")!;
+    const strip = root.querySelector<HTMLElement>(".strip")!;
+    const ticks = root.querySelector<HTMLElement>(".ticks")!;
+    const total = root.querySelector<HTMLElement>(".total")!;
+    const fromSel = root.querySelector<HTMLSelectElement>(".from")!;
+    const toSel = root.querySelector<HTMLSelectElement>(".to")!;
+    const hidden = root.querySelector<HTMLInputElement>('input[name="spans"]')!;
+    const fallback = root.querySelector<HTMLElement>(".timebar-fallback")!;
+    const hoursInput = fallback.querySelector<HTMLInputElement>("input")!;
+
+    // which half-hours are coloured, by their start minute
+    const on = new Set<number>();
+    for (const s of parseSpans(hidden.value) ?? []) for (let m = s.from; m < s.to; m += slot) on.add(m);
+    // start the range around anything already coloured in (a refused form)
+    if (on.size > 0) {
+      const first = Math.min(...on);
+      const last = Math.max(...on) + slot;
+      fromSel.value = String(Math.min(Number(fromSel.value), Math.floor(first / 60) * 60));
+      toSel.value = String(Math.max(Number(toSel.value), Math.ceil(last / 60) * 60));
+    }
+
+    const spans = (): Span[] => {
+      const out: Span[] = [];
+      for (const m of [...on].sort((a, b) => a - b)) {
+        const last = out.at(-1);
+        if (last && last.to === m) last.to = m + slot;
+        else out.push({ from: m, to: m + slot });
+      }
+      return out;
+    };
+
+    const update = () => {
+      const s = spans();
+      hidden.value = spansText(s);
+      const h = hoursIn(s);
+      hoursInput.value = s.length > 0 ? String(h) : "";
+      total.textContent = s.length > 0 ? `Roughly: ${roughly(h)} (${s.map(describeSpan).join(", ")})` : "Nothing coloured in yet.";
+      for (const cell of strip.querySelectorAll<HTMLButtonElement>(".cell")) {
+        const lit = on.has(Number(cell.dataset.m));
+        cell.classList.toggle("on", lit);
+        cell.setAttribute("aria-pressed", String(lit));
+      }
+    };
+
+    const clock = (m: number) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`;
+
+    const draw = () => {
+      let from = Number(fromSel.value);
+      let to = Number(toSel.value);
+      if (to <= from) {
+        to = Math.min(from + 60, 24 * 60);
+        toSel.value = String(to);
+      }
+      strip.replaceChildren();
+      ticks.replaceChildren();
+      for (let m = from; m < to; m += slot) {
+        const cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "cell";
+        cell.dataset.m = String(m);
+        // a slightly different crayon stroke on each cell, so it looks drawn
+        cell.style.setProperty("--wobble", `${((m * 7919) % 5) - 2}px`);
+        cell.setAttribute("aria-label", `${clock(m)} to ${clock(m + slot)}`);
+        strip.append(cell);
+      }
+      for (let m = from; m <= to; m += 60) {
+        const t = document.createElement("span");
+        t.textContent = String(m / 60);
+        t.style.left = `${((m - from) / (to - from)) * 100}%`;
+        ticks.append(t);
+      }
+      update();
+    };
+
+    // drag to colour: the first cell decides whether this stroke paints or rubs out
+    let painting: boolean | null = null;
+    const cellAt = (x: number, y: number) => (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLButtonElement>(".strip .cell");
+    const apply = (cell: HTMLButtonElement | null | undefined) => {
+      if (!cell || painting === null) return;
+      const m = Number(cell.dataset.m);
+      if (painting) on.add(m);
+      else on.delete(m);
+      update();
+    };
+    strip.addEventListener("pointerdown", (e) => {
+      const cell = cellAt(e.clientX, e.clientY);
+      if (!cell) return;
+      e.preventDefault();
+      painting = !on.has(Number(cell.dataset.m));
+      strip.setPointerCapture(e.pointerId);
+      apply(cell);
+    });
+    strip.addEventListener("pointermove", (e) => {
+      if (painting !== null) apply(cellAt(e.clientX, e.clientY));
+    });
+    const stop = () => {
+      painting = null;
+    };
+    strip.addEventListener("pointerup", stop);
+    strip.addEventListener("pointercancel", stop);
+    // keyboard: each cell is a button, Space or Enter toggles it (a click with
+    // no pointer down first)
+    strip.addEventListener("click", (e) => {
+      if ((e as PointerEvent).detail !== 0) return;
+      const cell = (e.target as HTMLElement).closest<HTMLButtonElement>(".cell");
+      if (!cell) return;
+      const m = Number(cell.dataset.m);
+      if (on.has(m)) on.delete(m);
+      else on.add(m);
+      update();
+    });
+
+    fromSel.addEventListener("change", draw);
+    toSel.addEventListener("change", draw);
+    ui.hidden = false;
+    fallback.hidden = true;
+    draw();
+  }
+</script>
+
+<style>
+  .timebar {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .timebar-q {
+    margin: 0;
+  }
+
+  .timebar-ui[hidden],
+  .timebar-fallback[hidden] {
+    display: none;
+  }
+
+  .timebar-ui {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .timebar-ui .hint {
+    margin: 0;
+  }
+
+  .timebar-range {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.9375rem;
+  }
+
+  .timebar-range label {
+    display: flex !important;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  select {
+    min-height: 2.5rem;
+    padding: 0.25rem 0.5rem;
+    font: inherit;
+    color: var(--fg);
+    background: var(--card);
+    border: 1px solid var(--line-strong);
+    border-radius: 0.4rem;
+  }
+
+  .strip {
+    display: flex;
+    height: 3rem;
+    padding: 0.35rem;
+    background: var(--card);
+    border: 1.5px solid var(--line-strong);
+    /* hand-drawn, not ruled */
+    border-radius: 0.6rem 0.35rem 0.7rem 0.4rem / 0.5rem 0.7rem 0.4rem 0.6rem;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .strip :global(.cell) {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-left: 1px dotted var(--line);
+    background: transparent;
+    cursor: crosshair;
+    position: relative;
+  }
+
+  .strip :global(.cell:first-child) {
+    border-left: none;
+  }
+
+  /* the crayon: a rough, slightly uneven stroke with a grainy texture */
+  .strip :global(.cell.on)::before {
+    content: "";
+    position: absolute;
+    inset: calc(0.3rem + var(--wobble, 0px)) -1px calc(0.3rem - var(--wobble, 0px));
+    background:
+      repeating-linear-gradient(100deg, rgb(255 255 255 / 0.18) 0 2px, transparent 2px 5px),
+      var(--c-clay);
+    opacity: 0.85;
+    border-radius: 3px 5px 2px 6px;
+    filter: url(#crayon);
+  }
+
+  .strip :global(.cell:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    z-index: 1;
+  }
+
+  .ticks {
+    position: relative;
+    height: 1.1rem;
+    margin: 0 0.35rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .ticks :global(span) {
+    position: absolute;
+    transform: translateX(-50%);
+  }
+
+  .total {
+    margin: 0;
+    font-family: var(--font-hand);
+    font-size: 1.3rem;
+    color: var(--fg);
+  }
+
+  .timebar-fallback {
+    display: grid;
+    gap: 0.25rem;
+  }
+</style>

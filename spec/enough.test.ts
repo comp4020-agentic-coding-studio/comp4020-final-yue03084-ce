@@ -158,3 +158,30 @@ describe("formatted notes", () => {
     for (const gone of ["alert(1)", "onerror", "color:red", "c-neon", "javascript:"]) expect(html).not.toContain(gone);
   });
 });
+
+// The time bar sends the half-hours someone coloured in. They're private, and
+// the hours stored beside them are always their total, never a second guess.
+describe("time spans", () => {
+  it("are kept, totalled, and seen only by their owner", async () => {
+    const tag = marker();
+    const author = browser();
+    const res = await author.declare({ description: `spans ${tag}`, shared: "on", hours: "99", spans: "540-690,840-900" });
+    expect(res.status).toBe(303);
+    const own = await author.get("/mine/");
+    expect(own).toContain("about 3½ hours");
+    expect(own).toContain("9:00–11:30");
+    expect(own).toContain("14:00–15:00");
+    expect(own).not.toContain("99 hours");
+    const other = await browser().get("/");
+    expect(other).toContain(`spans ${tag}`);
+    expect(other).not.toContain("9:00–11:30");
+  });
+
+  it("refuses times that aren't whole half-hours inside one day", async () => {
+    for (const spans of ["540-555", "1400-1500", "600-540", "nine-ten"]) {
+      const res = await browser().declare({ description: `bad ${marker()}`, spans });
+      expect(res.status, spans).toBe(400);
+    }
+  });
+});
+

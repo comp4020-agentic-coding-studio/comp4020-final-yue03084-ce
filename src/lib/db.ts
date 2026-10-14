@@ -5,6 +5,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { DESCRIPTION_MAX, FEELINGS, NOTES_MAX, type PresetKey } from "./limits";
 import { cleanNotes } from "./notes";
+import { hoursIn, parseSpans, spansText } from "./spans";
 import { type Enough, enoughs, type Person, people, replies } from "./schema";
 
 // One SQLite file is the app's whole persistent state. In production
@@ -101,6 +102,7 @@ export interface EnoughInput {
   description: string;
   shared: boolean;
   hours: string;
+  spans: string;
   feeling: string;
   notes: string;
 }
@@ -113,7 +115,10 @@ export function declareEnough(personId: number, input: EnoughInput): Outcome<Eno
   if ([...description].length > DESCRIPTION_MAX) {
     return { ok: false, reason: `Keep it to ${DESCRIPTION_MAX} characters or fewer.` };
   }
-  const hours = input.hours.trim() === "" ? null : Number(input.hours);
+  // coloured-in spans win; the typed hours are for when the bar can't run
+  const spans = parseSpans(input.spans);
+  if (spans === null) return { ok: false, reason: "Those times didn't make sense. Try colouring them in again." };
+  const hours = spans.length > 0 ? hoursIn(spans) : input.hours.trim() === "" ? null : Number(input.hours);
   if (hours !== null && !(Number.isFinite(hours) && hours >= 0 && hours <= 1000)) {
     return { ok: false, reason: "Hours should be a number, like 2 or 1.5." };
   }
@@ -122,7 +127,7 @@ export function declareEnough(personId: number, input: EnoughInput): Outcome<Eno
   const notes = cleanNotes(input.notes) || null;
   const value = db
     .insert(enoughs)
-    .values({ personId, description, shared: input.shared, hours, feeling, notes })
+    .values({ personId, description, shared: input.shared, hours, spans: spans.length > 0 ? spansText(spans) : null, feeling, notes })
     .returning()
     .get();
   return { ok: true, value };

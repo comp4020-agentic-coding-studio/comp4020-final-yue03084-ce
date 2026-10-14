@@ -40,3 +40,10 @@ export type NoteColour = keyof typeof NOTE_COLOURS;
 
 // How long the formatted notes can be, counted as stored HTML.
 export const NOTES_MAX = 20_000;
+
+// The time bar: the size of one cell a person colours in, and the range of the
+// day it can cover, in minutes since midnight.
+export const SLOT_MINUTES = 30;
+export const DAY_MINUTES = 24 * 60;
+// what the bar shows before someone changes it: 9:00 to 18:00
+export const DEFAULT_RANGE = { from: 9 * 60, to: 18 * 60 } as const;

@@ -3,6 +3,7 @@ import Page from "../layouts/Page.astro";
 import { displayName, mine } from "../lib/db";
 import { PRESET_REPLIES, type PresetKey } from "../lib/limits";
 import { isHtml } from "../lib/notes";
+import { describeSpan, parseSpans, roughly } from "../lib/spans";
 import { currentPerson } from "../lib/person";
 
 // Everything this person has said was enough, private fields included. It
@@ -31,7 +32,11 @@ const when = (iso: string) =>
             {e.hours !== null && (
               <>
                 <dt>Time spent</dt>
-                <dd>{e.hours} {e.hours === 1 ? "hour" : "hours"}</dd>
+                <dd>
+                  {e.spans
+                    ? `${roughly(e.hours)}: ${(parseSpans(e.spans) ?? []).map(describeSpan).join(", ")}`
+                    : `${e.hours} ${e.hours === 1 ? "hour" : "hours"}`}
+                </dd>
               </>
             )}
             {e.feeling && (
