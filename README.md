@@ -21,7 +21,7 @@ there to speak for you at that moment.
 
 ## What's there now
 
-You can say something is enough, choose whether to share it, see what others
+You can call something enough, choose whether to share it, see what others
 share appear live without reloading, and reply with a preset response.
 
 ## Where the idea came from
