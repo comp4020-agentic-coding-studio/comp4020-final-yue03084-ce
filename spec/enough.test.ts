@@ -25,6 +25,7 @@ function browser() {
     get: async (path: string) => (await send(path)).text(),
     declare: (fields: Record<string, string>) =>
       send("/enough/", { method: "POST", body: new URLSearchParams(fields) }),
+    remove: (enough: string) => send("/delete/", { method: "POST", body: new URLSearchParams({ enough }) }),
   };
 }
 
@@ -191,6 +192,36 @@ describe("time spans", () => {
       const res = await browser().declare({ description: `bad ${marker()}`, spans });
       expect(res.status, spans).toBe(400);
     }
+  });
+});
+
+// Deleting is the owner's alone, and a deleted shared enough leaves every
+// open feed at once.
+describe("deleting", () => {
+  const idOf = (html: string, text: string) => {
+    const m = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?${text}`).exec(html);
+    if (!m) throw new Error(`no card for ${text}`);
+    return m[1];
+  };
+
+  it("takes a shared enough off everyone's feed, live", async () => {
+    const tag = marker();
+    const author = browser();
+    await author.declare({ description: `gone ${tag}`, shared: "on" });
+    const id = idOf(await author.get("/mine/"), `gone ${tag}`);
+    const received = await readStream(() => author.remove(id), `"id":${id}`, 3_000);
+    expect(received).toContain("event: removed");
+    expect(await browser().get("/")).not.toContain(`gone ${tag}`);
+    expect(await author.get("/mine/")).not.toContain(`gone ${tag}`);
+  });
+
+  it("can't delete someone else's", async () => {
+    const tag = marker();
+    const author = browser();
+    await author.declare({ description: `kept ${tag}`, shared: "on" });
+    const id = idOf(await author.get("/mine/"), `kept ${tag}`);
+    await browser().remove(id);
+    expect(await browser().get("/")).toContain(`kept ${tag}`);
   });
 });
 

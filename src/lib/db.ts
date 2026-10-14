@@ -144,3 +144,20 @@ export function reply(personId: number, enoughId: number, preset: PresetKey): Ou
   const updated = publicEnough(enoughId);
   return updated ? { ok: true, value: updated } : { ok: false, reason: "That one isn't shared." };
 }
+
+// Delete one of your own enoughs, with the replies it got. Only its owner can:
+// the row has to match both the id and the person. Returns whether it was
+// shared, so the caller knows whether anyone else needs telling.
+export function deleteEnough(personId: number, enoughId: number): Outcome<{ wasShared: boolean }> {
+  const row = db
+    .select()
+    .from(enoughs)
+    .where(and(eq(enoughs.id, enoughId), eq(enoughs.personId, personId)))
+    .get();
+  if (!row) return { ok: false, reason: "That isn't one of yours." };
+  db.transaction((tx) => {
+    tx.delete(replies).where(eq(replies.enoughId, enoughId)).run();
+    tx.delete(enoughs).where(eq(enoughs.id, enoughId)).run();
+  });
+  return { ok: true, value: { wasShared: row.shared } };
+}

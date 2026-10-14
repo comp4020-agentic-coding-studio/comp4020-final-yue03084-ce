@@ -8,6 +8,7 @@ import { bus } from "../../lib/events";
 export const GET: APIRoute = () => {
   let onEnough: (e: PublicEnough) => void;
   let onReply: (e: PublicEnough) => void;
+  let onRemoved: (e: { id: number }) => void;
   let heartbeat: ReturnType<typeof setInterval>;
 
   const stream = new ReadableStream<string>({
@@ -18,13 +19,16 @@ export const GET: APIRoute = () => {
       heartbeat = setInterval(() => controller.enqueue(": ping\n\n"), 30_000);
       onEnough = (e) => controller.enqueue(`event: enough\ndata: ${JSON.stringify(e)}\n\n`);
       onReply = (e) => controller.enqueue(`event: reply\ndata: ${JSON.stringify(e)}\n\n`);
+      onRemoved = (e) => controller.enqueue(`event: removed\ndata: ${JSON.stringify(e)}\n\n`);
       bus.on("enough", onEnough);
       bus.on("reply", onReply);
+      bus.on("removed", onRemoved);
     },
     cancel() {
       clearInterval(heartbeat);
       bus.off("enough", onEnough);
       bus.off("reply", onReply);
+      bus.off("removed", onRemoved);
     },
   });
 

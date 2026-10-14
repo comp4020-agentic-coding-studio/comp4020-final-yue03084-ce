@@ -10,6 +10,8 @@ import type { PublicEnough } from "./db";
 interface Events {
   enough: [PublicEnough];
   reply: [PublicEnough];
+  // a shared enough its owner deleted: only the id goes out
+  removed: [{ id: number }];
 }
 export const bus = new EventEmitter<Events>();
 bus.setMaxListeners(0);

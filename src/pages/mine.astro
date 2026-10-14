@@ -90,6 +90,15 @@ const when = (iso: string) =>
                 .join(" · ") || "No replies yet."}
             </p>
           )}
+          {/* delete asks once more before it goes: a <details> needs no script */}
+          <details class="delete">
+            <summary>Delete</summary>
+            <form method="post" action="/delete/">
+              <input type="hidden" name="enough" value={e.id} />
+              <span>This can't be undone{e.shared ? ", and it comes off the feed for everyone" : ""}.</span>
+              <button type="submit" class="danger">Delete it</button>
+            </form>
+          </details>
         </li>
       ))
     }

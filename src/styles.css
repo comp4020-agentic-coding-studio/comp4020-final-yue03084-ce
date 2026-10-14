@@ -409,3 +409,51 @@ footer a[aria-current="page"] {
   font-size: 1.15rem;
   line-height: 1.4;
 }
+
+/* delete on Mine: tucked away, and one more step before it goes */
+.delete {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.delete summary {
+  display: inline-block;
+  padding-block: 0.4rem;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+
+.delete summary::-webkit-details-marker {
+  display: none;
+}
+
+.delete summary:hover {
+  color: var(--warn);
+}
+
+.delete form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.25rem;
+  color: var(--muted);
+}
+
+button.danger {
+  min-height: 2.25rem;
+  padding: 0.3rem 0.9rem;
+  border: 1px solid var(--warn);
+  border-radius: 0.5rem 0.4rem 0.55rem 0.45rem;
+  background: transparent;
+  color: var(--warn);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.danger:hover {
+  background: var(--warn);
+  color: #fff;
+}

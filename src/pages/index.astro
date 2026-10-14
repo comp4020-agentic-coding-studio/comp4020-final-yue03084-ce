@@ -116,5 +116,10 @@ const when = (iso: string) =>
       feed.prepend(card(e));
     });
     source.addEventListener("reply", (event) => updateCounts(JSON.parse(event.data)));
+    // its owner deleted it: take the card away for everyone
+    source.addEventListener("removed", (event) => {
+      const { id } = JSON.parse(event.data) as { id: number };
+      feed.querySelector(`[data-enough="${id}"]`)?.remove();
+    });
   </script>
 </Page>
