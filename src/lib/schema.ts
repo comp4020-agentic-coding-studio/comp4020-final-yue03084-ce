@@ -82,5 +82,33 @@ export const reports = sqliteTable(
   (t) => [uniqueIndex("reports_once").on(t.commentId, t.personId)],
 );
 
+// A break: someone stepped away to do something else. Public as "someone is
+// resting" and, if it followed a shared enough, as what they went to do; never
+// how long it lasted. endedAt is null while it's going.
+export const breaks = sqliteTable("breaks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  personId: integer("person_id")
+    .notNull()
+    .references(() => people.id),
+  enoughId: integer("enough_id").references(() => enoughs.id),
+  kind: text("kind").notNull(),
+  startedAt: createdAt(),
+  endedAt: text("ended_at"),
+});
+
+// Each time someone wanted to go back and check an enough, and what they did:
+// let it go, or check anyway. Only ever shown to them.
+export const urges = sqliteTable("urges", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  enoughId: integer("enough_id")
+    .notNull()
+    .references(() => enoughs.id),
+  personId: integer("person_id")
+    .notNull()
+    .references(() => people.id),
+  choice: text("choice").notNull(),
+  createdAt: createdAt(),
+});
+
 export type Person = typeof people.$inferSelect;
 export type Enough = typeof enoughs.$inferSelect;

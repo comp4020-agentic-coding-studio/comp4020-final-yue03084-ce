@@ -29,6 +29,9 @@ function browser() {
     comment: (enough: string, text: string) =>
       send("/comment/", { method: "POST", body: new URLSearchParams({ enough, text }) }),
     report: (comment: string) => send("/report/", { method: "POST", body: new URLSearchParams({ comment }) }),
+    rest: (fields: Record<string, string>) => send("/break/", { method: "POST", body: new URLSearchParams(fields) }),
+    urge: (enough: string, choice: string) =>
+      send("/urge/", { method: "POST", body: new URLSearchParams({ enough, choice }) }),
   };
 }
 
@@ -289,6 +292,63 @@ describe("comments", () => {
     expect(received).not.toContain(`unkind ${tag}`);
     expect(await browser().get("/")).not.toContain(`unkind ${tag}`);
     expect(await author.get("/mine/")).not.toContain(`unkind ${tag}`);
+  });
+});
+
+// Breaks: others see how many are resting and where someone went after a
+// shared enough, never who is resting or for how long.
+describe("breaks", () => {
+  // the count as the page shows it (not the wording kept in its data attributes)
+  const restingCount = (html: string) => {
+    const shown = /id="resting"[^>]*>\s*([^<]*)/.exec(html)?.[1] ?? "";
+    if (shown.startsWith("Nobody")) return 0;
+    const n = /^(\d+)/.exec(shown);
+    return n ? Number(n[1]) : Number.NaN;
+  };
+
+  it("change the resting count for everyone, live, and back again", async () => {
+    const before = restingCount(await browser().get("/"));
+    const someone = browser();
+    const started = await readStream(() => someone.rest({ kind: "tea" }), "event: resting", 3_000);
+    expect(started).toContain(`"count":${before + 1}`);
+    const ended = await readStream(() => someone.rest({ end: "1" }), "event: resting", 3_000);
+    expect(ended).toContain(`"count":${before}`);
+  });
+
+  it("after a shared enough, show where they went and when they're back, never how long", async () => {
+    const tag = marker();
+    const author = browser();
+    const received = await readStream(
+      () => author.declare({ description: `then walk ${tag}`, shared: "on", spans: "540-720", next: "walk" }),
+      `then walk ${tag}`,
+      3_000,
+    );
+    expect(received).toContain(`then walk ${tag}`);
+    let feed = await browser().get("/");
+    expect(feed).toContain("Then went for a walk.");
+    expect(feed).not.toContain("3 hours");
+    await author.rest({ end: "1" });
+    feed = await browser().get("/");
+    expect(feed).toContain("back from a walk");
+  });
+});
+
+// "I want to check it again" is the owner's alone: recorded, shown back to
+// them, and never to anyone else.
+describe("rechecking", () => {
+  it("is recorded for the owner only", async () => {
+    const tag = marker();
+    const author = browser();
+    await author.declare({ description: `recheck ${tag}`, shared: "on", notes: `<p>checked refs ${tag}</p>` });
+    const mineHtml = await author.get("/mine/");
+    const id = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?recheck ${tag}`).exec(mineHtml)?.[1] ?? "";
+    expect(mineHtml).toContain(`checked refs ${tag}`);
+    await author.urge(id, "let_go");
+    await author.urge(id, "checked");
+    await browser().urge(id, "checked");
+    const own = await author.get("/mine/");
+    expect(own).toContain("Wanted to check it again 2 times; let it go 1.");
+    expect(await browser().get("/")).not.toContain("Wanted to check it again");
   });
 });
 

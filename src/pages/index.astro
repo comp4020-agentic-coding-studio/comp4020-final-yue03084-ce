@@ -1,10 +1,11 @@
 ---
 import BlocksScene from "../components/BlocksScene.astro";
+import BreakBox from "../components/BreakBox.astro";
 import Comments from "../components/Comments.astro";
 import Replies from "../components/Replies.astro";
 import Page from "../layouts/Page.astro";
 import { sharedFeed } from "../lib/db";
-import { COMMENT_PROMPT, PRESET_REPLIES, REPLY_MAX } from "../lib/limits";
+import { BREAK_KINDS, COMMENT_PROMPT, PRESET_REPLIES, REPLY_MAX } from "../lib/limits";
 
 // The public feed: moments when someone stopped. Only shared enoughs, and only
 // their one-line description (CLAUDE.md: "Show stopping, never finishing").
@@ -19,6 +20,7 @@ const when = (iso: string) =>
   <h1>Put down for now</h1>
   <p>People who decided something was enough, and put it down.</p>
   <p><a class="button" href="/enough/">Call it enough</a></p>
+  <BreakBox />
 
   <ol
     class="feed"
@@ -26,6 +28,7 @@ const when = (iso: string) =>
     data-presets={JSON.stringify(PRESET_REPLIES)}
     data-prompt={COMMENT_PROMPT}
     data-max={REPLY_MAX}
+    data-breaks={JSON.stringify(BREAK_KINDS)}
   >
     {
       feed.map((e) => (
@@ -34,6 +37,9 @@ const when = (iso: string) =>
             <span class="who">{e.name}</span> · <time datetime={e.createdAt}>{when(e.createdAt)}</time>
           </p>
           <p class="what">{e.description}</p>
+          <p class="rest" data-rest={e.id}>
+            {e.rest && (e.rest.back ? `Then took a break, and is ${BREAK_KINDS[e.rest.kind].back}.` : `Then ${BREAK_KINDS[e.rest.kind].going}.`)}
+          </p>
           <Replies enoughId={e.id} counts={e.replies} canReply />
           <Comments enoughId={e.id} comments={e.comments} canComment />
         </li>
@@ -49,6 +55,11 @@ const when = (iso: string) =>
     const presets: Record<string, string> = JSON.parse(feed.dataset.presets ?? "{}");
     const prompt = feed.dataset.prompt ?? "";
     const max = Number(feed.dataset.max);
+    const breakKinds: Record<string, { going: string; back: string }> = JSON.parse(feed.dataset.breaks ?? "{}");
+
+    // the same words the card above renders for a break taken after an enough
+    const restLine = (e: PublicEnough) =>
+      !e.rest ? "" : e.rest.back ? `Then took a break, and is ${breakKinds[e.rest.kind]?.back}.` : `Then ${breakKinds[e.rest.kind]?.going}.`;
 
     // the same markup Comments.astro renders, from a PublicEnough's comments;
     // textContent throughout, so nobody's words become markup
@@ -127,6 +138,10 @@ const when = (iso: string) =>
       const line = document.createElement("p");
       line.className = "what";
       line.textContent = e.description;
+      const rest = document.createElement("p");
+      rest.className = "rest";
+      rest.dataset.rest = String(e.id);
+      rest.textContent = restLine(e);
       const form = document.createElement("form");
       form.className = "replies";
       form.method = "post";
@@ -150,13 +165,15 @@ const when = (iso: string) =>
         button.append(`${label} `, count);
         form.append(button);
       }
-      li.append(meta, line, form, comments(e));
+      li.append(meta, line, rest, form, comments(e));
       return li;
     }
 
     function updateCounts(e: PublicEnough) {
       const form = feed.querySelector<HTMLFormElement>(`form[data-replies="${e.id}"]`);
       if (!form) return;
+      const rest = feed.querySelector<HTMLElement>(`[data-rest="${e.id}"]`);
+      if (rest) rest.textContent = restLine(e);
       // redraw the comment list, keeping whatever someone is typing
       const box = feed.querySelector<HTMLDivElement>(`[data-comments="${e.id}"]`);
       if (box) {
@@ -200,6 +217,14 @@ const when = (iso: string) =>
       feed.prepend(card(e));
     });
     source.addEventListener("reply", (event) => updateCounts(JSON.parse(event.data)));
+    // how many people are on a break: a number, never who
+    source.addEventListener("resting", (event) => {
+      const { count } = JSON.parse(event.data) as { count: number };
+      const p = document.getElementById("resting");
+      if (!p) return;
+      p.textContent =
+        count === 0 ? (p.dataset.templateNone ?? "") : count === 1 ? (p.dataset.templateOne ?? "") : `${count} people are on a break right now.`;
+    });
     // its owner deleted it: take the card away for everyone
     source.addEventListener("removed", (event) => {
       const { id } = JSON.parse(event.data) as { id: number };

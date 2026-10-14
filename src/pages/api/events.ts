@@ -9,6 +9,7 @@ export const GET: APIRoute = () => {
   let onEnough: (e: PublicEnough) => void;
   let onReply: (e: PublicEnough) => void;
   let onRemoved: (e: { id: number }) => void;
+  let onResting: (e: { count: number }) => void;
   let heartbeat: ReturnType<typeof setInterval>;
 
   const stream = new ReadableStream<string>({
@@ -22,13 +23,16 @@ export const GET: APIRoute = () => {
       onRemoved = (e) => controller.enqueue(`event: removed\ndata: ${JSON.stringify(e)}\n\n`);
       bus.on("enough", onEnough);
       bus.on("reply", onReply);
+      onResting = (e) => controller.enqueue(`event: resting\ndata: ${JSON.stringify(e)}\n\n`);
       bus.on("removed", onRemoved);
+      bus.on("resting", onResting);
     },
     cancel() {
       clearInterval(heartbeat);
       bus.off("enough", onEnough);
       bus.off("reply", onReply);
       bus.off("removed", onRemoved);
+      bus.off("resting", onResting);
     },
   });
 

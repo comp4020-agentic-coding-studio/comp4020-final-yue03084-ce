@@ -12,6 +12,8 @@ interface Events {
   reply: [PublicEnough];
   // a shared enough its owner deleted: only the id goes out
   removed: [{ id: number }];
+  // how many people are on a break now: a number, never who
+  resting: [{ count: number }];
 }
 export const bus = new EventEmitter<Events>();
 bus.setMaxListeners(0);

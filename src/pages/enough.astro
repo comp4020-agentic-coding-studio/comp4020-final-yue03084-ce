@@ -1,9 +1,9 @@
 ---
 import TimeBar from "../components/TimeBar.astro";
 import Page from "../layouts/Page.astro";
-import { declareEnough, publicEnough } from "../lib/db";
+import { declareEnough, publicEnough, restingNow, startBreak } from "../lib/db";
 import { bus } from "../lib/events";
-import { DESCRIPTION_MAX, FEELINGS, NOTE_COLOURS } from "../lib/limits";
+import { BREAK_KINDS, DESCRIPTION_MAX, FEELINGS, isBreakKind, NOTE_COLOURS } from "../lib/limits";
 import { ensurePerson } from "../lib/person";
 
 // Call something enough. The description is the only part that can be
@@ -26,6 +26,12 @@ if (Astro.request.method === "POST") {
   const person = ensurePerson(Astro.cookies, Astro.url.protocol === "https:");
   const outcome = declareEnough(person.id, values);
   if (outcome.ok) {
+    // and then, if they picked one, straight into a break
+    const next = field("next");
+    if (isBreakKind(next)) {
+      startBreak(person.id, next, outcome.value.id);
+      bus.emit("resting", { count: restingNow() });
+    }
     // only a shared one goes on the bus, and only its public shape
     const shown = outcome.value.shared ? publicEnough(outcome.value.id) : undefined;
     if (shown) bus.emit("enough", shown);
@@ -84,6 +90,19 @@ if (Astro.request.method === "POST") {
         <!-- without scripts this plain box still works; with them the editor writes into it -->
         <textarea id="notes" name="notes" rows="4">{values.notes}</textarea>
       </div>
+    </fieldset>
+
+    <fieldset class="choices next">
+      <legend>And now? <small>(optional: others see where you went, never for how long)</small></legend>
+      <label class="inline"><input type="radio" name="next" value="" checked /> Nothing yet</label>
+      {
+        Object.entries(BREAK_KINDS).map(([key, k]) => (
+          <label class="inline">
+            <input type="radio" name="next" value={key} />
+            {k.label}
+          </label>
+        ))
+      }
     </fieldset>
 
     <button type="submit">That's enough</button>

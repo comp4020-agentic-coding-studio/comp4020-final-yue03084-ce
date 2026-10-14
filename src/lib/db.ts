@@ -1,12 +1,23 @@
 import { mkdirSync } from "node:fs";
 import Database from "better-sqlite3";
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { DESCRIPTION_MAX, FEELINGS, isNoteColour, NOTES_MAX, type PresetKey, REPLY_MAX, REPORTS_TO_HIDE } from "./limits";
+import {
+  BREAK_MAX_MINUTES,
+  type BreakKind,
+  DESCRIPTION_MAX,
+  FEELINGS,
+  isNoteColour,
+  NOTES_MAX,
+  type PresetKey,
+  REPLY_MAX,
+  REPORTS_TO_HIDE,
+  type UrgeChoice,
+} from "./limits";
 import { cleanNotes } from "./notes";
 import { hoursIn, parseSpans, spansText } from "./spans";
-import { comments, type Enough, enoughs, type Person, people, replies, reports } from "./schema";
+import { breaks, comments, type Enough, enoughs, type Person, people, replies, reports, urges } from "./schema";
 
 // One SQLite file is the app's whole persistent state. In production
 // DATA_DIR is the machine's volume (/data), which is how state survives a
@@ -48,6 +59,9 @@ export interface PublicEnough {
   createdAt: string;
   replies: Partial<Record<PresetKey, number>>;
   comments: PublicComment[];
+  // the break taken after it, if any: what they went to do, and whether
+  // they're back. Never how long.
+  rest: { kind: BreakKind; back: boolean } | null;
 }
 
 // A comment as anyone sees it: hidden ones never appear.
@@ -56,6 +70,27 @@ export interface PublicComment {
   name: string;
   text: string;
   createdAt: string;
+}
+
+// A break counts as going until it's ended or BREAK_MAX_MINUTES have passed.
+const stillGoing = () =>
+  and(isNull(breaks.endedAt), gt(breaks.startedAt, sql`strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ${`-${BREAK_MAX_MINUTES} minutes`})`));
+
+function restsAfter(ids: number[]): Map<number, { kind: BreakKind; back: boolean }> {
+  const out = new Map<number, { kind: BreakKind; back: boolean }>();
+  if (ids.length === 0) return out;
+  const going = new Set(
+    db.select({ id: breaks.id }).from(breaks).where(and(inArray(breaks.enoughId, ids), stillGoing())).all().map((r) => r.id),
+  );
+  for (const row of db.select().from(breaks).where(inArray(breaks.enoughId, ids)).orderBy(breaks.id).all()) {
+    if (row.enoughId !== null) out.set(row.enoughId, { kind: row.kind as BreakKind, back: !going.has(row.id) });
+  }
+  return out;
+}
+
+// How many people are on a break right now: a count, never who.
+export function restingNow(): number {
+  return db.select({ n: sql<number>`count(distinct ${breaks.personId})` }).from(breaks).where(stillGoing()).get()?.n ?? 0;
 }
 
 function visibleComments(ids: number[]): Map<number, PublicComment[]> {
@@ -96,6 +131,7 @@ const toPublic = (
   row: Enough,
   counts: Partial<Record<PresetKey, number>> = {},
   said: PublicComment[] = [],
+  rest: PublicEnough["rest"] = null,
 ): PublicEnough => ({
   id: row.id,
   name: displayName(row.personId),
@@ -103,6 +139,7 @@ const toPublic = (
   createdAt: row.createdAt,
   replies: counts,
   comments: said,
+  rest,
 });
 
 // The feed: shared enoughs only, newest first.
@@ -111,7 +148,8 @@ export function sharedFeed(limit = 50): PublicEnough[] {
   const ids = rows.map((r) => r.id);
   const counts = replyCounts(ids);
   const said = visibleComments(ids);
-  return rows.map((row) => toPublic(row, counts.get(row.id), said.get(row.id)));
+  const rests = restsAfter(ids);
+  return rows.map((row) => toPublic(row, counts.get(row.id), said.get(row.id), rests.get(row.id)));
 }
 
 export function publicEnough(id: number): PublicEnough | undefined {
@@ -120,19 +158,32 @@ export function publicEnough(id: number): PublicEnough | undefined {
     .from(enoughs)
     .where(and(eq(enoughs.id, id), eq(enoughs.shared, true)))
     .get();
-  return row && toPublic(row, replyCounts([row.id]).get(row.id), visibleComments([row.id]).get(row.id));
+  return (
+    row &&
+    toPublic(row, replyCounts([row.id]).get(row.id), visibleComments([row.id]).get(row.id), restsAfter([row.id]).get(row.id))
+  );
 }
 
 // Everything one person has written, private fields included: only ever
 // rendered for that person.
 export function mine(
   personId: number,
-): (Enough & { replies: Partial<Record<PresetKey, number>>; comments: PublicComment[] })[] {
+): (Enough & {
+  replies: Partial<Record<PresetKey, number>>;
+  comments: PublicComment[];
+  urges: { letGo: number; checked: number };
+})[] {
   const rows = db.select().from(enoughs).where(eq(enoughs.personId, personId)).orderBy(desc(enoughs.id)).all();
   const ids = rows.map((r) => r.id);
   const counts = replyCounts(ids);
   const said = visibleComments(ids);
-  return rows.map((row) => ({ ...row, replies: counts.get(row.id) ?? {}, comments: said.get(row.id) ?? [] }));
+  const tally = urgeCounts(ids);
+  return rows.map((row) => ({
+    ...row,
+    replies: counts.get(row.id) ?? {},
+    comments: said.get(row.id) ?? [],
+    urges: tally.get(row.id) ?? { letGo: 0, checked: 0 },
+  }));
 }
 
 export interface EnoughInput {
@@ -198,6 +249,8 @@ export function deleteEnough(personId: number, enoughId: number): Outcome<{ wasS
       tx.delete(reports).where(inArray(reports.commentId, theirComments.map((c) => c.id))).run();
     }
     tx.delete(comments).where(eq(comments.enoughId, enoughId)).run();
+    tx.delete(urges).where(eq(urges.enoughId, enoughId)).run();
+    tx.update(breaks).set({ enoughId: null }).where(eq(breaks.enoughId, enoughId)).run();
     tx.delete(replies).where(eq(replies.enoughId, enoughId)).run();
     tx.delete(enoughs).where(eq(enoughs.id, enoughId)).run();
   });
@@ -227,4 +280,57 @@ export function report(personId: number, commentId: number): Outcome<PublicEnoug
   if (n >= REPORTS_TO_HIDE) db.update(comments).set({ hidden: true }).where(eq(comments.id, commentId)).run();
   const updated = publicEnough(row.enoughId);
   return updated ? { ok: true, value: updated } : { ok: false, reason: "That one isn't shared." };
+}
+
+// The break someone is on right now, if any.
+export function currentBreak(personId: number) {
+  return db.select().from(breaks).where(and(eq(breaks.personId, personId), stillGoing())).get();
+}
+
+// Start a break: ends any one already going, and can name the enough it
+// follows (only one of their own). Returns the enough's public card if that
+// one is shared, so the feed can show where they went.
+export function startBreak(personId: number, kind: BreakKind, enoughId: number | null): Outcome<PublicEnough | null> {
+  if (enoughId !== null) {
+    const own = db.select().from(enoughs).where(and(eq(enoughs.id, enoughId), eq(enoughs.personId, personId))).get();
+    if (!own) enoughId = null;
+  }
+  endBreak(personId);
+  db.insert(breaks).values({ personId, kind, enoughId }).run();
+  return { ok: true, value: enoughId === null ? null : (publicEnough(enoughId) ?? null) };
+}
+
+// End someone's current break. Returns the enough it followed, if shared.
+export function endBreak(personId: number): PublicEnough | null {
+  const going = currentBreak(personId);
+  if (!going) return null;
+  db.update(breaks).set({ endedAt: sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))` }).where(eq(breaks.id, going.id)).run();
+  return going.enoughId === null ? null : (publicEnough(going.enoughId) ?? null);
+}
+
+function urgeCounts(ids: number[]): Map<number, { letGo: number; checked: number }> {
+  const out = new Map<number, { letGo: number; checked: number }>();
+  if (ids.length === 0) return out;
+  const rows = db
+    .select({ enoughId: urges.enoughId, choice: urges.choice, n: count() })
+    .from(urges)
+    .where(inArray(urges.enoughId, ids))
+    .groupBy(urges.enoughId, urges.choice)
+    .all();
+  for (const row of rows) {
+    const entry = out.get(row.enoughId) ?? { letGo: 0, checked: 0 };
+    if (row.choice === "let_go") entry.letGo = row.n;
+    else entry.checked = row.n;
+    out.set(row.enoughId, entry);
+  }
+  return out;
+}
+
+// Record that someone wanted to recheck one of their own enoughs, and what
+// they chose. Private: nothing goes on the bus.
+export function recordUrge(personId: number, enoughId: number, choice: UrgeChoice): Outcome<null> {
+  const own = db.select().from(enoughs).where(and(eq(enoughs.id, enoughId), eq(enoughs.personId, personId))).get();
+  if (!own) return { ok: false, reason: "That isn't one of yours." };
+  db.insert(urges).values({ enoughId, personId, choice }).run();
+  return { ok: true, value: null };
 }

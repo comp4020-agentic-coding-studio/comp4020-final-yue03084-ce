@@ -1,7 +1,7 @@
 ---
 import Page from "../layouts/Page.astro";
 import { displayName, mine } from "../lib/db";
-import { PRESET_REPLIES, type PresetKey } from "../lib/limits";
+import { PRESET_REPLIES, type PresetKey, URGE_CHOICES } from "../lib/limits";
 import { isHtml } from "../lib/notes";
 import { describeSpan, parseSpans, roughly } from "../lib/spans";
 import { currentPerson } from "../lib/person";
@@ -99,6 +99,39 @@ const when = (iso: string) =>
               ))}
             </ul>
           )}
+          {/* "I want to check it again": shows what they wrote down when they
+              called it enough, and the note from the wall, then lets them
+              choose. Either choice is recorded; neither stops them. Works as a
+              plain <details> without script. */}
+          <details class="urge">
+            <summary>I want to check it again</summary>
+            <div class="urge-body">
+              <p>You called this enough on {when(e.createdAt)}.</p>
+              {e.notes && (
+                <>
+                  <p class="hint">What you did and checked then:</p>
+                  {isHtml(e.notes) ? <div class="notes rich then" set:html={e.notes} /> : <p class="notes then">{e.notes}</p>}
+                </>
+              )}
+              {e.hours !== null && <p class="hint">Time you put in: {e.spans ? roughly(e.hours) : `${e.hours} hours`}.</p>}
+              <p class="wall">Live with imperfection.</p>
+              <form method="post" action="/urge/" class="urge-choices">
+                <input type="hidden" name="enough" value={e.id} />
+                <button type="submit" name="choice" value="let_go" class="let-go">
+                  {URGE_CHOICES.let_go}
+                </button>
+                <button type="submit" name="choice" value="checked" class="check-anyway">
+                  {URGE_CHOICES.checked}
+                </button>
+              </form>
+            </div>
+          </details>
+          {(e.urges.letGo > 0 || e.urges.checked > 0) && (
+            <p class="urge-tally">
+              Wanted to check it again {e.urges.letGo + e.urges.checked}{" "}
+              {e.urges.letGo + e.urges.checked === 1 ? "time" : "times"}; let it go {e.urges.letGo}.
+            </p>
+          )}
           {/* delete asks once more before it goes: a <details> needs no script */}
           <details class="delete">
             <summary>Delete</summary>
@@ -112,4 +145,31 @@ const when = (iso: string) =>
       ))
     }
   </ol>
+  <script>
+    // with script, the urge opens as a dialog over the page rather than in place
+    for (const details of document.querySelectorAll<HTMLDetailsElement>("details.urge")) {
+      const body = details.querySelector<HTMLElement>(".urge-body");
+      const summary = details.querySelector("summary");
+      if (!body || !summary) continue;
+      const dialog = document.createElement("dialog");
+      dialog.className = "urge-dialog";
+      dialog.setAttribute("aria-label", "You want to check it again");
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "close";
+      close.setAttribute("aria-label", "Close");
+      close.textContent = "×";
+      close.addEventListener("click", () => dialog.close());
+      dialog.append(close, body);
+      dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) dialog.close();
+      });
+      const open = document.createElement("button");
+      open.type = "button";
+      open.className = "urge-open";
+      open.textContent = summary.textContent ?? "";
+      open.addEventListener("click", () => dialog.showModal());
+      details.replaceWith(open, dialog);
+    }
+  </script>
 </Page>

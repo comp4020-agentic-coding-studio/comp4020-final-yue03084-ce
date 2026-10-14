@@ -54,3 +54,24 @@ export const SLOT_MINUTES = 30;
 export const DAY_MINUTES = 24 * 60;
 // what the bar shows before someone changes it: 9:00 to 18:00
 export const DEFAULT_RANGE = { from: 9 * 60, to: 18 * 60 } as const;
+
+// What people go and do when they take a break. Preset only, so nothing on the
+// feed needs moderating; the key is stored, the words shown. "going" reads
+// after "went to …" on a card, "back" after someone returns.
+export const BREAK_KINDS = {
+  walk: { label: "Go for a walk", going: "went for a walk", back: "back from a walk" },
+  tea: { label: "Make a cup of tea", going: "made a cup of tea", back: "back from tea" },
+  nap: { label: "Have a nap", going: "went for a nap", back: "back from a nap" },
+  move: { label: "Move a bit", going: "went to move a bit", back: "back from moving" },
+  watch: { label: "Watch something", going: "went to watch something", back: "back from watching something" },
+} as const;
+export type BreakKind = keyof typeof BREAK_KINDS;
+export const isBreakKind = (key: string): key is BreakKind => Object.hasOwn(BREAK_KINDS, key);
+// a break nobody ended counts as over after this long, so "resting now" stays true
+export const BREAK_MAX_MINUTES = 120;
+
+// What someone can choose when they want to go back and check something
+// they already called enough.
+export const URGE_CHOICES = { let_go: "Okay, I'll leave it", checked: "I'll check it anyway" } as const;
+export type UrgeChoice = keyof typeof URGE_CHOICES;
+export const isUrgeChoice = (key: string): key is UrgeChoice => Object.hasOwn(URGE_CHOICES, key);

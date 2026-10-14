@@ -1,0 +1,39 @@
+---
+import { currentBreak, restingNow } from "../lib/db";
+import { BREAK_KINDS } from "../lib/limits";
+import { currentPerson } from "../lib/person";
+
+// "Take a break": how many people are resting right now (a number, never
+// who), and either the choices of what to go and do or, while you're on one,
+// a button to come back. Plain forms; the feed's script keeps the count live.
+const person = currentPerson(Astro.cookies);
+const mine = person ? currentBreak(person.id) : undefined;
+const count = restingNow();
+const resting = (n: number) => (n === 0 ? "Nobody's on a break right now." : n === 1 ? "1 person is on a break right now." : `${n} people are on a break right now.`);
+---
+
+<section class="breakbox" aria-labelledby="break-h">
+  <h2 id="break-h">Take a break</h2>
+  <p class="resting" id="resting" aria-live="polite" data-template-one="1 person is on a break right now." data-template-none="Nobody's on a break right now.">
+    {resting(count)}
+  </p>
+  {
+    mine ? (
+      <form method="post" action="/break/" class="break-back">
+        <input type="hidden" name="end" value="1" />
+        <input type="hidden" name="back" value={Astro.url.pathname} />
+        <span>You're on a break ({BREAK_KINDS[mine.kind as keyof typeof BREAK_KINDS]?.label.toLowerCase() ?? "resting"}).</span>
+        <button type="submit">I'm back</button>
+      </form>
+    ) : (
+      <form method="post" action="/break/" class="break-go">
+        <input type="hidden" name="back" value={Astro.url.pathname} />
+        {Object.entries(BREAK_KINDS).map(([key, k]) => (
+          <button type="submit" name="kind" value={key}>
+            {k.label}
+          </button>
+        ))}
+      </form>
+    )
+  }
+</section>
