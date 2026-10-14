@@ -1,3 +1,6 @@
+// The site's name, read by every page title.
+export const SITE_NAME = "Crooked Tower";
+
 // Every number the app enforces lives here, once. The form, the server check
 // and any message about a limit all read these (CLAUDE.md: "Moderation numbers
 // live in one place").

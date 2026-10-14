@@ -1,4 +1,6 @@
-# Enough (working title)
+# Crooked Tower
+
+*Live with imperfection.*
 
 A public, anonymous space for people who take their work seriously and lean
 towards perfectionism. When you finish something, you record that it's

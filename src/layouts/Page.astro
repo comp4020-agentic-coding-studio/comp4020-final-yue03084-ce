@@ -1,11 +1,13 @@
 ---
 import "../styles.css";
-import { NOTE_COLOURS } from "../lib/limits";
+import { NOTE_COLOURS, SITE_NAME } from "../lib/limits";
 
 interface Props {
-  title: string;
+  // the page's own name; leave it out for the home page, which is just the site
+  title?: string;
 }
 const { title } = Astro.props;
+const fullTitle = title && title !== SITE_NAME ? `${title} · ${SITE_NAME}` : SITE_NAME;
 const here = Astro.url.pathname;
 // the note colours' shades, from their one definition (CLAUDE.md: "One fact, one piece of code")
 const shades = (theme: "light" | "dark") =>
@@ -26,7 +28,7 @@ const links = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <title>{fullTitle}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
