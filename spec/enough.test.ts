@@ -1,5 +1,5 @@
 import { describe, expect, inject, it } from "vitest";
-import { DESCRIPTION_MAX, NOTES_MAX } from "../src/lib/limits.ts";
+import { DESCRIPTION_MAX, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE } from "../src/lib/limits.ts";
 
 // The product rules that can be checked, against the running app: a shared
 // enough reaches every open page live, and nothing private (an unshared
@@ -26,6 +26,9 @@ function browser() {
     declare: (fields: Record<string, string>) =>
       send("/enough/", { method: "POST", body: new URLSearchParams(fields) }),
     remove: (enough: string) => send("/delete/", { method: "POST", body: new URLSearchParams({ enough }) }),
+    comment: (enough: string, text: string) =>
+      send("/comment/", { method: "POST", body: new URLSearchParams({ enough, text }) }),
+    report: (comment: string) => send("/report/", { method: "POST", body: new URLSearchParams({ comment }) }),
   };
 }
 
@@ -229,6 +232,63 @@ describe("deleting", () => {
     const id = idOf(await author.get("/mine/"), `kept ${tag}`);
     await browser().remove(id);
     expect(await browser().get("/")).toContain(`kept ${tag}`);
+  });
+});
+
+// One-line comments are public and live; enough reports hide one from everyone.
+describe("comments", () => {
+  const enoughId = (html: string, text: string) => {
+    const m = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?${text}`).exec(html);
+    if (!m) throw new Error(`no card for ${text}`);
+    return m[1];
+  };
+  const commentId = (html: string, text: string) => {
+    const m = new RegExp(`data-comment="(\\d+)"[\\s\\S]*?${text}`).exec(html);
+    if (!m) throw new Error(`no comment ${text}`);
+    return m[1];
+  };
+
+  it("reach every open feed within about a second", async () => {
+    const tag = marker();
+    const author = browser();
+    await author.declare({ description: `talk ${tag}`, shared: "on" });
+    const id = enoughId(await author.get("/"), `talk ${tag}`);
+    const received = await readStream(() => browser().comment(id, `well done ${tag}`), `well done ${tag}`, 3_000);
+    expect(received).toContain(`well done ${tag}`);
+    expect(await browser().get("/")).toContain(`well done ${tag}`);
+  });
+
+  it(`refuses a comment over ${REPLY_MAX} characters`, async () => {
+    const tag = marker();
+    const author = browser();
+    await author.declare({ description: `long ${tag}`, shared: "on" });
+    const id = enoughId(await author.get("/"), `long ${tag}`);
+    const res = await browser().comment(id, `${tag}${"x".repeat(REPLY_MAX)}`);
+    expect(res.status).toBe(303);
+    expect(await browser().get("/")).not.toContain(`${tag}xxxx`);
+  });
+
+  it(`hide once ${REPORTS_TO_HIDE} different people report them, and not before`, async () => {
+    const tag = marker();
+    const author = browser();
+    await author.declare({ description: `reported ${tag}`, shared: "on" });
+    const id = enoughId(await author.get("/"), `reported ${tag}`);
+    const commenter = browser();
+    await commenter.comment(id, `unkind ${tag}`);
+    const cid = commentId(await author.get("/"), `unkind ${tag}`);
+
+    // reporting your own does nothing, and one person reporting twice counts once
+    await commenter.report(cid);
+    const repeat = browser();
+    await repeat.report(cid);
+    await repeat.report(cid);
+    for (let i = 2; i < REPORTS_TO_HIDE; i++) await browser().report(cid);
+    expect(await browser().get("/")).toContain(`unkind ${tag}`);
+
+    const received = await readStream(() => browser().report(cid), `reported ${tag}`, 3_000);
+    expect(received).not.toContain(`unkind ${tag}`);
+    expect(await browser().get("/")).not.toContain(`unkind ${tag}`);
+    expect(await author.get("/mine/")).not.toContain(`unkind ${tag}`);
   });
 });
 

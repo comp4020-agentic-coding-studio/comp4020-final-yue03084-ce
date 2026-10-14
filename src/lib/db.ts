@@ -3,10 +3,10 @@ import Database from "better-sqlite3";
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { DESCRIPTION_MAX, FEELINGS, isNoteColour, NOTES_MAX, type PresetKey } from "./limits";
+import { DESCRIPTION_MAX, FEELINGS, isNoteColour, NOTES_MAX, type PresetKey, REPLY_MAX, REPORTS_TO_HIDE } from "./limits";
 import { cleanNotes } from "./notes";
 import { hoursIn, parseSpans, spansText } from "./spans";
-import { type Enough, enoughs, type Person, people, replies } from "./schema";
+import { comments, type Enough, enoughs, type Person, people, replies, reports } from "./schema";
 
 // One SQLite file is the app's whole persistent state. In production
 // DATA_DIR is the machine's volume (/data), which is how state survives a
@@ -47,6 +47,32 @@ export interface PublicEnough {
   description: string;
   createdAt: string;
   replies: Partial<Record<PresetKey, number>>;
+  comments: PublicComment[];
+}
+
+// A comment as anyone sees it: hidden ones never appear.
+export interface PublicComment {
+  id: number;
+  name: string;
+  text: string;
+  createdAt: string;
+}
+
+function visibleComments(ids: number[]): Map<number, PublicComment[]> {
+  const out = new Map<number, PublicComment[]>();
+  if (ids.length === 0) return out;
+  const rows = db
+    .select()
+    .from(comments)
+    .where(and(inArray(comments.enoughId, ids), eq(comments.hidden, false)))
+    .orderBy(comments.id)
+    .all();
+  for (const row of rows) {
+    const list = out.get(row.enoughId) ?? [];
+    list.push({ id: row.id, name: displayName(row.personId), text: row.text, createdAt: row.createdAt });
+    out.set(row.enoughId, list);
+  }
+  return out;
 }
 
 function replyCounts(ids: number[]): Map<number, Partial<Record<PresetKey, number>>> {
@@ -66,19 +92,26 @@ function replyCounts(ids: number[]): Map<number, Partial<Record<PresetKey, numbe
   return counts;
 }
 
-const toPublic = (row: Enough, counts: Partial<Record<PresetKey, number>> = {}): PublicEnough => ({
+const toPublic = (
+  row: Enough,
+  counts: Partial<Record<PresetKey, number>> = {},
+  said: PublicComment[] = [],
+): PublicEnough => ({
   id: row.id,
   name: displayName(row.personId),
   description: row.description,
   createdAt: row.createdAt,
   replies: counts,
+  comments: said,
 });
 
 // The feed: shared enoughs only, newest first.
 export function sharedFeed(limit = 50): PublicEnough[] {
   const rows = db.select().from(enoughs).where(eq(enoughs.shared, true)).orderBy(desc(enoughs.id)).limit(limit).all();
-  const counts = replyCounts(rows.map((r) => r.id));
-  return rows.map((row) => toPublic(row, counts.get(row.id)));
+  const ids = rows.map((r) => r.id);
+  const counts = replyCounts(ids);
+  const said = visibleComments(ids);
+  return rows.map((row) => toPublic(row, counts.get(row.id), said.get(row.id)));
 }
 
 export function publicEnough(id: number): PublicEnough | undefined {
@@ -87,15 +120,19 @@ export function publicEnough(id: number): PublicEnough | undefined {
     .from(enoughs)
     .where(and(eq(enoughs.id, id), eq(enoughs.shared, true)))
     .get();
-  return row && toPublic(row, replyCounts([row.id]).get(row.id));
+  return row && toPublic(row, replyCounts([row.id]).get(row.id), visibleComments([row.id]).get(row.id));
 }
 
 // Everything one person has written, private fields included: only ever
 // rendered for that person.
-export function mine(personId: number): (Enough & { replies: Partial<Record<PresetKey, number>> })[] {
+export function mine(
+  personId: number,
+): (Enough & { replies: Partial<Record<PresetKey, number>>; comments: PublicComment[] })[] {
   const rows = db.select().from(enoughs).where(eq(enoughs.personId, personId)).orderBy(desc(enoughs.id)).all();
-  const counts = replyCounts(rows.map((r) => r.id));
-  return rows.map((row) => ({ ...row, replies: counts.get(row.id) ?? {} }));
+  const ids = rows.map((r) => r.id);
+  const counts = replyCounts(ids);
+  const said = visibleComments(ids);
+  return rows.map((row) => ({ ...row, replies: counts.get(row.id) ?? {}, comments: said.get(row.id) ?? [] }));
 }
 
 export interface EnoughInput {
@@ -156,8 +193,38 @@ export function deleteEnough(personId: number, enoughId: number): Outcome<{ wasS
     .get();
   if (!row) return { ok: false, reason: "That isn't one of yours." };
   db.transaction((tx) => {
+    const theirComments = tx.select({ id: comments.id }).from(comments).where(eq(comments.enoughId, enoughId)).all();
+    if (theirComments.length > 0) {
+      tx.delete(reports).where(inArray(reports.commentId, theirComments.map((c) => c.id))).run();
+    }
+    tx.delete(comments).where(eq(comments.enoughId, enoughId)).run();
     tx.delete(replies).where(eq(replies.enoughId, enoughId)).run();
     tx.delete(enoughs).where(eq(enoughs.id, enoughId)).run();
   });
   return { ok: true, value: { wasShared: row.shared } };
+}
+
+// A one-line comment on a shared enough, up to REPLY_MAX characters.
+export function comment(personId: number, enoughId: number, input: string): Outcome<PublicEnough> {
+  const text = input.trim().replace(/\s+/g, " ");
+  if (text === "") return { ok: false, reason: "Write a few words first." };
+  if ([...text].length > REPLY_MAX) return { ok: false, reason: `Keep it to ${REPLY_MAX} characters or fewer.` };
+  if (!publicEnough(enoughId)) return { ok: false, reason: "That one isn't shared." };
+  db.insert(comments).values({ enoughId, personId, text }).run();
+  const updated = publicEnough(enoughId);
+  return updated ? { ok: true, value: updated } : { ok: false, reason: "That one isn't shared." };
+}
+
+// Report a comment. Each person counts once, and not on their own comment;
+// at REPORTS_TO_HIDE reports it's hidden from everyone. Returns the enough as
+// it now stands, so the caller can tell the open feeds.
+export function report(personId: number, commentId: number): Outcome<PublicEnough> {
+  const row = db.select().from(comments).where(eq(comments.id, commentId)).get();
+  if (!row || row.hidden) return { ok: false, reason: "That comment isn't there." };
+  if (row.personId === personId) return { ok: false, reason: "That's your own comment." };
+  db.insert(reports).values({ commentId, personId }).onConflictDoNothing().run();
+  const n = db.select({ n: count() }).from(reports).where(eq(reports.commentId, commentId)).get()?.n ?? 0;
+  if (n >= REPORTS_TO_HIDE) db.update(comments).set({ hidden: true }).where(eq(comments.id, commentId)).run();
+  const updated = publicEnough(row.enoughId);
+  return updated ? { ok: true, value: updated } : { ok: false, reason: "That one isn't shared." };
 }

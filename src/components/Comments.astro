@@ -1,0 +1,48 @@
+---
+import type { PublicComment } from "../lib/db";
+import { COMMENT_PROMPT, REPLY_MAX } from "../lib/limits";
+
+// The one-line comments under a shared enough, each with a report button, and
+// a box to add one. Plain forms, so they work without script; the feed's
+// script sends them with fetch and redraws this from the stream.
+interface Props {
+  enoughId: number;
+  comments: PublicComment[];
+  canComment: boolean;
+}
+const { enoughId, comments, canComment } = Astro.props;
+---
+
+<div class="comments" data-comments={enoughId}>
+  <ul class="comment-list">
+    {
+      comments.map((c) => (
+        <li data-comment={c.id}>
+          <span class="who">{c.name}</span> <span class="said">{c.text}</span>
+          {canComment && (
+            <form method="post" action="/report/" class="report">
+              <input type="hidden" name="comment" value={c.id} />
+              <button type="submit" title="Report this comment">Report</button>
+            </form>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+  {
+    canComment && (
+      <form method="post" action="/comment/" class="comment-box">
+        <input type="hidden" name="enough" value={enoughId} />
+        <input
+          name="text"
+          maxlength={REPLY_MAX}
+          placeholder={COMMENT_PROMPT}
+          aria-label={`A comment, up to ${REPLY_MAX} characters`}
+          required
+          autocomplete="off"
+        />
+        <button type="submit">Send</button>
+      </form>
+    )
+  }
+</div>

@@ -90,6 +90,15 @@ const when = (iso: string) =>
                 .join(" · ") || "No replies yet."}
             </p>
           )}
+          {e.comments.length > 0 && (
+            <ul class="comment-list">
+              {e.comments.map((c) => (
+                <li>
+                  <span class="who">{c.name}</span> <span class="said">{c.text}</span>
+                </li>
+              ))}
+            </ul>
+          )}
           {/* delete asks once more before it goes: a <details> needs no script */}
           <details class="delete">
             <summary>Delete</summary>

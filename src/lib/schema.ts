@@ -51,5 +51,36 @@ export const replies = sqliteTable(
   (t) => [uniqueIndex("replies_once").on(t.enoughId, t.personId, t.preset)],
 );
 
+// A one-line comment on a shared enough. Public, unless enough people report
+// it (REPORTS_TO_HIDE), when hidden is set and nobody sees it any more.
+export const comments = sqliteTable("comments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  enoughId: integer("enough_id")
+    .notNull()
+    .references(() => enoughs.id),
+  personId: integer("person_id")
+    .notNull()
+    .references(() => people.id),
+  text: text("text").notNull(),
+  hidden: integer("hidden", { mode: "boolean" }).notNull().default(false),
+  createdAt: createdAt(),
+});
+
+// One person's report of one comment; reporting twice counts once.
+export const reports = sqliteTable(
+  "reports",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    commentId: integer("comment_id")
+      .notNull()
+      .references(() => comments.id),
+    personId: integer("person_id")
+      .notNull()
+      .references(() => people.id),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("reports_once").on(t.commentId, t.personId)],
+);
+
 export type Person = typeof people.$inferSelect;
 export type Enough = typeof enoughs.$inferSelect;

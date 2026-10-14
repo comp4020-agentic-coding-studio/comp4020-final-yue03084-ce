@@ -8,10 +8,10 @@ export const SITE_NAME = "Crooked Tower";
 // How long the public one-line description of the thing can be.
 export const DESCRIPTION_MAX = 60;
 
-// How long a free-text reply can be (replies are preset-only in v1).
+// How long a one-line comment on someone's enough can be.
 export const REPLY_MAX = 30;
 
-// How many reports hide a reply (reporting isn't built yet).
+// How many people reporting a comment hide it from everyone.
 export const REPORTS_TO_HIDE = 3;
 
 // The preset replies, keyed so the database stores the key, not the wording.
@@ -23,6 +23,8 @@ export const PRESET_REPLIES = {
   enough: "Proud of you.",
 } as const;
 export type PresetKey = keyof typeof PRESET_REPLIES;
+// what the comment box says before anyone types, to point the tone at kindness
+export const COMMENT_PROMPT = "Say something to the person who stopped…";
 export const isPresetKey = (key: string): key is PresetKey => Object.hasOwn(PRESET_REPLIES, key);
 
 // How it felt, asked towards "enough", never as a score. Private.
