@@ -16,7 +16,7 @@ const when = (iso: string) =>
 <Page title="Mine">
   <h1>What you put down</h1>
   {person && <p>On the feed you show as {displayName(person.id)}. Only you can see this page.</p>}
-  {rows.length === 0 && <p>Nothing yet. <a href="/enough/">Say something is enough.</a></p>}
+  {rows.length === 0 && <p>Nothing yet. <a href="/enough/">Call something enough.</a></p>}
   <ol class="feed mine">
     {
       rows.map((e) => (
