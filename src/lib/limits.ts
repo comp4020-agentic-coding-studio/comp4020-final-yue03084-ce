@@ -83,3 +83,28 @@ export const PASSWORD_MIN = 8;
 // Failed logins allowed per username in a window, before refusing for a while.
 export const LOGIN_ATTEMPTS = 5;
 export const LOGIN_WINDOW_MINUTES = 15;
+
+// Working, and the little one on Mine who works alongside you. How it slows
+// down after your alarm is a metaphor we chose for diminishing returns, not
+// something measured: past the alarm, every SLOW_EVERY_MINUTES it moves at
+// SPEED_FACTOR of its speed and carries blocks BLOCK_FACTOR of the size, down
+// to a floor so it never stops; it yawns after YAWN_AFTER_MINUTES. A break of
+// RECOVER_MINUTES or more restores it fully, a shorter one partly.
+export const SLOW_EVERY_MINUTES = 10;
+export const SPEED_FACTOR = 0.7;
+export const BLOCK_FACTOR = 0.8;
+export const YAWN_AFTER_MINUTES = 20;
+export const RECOVER_MINUTES = 10;
+export const SLOWEST_SPEED = 0.25;
+export const SMALLEST_BLOCK = 0.35;
+// one block on the day's tower for this much work (never shown as a number),
+// up to TOWER_MAX blocks drawn
+export const BLOCK_EVERY_MINUTES = 15;
+export const TOWER_MAX = 12;
+// how long one trip to the tower takes when it's fresh
+export const CARRY_SECONDS = 4;
+// the Enough alarm: quick intervals to pick from, the longest allowed, and how
+// long "Give me 10 more minutes" waits before asking again
+export const ALARM_INTERVALS = [60, 90, 120] as const;
+export const ALARM_MAX_MINUTES = 12 * 60;
+export const SNOOZE_MINUTES = 10;

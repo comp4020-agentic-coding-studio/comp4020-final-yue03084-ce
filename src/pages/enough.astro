@@ -5,6 +5,8 @@ import { declareEnough, publicEnough, restingNow, startBreak } from "../lib/db";
 import { bus } from "../lib/events";
 import { BREAK_KINDS, DESCRIPTION_MAX, FEELINGS, isBreakKind, NOTE_COLOURS } from "../lib/limits";
 import { signedInPerson } from "../lib/person";
+import { spansText } from "../lib/spans";
+import { finishedSpans } from "../lib/work";
 
 // Call something enough. The description is the only part that can be
 // public, and only if shared is ticked; the rest is the person's own.
@@ -15,6 +17,15 @@ let values = { description: "", shared: true, hours: "", spans: "", crayon: "", 
 // to sign in first, and a post is refused
 const person = signedInPerson(Astro.cookies);
 if (Astro.request.method === "POST" && !person) return Astro.redirect("/account/", 303);
+
+// Coming from "Finish" on Mine: the time bar starts filled in from that work
+// session, breaks left out. Only the owner's own session counts; anyone else's
+// ?session= fills in nothing.
+const fromSession = Number(Astro.url.searchParams.get("session"));
+if (Astro.request.method === "GET" && person && Number.isInteger(fromSession) && fromSession > 0) {
+  const filled = finishedSpans(person.id, fromSession);
+  if (filled && filled.spans.length > 0) values.spans = spansText(filled.spans);
+}
 
 if (Astro.request.method === "POST" && person) {
   const form = await Astro.request.formData();

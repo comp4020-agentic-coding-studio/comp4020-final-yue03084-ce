@@ -43,6 +43,13 @@
       "when": 1792458993353,
       "tag": "0005_rare_starjammers",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792491189852,
+      "tag": "0006_reflective_harpoon",
+      "breakpoints": true
     }
   ]
 }

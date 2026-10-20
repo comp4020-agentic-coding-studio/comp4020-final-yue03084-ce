@@ -1,0 +1,268 @@
+---
+import { CARRY_SECONDS, NOTE_COLOURS } from "../lib/limits";
+import type { WorkView } from "../lib/work";
+import { tiredness } from "../lib/worktime";
+
+// The little one: works alongside you on Mine, only ever for its owner.
+// Working, it carries blocks to the day's crooked tower; past your alarm it
+// slows down, carries smaller blocks and yawns (a metaphor, limits.ts); on a
+// break it has tea, stretches or naps. Sleepy, never sad. The tower is a
+// drawing of today, never a number. Decoration, so hidden from screen
+// readers; the text beside it says what's going on. With reduced motion it
+// holds a still pose for the state.
+interface Props {
+  view: WorkView;
+}
+const { view } = Astro.props;
+const colours = Object.keys(NOTE_COLOURS);
+// the day's tower, crooked: each block a little off-centre and tilted
+const tower = Array.from({ length: view.tower }, (_, i) => {
+  const wobble = ((i * 37) % 7) - 3;
+  return {
+    x: 148 + wobble * 2,
+    y: 150 - i * 11,
+    w: 34 - ((i * 13) % 9),
+    r: ((i * 53) % 9) - 4,
+    colour: colours[i % colours.length],
+  };
+});
+const t = view.state === "resting" ? tiredness(0) : view.tiredness;
+const pose = view.state === "resting" ? (view.restKind === "nap" ? "nap" : view.restKind === "move" || view.restKind === "walk" ? "stretch" : "tea") : "work";
+---
+
+<figure
+  class="little-one"
+  aria-hidden="true"
+  data-state={view.state}
+  data-pose={pose}
+  data-sleepy-from={view.sleepyFrom ?? ""}
+  data-carry={view.carry}
+  data-yawning={String(t.yawning)}
+  style={`--speed: ${t.speed}; --block: ${t.block}; --carry-seconds: ${CARRY_SECONDS}s`}
+>
+  <svg viewBox="0 0 300 175" role="presentation" focusable="false">
+    <line class="ground" x1="10" y1="165.5" x2="290" y2="165.5" />
+    {
+      tower.map((b) => (
+        <rect
+          class={`tblock c-${b.colour}`}
+          x={b.x}
+          y={b.y}
+          width={b.w}
+          height="10"
+          rx="2"
+          transform={`rotate(${b.r} ${b.x + b.w / 2} ${b.y + 5})`}
+        />
+      ))
+    }
+
+    <!-- working: walks to the pile and back with a block, the block shrinking as it tires -->
+    <g class="worker">
+      <g class="walker">
+        <circle class="head" cx="70" cy="111" r="8" />
+        <path class="mouth" d="M67 114 q3 2 6 0" />
+        <ellipse class="yawn" cx="70" cy="114" rx="2.2" ry="2.8" />
+        <path d="M70 119 L70 141 M70 141 L63 163 M70 141 L77 163 M70 125 L84 119 M70 125 L84 127" />
+        <rect class="carried" x="80" y="113" width="18" height="10" rx="2" />
+      </g>
+    </g>
+
+    <!-- resting: tea, a stretch, or a nap -->
+    <g class="rester tea">
+      <circle class="head" cx="70" cy="129" r="8" />
+      <path class="mouth" d="M67 132 q3 2 6 0" />
+      <path d="M70 137 L70 152 M70 152 L86 152 L88 163 M70 152 L58 163 M70 142 L82 146" />
+      <path class="cup" d="M82 141 h8 v7 a3 3 0 0 1 -3 3 h-2 a3 3 0 0 1 -3 -3 z" />
+      <path class="steam" d="M85 136 q-2 -4 0 -7 M88 137 q2 -4 0 -7" />
+    </g>
+    <g class="rester stretch">
+      <circle class="head" cx="70" cy="105" r="8" />
+      <path class="mouth" d="M67 108 q3 2 6 0" />
+      <path d="M70 113 L70 139 M70 139 L62 163 M70 139 L78 163 M70 120 L58 98 M70 120 L82 98" />
+    </g>
+    <g class="rester nap">
+      <circle class="head" cx="56" cy="156" r="8" />
+      <path d="M64 158 L102 158 M102 158 L114 164 M102 158 L116 156 M74 158 L66 148" />
+      <path class="zz" d="M74 134 h7 l-7 7 h7 M86 124 h5 l-5 5 h5" />
+    </g>
+  </svg>
+</figure>
+
+<style>
+  .little-one {
+    margin: 0;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    max-width: 26rem;
+    height: auto;
+  }
+
+  .ground {
+    stroke: var(--line-strong);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+
+  .tblock.c-sage { fill: var(--c-sage); }
+  .tblock.c-rose { fill: var(--c-rose); }
+  .tblock.c-mist { fill: var(--c-mist); }
+  .tblock.c-clay { fill: var(--c-clay); }
+
+  .worker path,
+  .worker circle,
+  .rester path,
+  .rester circle {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 2.3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .head {
+    fill: var(--card) !important;
+  }
+
+  .mouth {
+    stroke-width: 1.4 !important;
+  }
+
+  .yawn {
+    fill: var(--fg);
+    opacity: 0;
+  }
+
+  .carried {
+    fill: var(--c-clay);
+    transform-box: fill-box;
+    transform-origin: center;
+    transform: scale(var(--block));
+  }
+
+  .cup {
+    fill: var(--c-mist) !important;
+    stroke-width: 1.5 !important;
+  }
+
+  .steam,
+  .zz {
+    stroke: var(--muted) !important;
+    stroke-width: 1.3 !important;
+    animation: drift 3s ease-in-out infinite;
+  }
+
+  .rester {
+    display: none;
+  }
+
+  [data-state="resting"] .worker {
+    display: none;
+  }
+
+  [data-pose="tea"] .rester.tea,
+  [data-pose="stretch"] .rester.stretch,
+  [data-pose="nap"] .rester.nap {
+    display: inline;
+  }
+
+  /* working: to the tower and back, slower as it tires */
+  .walker {
+    animation: carry calc(var(--carry-seconds) / var(--speed)) ease-in-out infinite;
+  }
+
+  @keyframes carry {
+    0%, 8% { transform: translateX(0); }
+    45%, 55% { transform: translateX(46px); }
+    92%, 100% { transform: translateX(0); }
+  }
+
+  /* the block it carries is put down at the tower and picked up again */
+  .carried {
+    animation: hold calc(var(--carry-seconds) / var(--speed)) ease-in-out infinite;
+  }
+
+  @keyframes hold {
+    0%, 45% { opacity: 1; }
+    52%, 92% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  /* sleepy: a slow yawn now and then, never a frown */
+  [data-yawning="true"] .yawn {
+    animation: yawn 7s ease-in-out infinite;
+  }
+
+  [data-yawning="true"] .mouth {
+    animation: yawn-mouth 7s ease-in-out infinite;
+  }
+
+  @keyframes yawn {
+    0%, 70%, 100% { opacity: 0; }
+    78%, 90% { opacity: 1; }
+  }
+
+  @keyframes yawn-mouth {
+    0%, 70%, 100% { opacity: 1; }
+    78%, 90% { opacity: 0; }
+  }
+
+  [data-pose="stretch"] .rester.stretch {
+    animation: stretch 4s ease-in-out infinite;
+    transform-origin: 70px 163px;
+  }
+
+  @keyframes stretch {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(1.04); }
+  }
+
+  @keyframes drift {
+    0%, 100% { transform: translateY(0); opacity: 0.6; }
+    50% { transform: translateY(-3px); opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .walker,
+    .carried,
+    .yawn,
+    .mouth,
+    .steam,
+    .zz,
+    .rester.stretch {
+      animation: none !important;
+    }
+    .carried {
+      opacity: 1;
+    }
+    [data-yawning="true"] .yawn {
+      opacity: 1;
+    }
+    [data-yawning="true"] .mouth {
+      opacity: 0;
+    }
+  }
+</style>
+
+<script>
+  import { tiredness } from "../lib/worktime";
+
+  // keep the little one's tiredness in step with the clock while the page is
+  // open, from the same curve the server uses (worktime.ts)
+  for (const fig of document.querySelectorAll<HTMLElement>(".little-one")) {
+    if (fig.dataset.state !== "working") continue;
+    const sleepyFrom = fig.dataset.sleepyFrom ? Date.parse(fig.dataset.sleepyFrom) : null;
+    const carry = Number(fig.dataset.carry) || 0;
+    const tick = () => {
+      const past = sleepyFrom === null ? carry : carry + Math.max(0, (Date.now() - sleepyFrom) / 60_000);
+      const t = tiredness(past);
+      fig.style.setProperty("--speed", String(t.speed));
+      fig.style.setProperty("--block", String(t.block));
+      fig.dataset.yawning = String(t.yawning);
+    };
+    tick();
+    setInterval(tick, 20_000);
+  }
+</script>

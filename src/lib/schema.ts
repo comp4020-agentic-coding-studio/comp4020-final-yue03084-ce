@@ -127,5 +127,43 @@ export const urges = sqliteTable("urges", {
   createdAt: createdAt(),
 });
 
+// A stretch of time someone says they're working, from Mine. Private: only
+// ever shown to its owner. tz is the browser's offset from UTC in minutes
+// (local = UTC + tz); dayKey is the local date the day's tower belongs to. The
+// alarm is an interval (minutes after starting or coming back) or a clock time
+// (minutes after local midnight); alarmAt is when it next goes off. On a break
+// the session is paused (pausedAt, pauseKind) with no open stretch.
+export const workSessions = sqliteTable("work_sessions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  personId: integer("person_id")
+    .notNull()
+    .references(() => people.id),
+  startedAt: text("started_at").notNull(),
+  endedAt: text("ended_at"),
+  tz: integer("tz").notNull(),
+  dayKey: text("day_key").notNull(),
+  alarmKind: text("alarm_kind"),
+  alarmValue: integer("alarm_value"),
+  alarmAt: text("alarm_at"),
+  snoozes: integer("snoozes").notNull().default(0),
+  pausedAt: text("paused_at"),
+  pauseKind: text("pause_kind"),
+});
+
+// The working parts of a session, between breaks. sleepyFrom is when the
+// little one starts getting sleepy in this stretch (the alarm moment; null if
+// it won't), and carry is how sleepy it already was when the stretch began,
+// in minutes past the alarm, after a short rest (see worktime.ts).
+export const workStretches = sqliteTable("work_stretches", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  sessionId: integer("session_id")
+    .notNull()
+    .references(() => workSessions.id),
+  startedAt: text("started_at").notNull(),
+  endedAt: text("ended_at"),
+  sleepyFrom: text("sleepy_from"),
+  carry: real("carry").notNull().default(0),
+});
+
 export type Person = typeof people.$inferSelect;
 export type Enough = typeof enoughs.$inferSelect;

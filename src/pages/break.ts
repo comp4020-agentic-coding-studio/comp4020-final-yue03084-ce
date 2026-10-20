@@ -3,6 +3,7 @@ import { endBreak, restingNow, startBreak } from "../lib/db";
 import { bus } from "../lib/events";
 import { isBreakKind } from "../lib/limits";
 import { signedInPerson } from "../lib/person";
+import { pauseWork, resumeWork } from "../lib/work";
 
 // Start or end a break. Every open feed hears the new resting count, and if
 // the break follows a shared enough, that card's "went for a walk" / "back".
@@ -15,13 +16,16 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const back = String(form.get("back") ?? "/");
   const to = back.startsWith("/") && !back.startsWith("//") ? back : "/";
   let card = null;
-  if (form.get("end")) card = endBreak(person.id);
-  else {
+  if (form.get("end")) {
+    card = endBreak(person.id);
+    resumeWork(person.id); // a work session on pause picks up again
+  } else {
     const kind = String(form.get("kind") ?? "");
     if (!isBreakKind(kind)) return redirect(to, 303);
     const enough = Number(form.get("enough"));
     const outcome = startBreak(person.id, kind, Number.isInteger(enough) && enough > 0 ? enough : null);
     if (outcome.ok) card = outcome.value;
+    pauseWork(person.id, kind); // and a work session going pauses
   }
   bus.emit("resting", { count: restingNow() });
   if (card) bus.emit("reply", card);

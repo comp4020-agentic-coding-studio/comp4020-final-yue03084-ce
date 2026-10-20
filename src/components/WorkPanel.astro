@@ -1,0 +1,307 @@
+---
+import { ALARM_INTERVALS, ALARM_MAX_MINUTES, BREAK_KINDS, SNOOZE_MINUTES } from "../lib/limits";
+import type { WorkView } from "../lib/work";
+import LittleOne from "./LittleOne.astro";
+
+// "Start working" on Mine, and the little one while you do. The owner's
+// alone. Start can set an Enough alarm: after an interval, or at a clock
+// time. While the page is open the alarm sends a notification and, when you
+// look, a soft overlay: "Okay, go and rest" (a break, like anywhere else) or
+// "Give me 10 more minutes". Finish goes to Call it enough with the time bar
+// filled in. All plain forms; the script adds the alarm and the time zone.
+interface Props {
+  view: WorkView | null;
+}
+const { view } = Astro.props;
+const resting = view?.state === "resting";
+---
+
+<section class="work" aria-labelledby="work-h">
+  <h2 id="work-h">{view ? (resting ? "On a break" : "Working") : "Start working"}</h2>
+  {
+    !view ? (
+      <form method="post" action="/work/" class="stack work-start">
+        <input type="hidden" name="action" value="start" />
+        <input type="hidden" name="tz" value="0" />
+        <p class="hint">
+          The little one works alongside you. Set an alarm for when you'd like to stop, and it will start to get sleepy
+          then.
+        </p>
+        <fieldset class="choices">
+          <legend>Enough alarm</legend>
+          <label class="inline">
+            <input type="radio" name="alarm" value="" checked /> No alarm
+          </label>
+          <label class="inline">
+            <input type="radio" name="alarm" value="interval" /> After
+            <select name="minutes" aria-label="Minutes">
+              {ALARM_INTERVALS.map((m) => (
+                <option value={m} selected={m === 90}>
+                  {m} minutes
+                </option>
+              ))}
+            </select>
+          </label>
+          <label class="inline">
+            <input type="radio" name="alarm" value="interval" data-custom /> After
+            <input
+              type="number"
+              name="minutes-custom"
+              min="1"
+              max={ALARM_MAX_MINUTES}
+              inputmode="numeric"
+              aria-label="Your own number of minutes"
+              class="short"
+            />
+            minutes
+          </label>
+          <label class="inline">
+            <input type="radio" name="alarm" value="clock" /> At
+            <input type="time" name="clock" aria-label="Time of day" class="short" />
+          </label>
+        </fieldset>
+        <button type="submit">Start working</button>
+      </form>
+    ) : (
+      <div class="work-on">
+        <LittleOne view={view} />
+        <p class="work-status" aria-live="polite">
+          {resting
+            ? `You're on a break (${view.restLabel?.toLowerCase() ?? "resting"}). The little one is resting too.`
+            : view.tiredness.sleepy
+              ? "Past your alarm. The little one is getting sleepy."
+              : view.alarmLabel
+                ? `Your alarm is set ${view.alarmLabel}.`
+                : "No alarm set."}
+          {view.snoozes > 0 && ` You've asked for ${SNOOZE_MINUTES} more minutes ${view.snoozes} ${view.snoozes === 1 ? "time" : "times"}.`}
+        </p>
+        <div class="work-actions">
+          {resting ? (
+            <form method="post" action="/break/">
+              <input type="hidden" name="end" value="1" />
+              <input type="hidden" name="back" value="/mine/" />
+              <button type="submit">I'm back</button>
+            </form>
+          ) : (
+            <form method="post" action="/work/">
+              <input type="hidden" name="action" value="rest" />
+              <label class="inline take-break">
+                <span>Take a break:</span>
+                <select name="kind" aria-label="What to do">
+                  {Object.entries(BREAK_KINDS).map(([key, k]) => (
+                    <option value={key}>{k.label}</option>
+                  ))}
+                </select>
+              </label>
+              <button type="submit" class="quiet">Go</button>
+            </form>
+          )}
+          <form method="post" action="/work/">
+            <input type="hidden" name="action" value="finish" />
+            <button type="submit">Finish and call it enough</button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+</section>
+
+{
+  view && !resting && view.alarmAt && (
+    <div class="alarm" data-alarm-at={view.alarmAt} hidden>
+      <div class="alarm-card" role="alertdialog" aria-labelledby="alarm-h" aria-describedby="alarm-p">
+        <h2 id="alarm-h">That's enough for now</h2>
+        <p id="alarm-p">The little one is getting sleepy. You've put in plenty.</p>
+        <form method="post" action="/work/" class="alarm-rest">
+          <input type="hidden" name="action" value="rest" />
+          <fieldset class="choices">
+            <legend>Okay, go and rest:</legend>
+            {Object.entries(BREAK_KINDS).map(([key, k], i) => (
+              <label class="inline">
+                <input type="radio" name="kind" value={key} checked={i === 0} />
+                {k.label}
+              </label>
+            ))}
+          </fieldset>
+          <button type="submit">Okay, go and rest</button>
+        </form>
+        <form method="post" action="/work/">
+          <input type="hidden" name="action" value="snooze" />
+          <button type="submit" class="quiet">Give me {SNOOZE_MINUTES} more minutes</button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+<script>
+  // the browser's offset from UTC, so the alarm and the time bar use your clock
+  for (const tz of document.querySelectorAll<HTMLInputElement>('form.work-start input[name="tz"]')) {
+    tz.value = String(-new Date().getTimezoneOffset());
+  }
+
+  // starting: your own minutes count only if you chose that line, and asking
+  // for notification permission happens here, on a click
+  const start = document.querySelector<HTMLFormElement>("form.work-start");
+  start?.addEventListener("submit", () => {
+    const custom = start.querySelector<HTMLInputElement>("input[data-custom]");
+    const typed = start.querySelector<HTMLInputElement>('input[name="minutes-custom"]');
+    const select = start.querySelector<HTMLSelectElement>('select[name="minutes"]');
+    if (custom?.checked && typed?.value && select) {
+      const own = document.createElement("option");
+      own.value = typed.value;
+      select.append(own);
+      select.value = typed.value;
+    }
+    const alarm = start.querySelector<HTMLInputElement>('input[name="alarm"]:checked');
+    if (alarm?.value && "Notification" in window && Notification.permission === "default") {
+      void Notification.requestPermission();
+    }
+  });
+
+  // the Enough alarm, while the page is open: a notification at the moment,
+  // and the overlay whenever you look at the page after it
+  const alarm = document.querySelector<HTMLElement>(".alarm");
+  if (alarm?.dataset.alarmAt) {
+    const at = Date.parse(alarm.dataset.alarmAt);
+    let notified = false;
+    const ring = () => {
+      if (Date.now() < at) return;
+      if (!notified) {
+        notified = true;
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("That's enough for now", { body: "The little one is getting sleepy. Time for a break?" });
+        }
+      }
+      if (document.visibilityState === "visible" && alarm.hidden) {
+        alarm.hidden = false;
+        alarm.querySelector<HTMLButtonElement>(".alarm-rest button")?.focus();
+      }
+    };
+    ring();
+    setInterval(ring, 5_000);
+    document.addEventListener("visibilitychange", ring);
+  }
+</script>
+
+<style>
+  .work {
+    margin: 0 0 1.75rem;
+    padding: 1rem 1.15rem 1.15rem;
+    border: 1.5px dashed var(--line-strong);
+    border-radius: 0.8rem 0.5rem 0.9rem 0.6rem;
+  }
+
+  .work h2 {
+    margin: 0 0 0.4rem;
+    font-size: 1.2rem;
+  }
+
+  .work-start .choices label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .short {
+    width: 7rem !important;
+    min-height: 2.25rem;
+  }
+
+  select {
+    min-height: 2.25rem;
+    padding: 0.2rem 0.4rem;
+    font: inherit;
+    color: var(--fg);
+    background: var(--card);
+    border: 1px solid var(--line-strong);
+    border-radius: 0.4rem;
+  }
+
+  .work-status {
+    margin: 0.25rem 0 0.75rem;
+    color: var(--muted);
+  }
+
+  .work-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1rem;
+  }
+
+  .work-actions form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .take-break {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  button.quiet {
+    min-height: 2.5rem;
+    padding: 0.3rem 0.9rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 1.2rem;
+    background: var(--card);
+    color: var(--fg);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  button.quiet:hover {
+    background: var(--accent-soft);
+  }
+
+  .work-actions form:not(:has(.quiet)) button,
+  .work-start button {
+    min-height: 2.5rem;
+  }
+
+  /* the alarm: a soft cover over the page, not a red siren */
+  .alarm {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgb(247 242 234 / 0.94);
+  }
+
+  .alarm[hidden] {
+    display: none;
+  }
+
+  .alarm-card {
+    width: min(30rem, 100%);
+    padding: 1.4rem 1.5rem 1.5rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 1rem 0.7rem 1.1rem 0.8rem;
+    background: var(--card);
+    box-shadow: 0 18px 40px -22px rgb(60 45 30 / 0.45);
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .alarm-card h2 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .alarm-card p {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .alarm-rest {
+    display: grid;
+    gap: 0.6rem;
+  }
+</style>
