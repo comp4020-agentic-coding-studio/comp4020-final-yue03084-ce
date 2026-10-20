@@ -22,6 +22,7 @@ function browser() {
     return res;
   };
   return {
+    send,
     get: async (path: string) => (await send(path)).text(),
     declare: (fields: Record<string, string>) =>
       send("/enough/", { method: "POST", body: new URLSearchParams(fields) }),
@@ -63,12 +64,29 @@ async function readStream(start: () => Promise<unknown>, until: string, ms: numb
   return received;
 }
 
+// Writing needs an account (CLAUDE.md: "Writing needs an account"), so a
+// browser that writes registers first. browser() alone is a reader.
+let accounts = 0;
+async function signedIn() {
+  const b = browser();
+  const res = await b.send("/account/", {
+    method: "POST",
+    body: new URLSearchParams({
+      action: "register",
+      username: `s${Date.now().toString(36)}${(accounts++).toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      password: "a-long-enough-password",
+    }),
+  });
+  if (res.status !== 303) throw new Error(`couldn't register a test account: ${res.status}`);
+  return b;
+}
+
 const marker = () => `t${Math.random().toString(36).slice(2, 10)}`;
 
 describe("a shared enough", () => {
   it("reaches another open page within about a second, with no reload", async () => {
     const tag = marker();
-    const author = browser();
+    const author = await signedIn();
     const t0 = Date.now();
     const received = await readStream(
       () => author.declare({ description: `report ${tag}`, shared: "on" }),
@@ -82,7 +100,7 @@ describe("a shared enough", () => {
 
   it("is still on the feed for someone else after a reload", async () => {
     const tag = marker();
-    await browser().declare({ description: `letter ${tag}`, shared: "on" });
+    await (await signedIn()).declare({ description: `letter ${tag}`, shared: "on" });
     expect(await browser().get("/")).toContain(`letter ${tag}`);
   });
 });
@@ -90,7 +108,7 @@ describe("a shared enough", () => {
 describe("what stays private", () => {
   it("an unshared enough reaches nobody else, on the feed or the stream", async () => {
     const tag = marker();
-    const author = browser();
+    const author = await signedIn();
     const received = await readStream(() => author.declare({ description: `draft ${tag}` }), tag, 1_500);
     expect(received).not.toContain(tag);
     expect(await browser().get("/")).not.toContain(tag);
@@ -100,7 +118,7 @@ describe("what stays private", () => {
   it("hours, feeling and notes reach only their owner, even when shared", async () => {
     const tag = marker();
     const notes = `checked every citation ${tag}`;
-    const author = browser();
+    const author = await signedIn();
     const received = await readStream(
       () =>
         author.declare({
@@ -130,14 +148,14 @@ describe("what stays private", () => {
 describe("limits", () => {
   it(`refuses a description over ${DESCRIPTION_MAX} characters`, async () => {
     const tag = marker();
-    const res = await browser().declare({ description: `${tag}${"x".repeat(DESCRIPTION_MAX)}`, shared: "on" });
+    const res = await (await signedIn()).declare({ description: `${tag}${"x".repeat(DESCRIPTION_MAX)}`, shared: "on" });
     expect(res.status).toBe(400);
     expect(await browser().get("/")).not.toContain(tag);
   });
 
   it(`refuses notes over ${NOTES_MAX} characters`, async () => {
     const tag = marker();
-    const res = await browser().declare({ description: `long ${tag}`, notes: `<p>${"x".repeat(NOTES_MAX)}</p>` });
+    const res = await (await signedIn()).declare({ description: `long ${tag}`, notes: `<p>${"x".repeat(NOTES_MAX)}</p>` });
     expect(res.status).toBe(400);
   });
 });
@@ -147,7 +165,7 @@ describe("limits", () => {
 describe("formatted notes", () => {
   it("keep bold, italic, lists and a palette colour, and lose everything else", async () => {
     const tag = marker();
-    const author = browser();
+    const author = await signedIn();
     await author.declare({
       description: `formatted ${tag}`,
       notes: [
@@ -171,7 +189,7 @@ describe("formatted notes", () => {
 describe("time spans", () => {
   it("are kept, totalled, and seen only by their owner", async () => {
     const tag = marker();
-    const author = browser();
+    const author = await signedIn();
     const res = await author.declare({ description: `spans ${tag}`, shared: "on", hours: "99", spans: "540-690,840-900" });
     expect(res.status).toBe(303);
     const own = await author.get("/mine/");
@@ -185,7 +203,7 @@ describe("time spans", () => {
   });
 
   it("keep the crayon they were drawn with, and only a palette colour", async () => {
-    const author = browser();
+    const author = await signedIn();
     await author.declare({ description: `sage ${marker()}`, spans: "540-600", crayon: "sage" });
     await author.declare({ description: `neon ${marker()}`, spans: "600-660", crayon: "neon" });
     const own = await author.get("/mine/");
@@ -195,7 +213,7 @@ describe("time spans", () => {
 
   it("refuses times that aren't whole half-hours inside one day", async () => {
     for (const spans of ["540-555", "1400-1500", "600-540", "nine-ten"]) {
-      const res = await browser().declare({ description: `bad ${marker()}`, spans });
+      const res = await (await signedIn()).declare({ description: `bad ${marker()}`, spans });
       expect(res.status, spans).toBe(400);
     }
   });
@@ -212,7 +230,7 @@ describe("deleting", () => {
 
   it("takes a shared enough off everyone's feed, live", async () => {
     const tag = marker();
-    const author = browser();
+    const author = await signedIn();
     await author.declare({ description: `gone ${tag}`, shared: "on" });
     const id = idOf(await author.get("/mine/"), `gone ${tag}`);
     const received = await readStream(() => author.remove(id), `"id":${id}`, 3_000);
@@ -230,10 +248,10 @@ describe("deleting", () => {
 
   it("can't delete someone else's", async () => {
     const tag = marker();
-    const author = browser();
+    const author = await signedIn();
     await author.declare({ description: `kept ${tag}`, shared: "on" });
     const id = idOf(await author.get("/mine/"), `kept ${tag}`);
-    await browser().remove(id);
+    await (await signedIn()).remove(id);
     expect(await browser().get("/")).toContain(`kept ${tag}`);
   });
 });
@@ -253,42 +271,44 @@ describe("comments", () => {
 
   it("reach every open feed within about a second", async () => {
     const tag = marker();
-    const author = browser();
+    const author = await signedIn();
     await author.declare({ description: `talk ${tag}`, shared: "on" });
     const id = enoughId(await author.get("/"), `talk ${tag}`);
-    const received = await readStream(() => browser().comment(id, `well done ${tag}`), `well done ${tag}`, 3_000);
+    const other = await signedIn();
+    const received = await readStream(() => other.comment(id, `well done ${tag}`), `well done ${tag}`, 3_000);
     expect(received).toContain(`well done ${tag}`);
     expect(await browser().get("/")).toContain(`well done ${tag}`);
   });
 
   it(`refuses a comment over ${REPLY_MAX} characters`, async () => {
     const tag = marker();
-    const author = browser();
+    const author = await signedIn();
     await author.declare({ description: `long ${tag}`, shared: "on" });
     const id = enoughId(await author.get("/"), `long ${tag}`);
-    const res = await browser().comment(id, `${tag}${"x".repeat(REPLY_MAX)}`);
+    const res = await (await signedIn()).comment(id, `${tag}${"x".repeat(REPLY_MAX)}`);
     expect(res.status).toBe(303);
     expect(await browser().get("/")).not.toContain(`${tag}xxxx`);
   });
 
   it(`hide once ${REPORTS_TO_HIDE} different people report them, and not before`, async () => {
     const tag = marker();
-    const author = browser();
+    const author = await signedIn();
     await author.declare({ description: `reported ${tag}`, shared: "on" });
     const id = enoughId(await author.get("/"), `reported ${tag}`);
-    const commenter = browser();
+    const commenter = await signedIn();
     await commenter.comment(id, `unkind ${tag}`);
     const cid = commentId(await author.get("/"), `unkind ${tag}`);
 
     // reporting your own does nothing, and one person reporting twice counts once
     await commenter.report(cid);
-    const repeat = browser();
+    const repeat = await signedIn();
     await repeat.report(cid);
     await repeat.report(cid);
-    for (let i = 2; i < REPORTS_TO_HIDE; i++) await browser().report(cid);
+    for (let i = 2; i < REPORTS_TO_HIDE; i++) await (await signedIn()).report(cid);
     expect(await browser().get("/")).toContain(`unkind ${tag}`);
 
-    const received = await readStream(() => browser().report(cid), `reported ${tag}`, 3_000);
+    const last = await signedIn();
+    const received = await readStream(() => last.report(cid), `reported ${tag}`, 3_000);
     expect(received).not.toContain(`unkind ${tag}`);
     expect(await browser().get("/")).not.toContain(`unkind ${tag}`);
     expect(await author.get("/mine/")).not.toContain(`unkind ${tag}`);
@@ -308,7 +328,7 @@ describe("breaks", () => {
 
   it("change the resting count for everyone, live, and back again", async () => {
     const before = restingCount(await browser().get("/"));
-    const someone = browser();
+    const someone = await signedIn();
     const started = await readStream(() => someone.rest({ kind: "tea" }), "event: resting", 3_000);
     expect(started).toContain(`"count":${before + 1}`);
     const ended = await readStream(() => someone.rest({ end: "1" }), "event: resting", 3_000);
@@ -317,7 +337,7 @@ describe("breaks", () => {
 
   it("after a shared enough, show where they went and when they're back, never how long", async () => {
     const tag = marker();
-    const author = browser();
+    const author = await signedIn();
     const received = await readStream(
       () => author.declare({ description: `then walk ${tag}`, shared: "on", spans: "540-720", next: "walk" }),
       `then walk ${tag}`,
@@ -338,17 +358,55 @@ describe("breaks", () => {
 describe("rechecking", () => {
   it("is recorded for the owner only", async () => {
     const tag = marker();
-    const author = browser();
+    const author = await signedIn();
     await author.declare({ description: `recheck ${tag}`, shared: "on", notes: `<p>checked refs ${tag}</p>` });
     const mineHtml = await author.get("/mine/");
     const id = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?recheck ${tag}`).exec(mineHtml)?.[1] ?? "";
     expect(mineHtml).toContain(`checked refs ${tag}`);
     await author.urge(id, "let_go");
     await author.urge(id, "checked");
-    await browser().urge(id, "checked");
+    await (await signedIn()).urge(id, "checked");
     const own = await author.get("/mine/");
     expect(own).toContain("Wanted to check it again 2 times; let it go 1.");
     expect(await browser().get("/")).not.toContain("Wanted to check it again");
+  });
+});
+
+// Reading needs nothing; every write needs an account, checked on the server.
+describe("without an account", () => {
+  it("anyone can read the feed", async () => {
+    const res = await browser().send("/");
+    expect(res.status).toBe(200);
+  });
+
+  it("every write is refused, and nothing is written", async () => {
+    const tag = marker();
+    const author = await signedIn();
+    await author.declare({ description: `target ${tag}`, shared: "on" });
+    const id = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?target ${tag}`).exec(await author.get("/mine/"))?.[1] ?? "";
+
+    const reader = browser();
+    const anon = await reader.declare({ description: `anon ${tag}`, shared: "on" });
+    expect(anon.status).toBe(303);
+    expect(anon.headers.get("location")).toContain("/account/");
+    for (const [path, fields] of [
+      ["/comment/", { enough: id, text: `anon comment ${tag}` }],
+      ["/reply/", { enough: id, preset: "seen" }],
+      ["/delete/", { enough: id }],
+      ["/break/", { kind: "walk" }],
+      ["/urge/", { enough: id, choice: "let_go" }],
+    ] as const) {
+      const res = await reader.send(path, {
+        method: "POST",
+        body: new URLSearchParams(fields as Record<string, string>),
+        headers: { accept: "application/json" },
+      });
+      expect(res.status, path).not.toBe(200);
+    }
+    const feed = await browser().get("/");
+    expect(feed).not.toContain(`anon ${tag}`);
+    expect(feed).not.toContain(`anon comment ${tag}`);
+    expect(feed).toContain(`target ${tag}`);
   });
 });
 

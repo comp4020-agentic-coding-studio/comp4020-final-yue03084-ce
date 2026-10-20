@@ -2,14 +2,16 @@ import type { APIRoute } from "astro";
 import { endBreak, restingNow, startBreak } from "../lib/db";
 import { bus } from "../lib/events";
 import { isBreakKind } from "../lib/limits";
-import { ensurePerson } from "../lib/person";
+import { signedInPerson } from "../lib/person";
 
 // Start or end a break. Every open feed hears the new resting count, and if
 // the break follows a shared enough, that card's "went for a walk" / "back".
-export const POST: APIRoute = async ({ request, cookies, url, redirect }) => {
+export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   // a POST with no form body (not one a page sends) is just ignored
   const form = await request.formData().catch(() => new FormData());
-  const person = ensurePerson(cookies, url.protocol === "https:");
+  // writing needs an account (signedInPerson)
+  const person = signedInPerson(cookies);
+  if (!person) return redirect("/account/", 303);
   const back = String(form.get("back") ?? "/");
   const to = back.startsWith("/") && !back.startsWith("//") ? back : "/";
   let card = null;

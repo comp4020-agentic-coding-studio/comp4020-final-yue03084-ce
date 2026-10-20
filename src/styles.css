@@ -743,3 +743,8 @@ button.quiet:hover {
     align-items: start;
   }
 }
+
+.join-hint {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}

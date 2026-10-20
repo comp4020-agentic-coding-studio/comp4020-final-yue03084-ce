@@ -1,7 +1,7 @@
 import { describe, expect, inject, it } from "vitest";
 import { LOGIN_ATTEMPTS, PASSWORD_MIN } from "../src/lib/limits.ts";
 
-// Optional accounts, against the running app: registering keeps the person
+// Accounts, against the running app (writing needs one): registering keeps the person
 // you already are, signing in elsewhere is that same person, the username is
 // never public, logins are rate-limited, and an account doesn't widen what
 // anyone may change.
@@ -63,28 +63,24 @@ async function readStream(start: () => Promise<unknown>, ms: number): Promise<st
 }
 
 describe("accounts", () => {
-  it("registering keeps the same person and everything they wrote", async () => {
+  it("registering gives a block number and lets you write; what you write is yours", async () => {
     const tag = marker();
     const me = browser();
-    await me.declare({ description: `before account ${tag}`, notes: `<p>private ${tag}</p>` });
-    const before = await me.get("/mine/");
-    const name = /you show as (A block #\d+)/.exec(before)?.[1];
-    expect(name).toBeTruthy();
-
     const res = await me.register(newName(), PASSWORD);
     expect(res.status).toBe(303);
-    const after = await me.get("/mine/");
-    expect(after).toContain(`you show as ${name}`);
-    expect(after).toContain(`before account ${tag}`);
-    expect(after).toContain(`private ${tag}`);
+    await me.declare({ description: `after account ${tag}`, notes: `<p>private ${tag}</p>` });
+    const mine = await me.get("/mine/");
+    expect(mine).toMatch(/you show as A block #\d+/);
+    expect(mine).toContain(`after account ${tag}`);
+    expect(mine).toContain(`private ${tag}`);
   });
 
   it("signing in from a fresh browser is the same person, with the same Mine", async () => {
     const tag = marker();
     const username = newName();
     const first = browser();
-    await first.declare({ description: `elsewhere ${tag}` });
     await first.register(username, PASSWORD);
+    await first.declare({ description: `elsewhere ${tag}` });
 
     const second = browser();
     const res = await second.login(username.toUpperCase(), PASSWORD);
@@ -154,6 +150,7 @@ describe("accounts", () => {
   it("an account doesn't let anyone delete someone else's enough", async () => {
     const tag = marker();
     const author = browser();
+    await author.register(newName(), PASSWORD);
     await author.declare({ description: `not yours ${tag}`, shared: "on" });
     const id = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?not yours ${tag}`).exec(await author.get("/mine/"))?.[1] ?? "";
 

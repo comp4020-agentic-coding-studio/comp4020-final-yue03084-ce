@@ -4,14 +4,19 @@ import Page from "../layouts/Page.astro";
 import { declareEnough, publicEnough, restingNow, startBreak } from "../lib/db";
 import { bus } from "../lib/events";
 import { BREAK_KINDS, DESCRIPTION_MAX, FEELINGS, isBreakKind, NOTE_COLOURS } from "../lib/limits";
-import { ensurePerson } from "../lib/person";
+import { signedInPerson } from "../lib/person";
 
 // Call something enough. The description is the only part that can be
 // public, and only if shared is ticked; the rest is the person's own.
 let refused: string | null = null;
 let values = { description: "", shared: true, hours: "", spans: "", crayon: "", feeling: "", notes: "" };
 
-if (Astro.request.method === "POST") {
+// writing needs an account (signedInPerson): without one, this page asks you
+// to sign in first, and a post is refused
+const person = signedInPerson(Astro.cookies);
+if (Astro.request.method === "POST" && !person) return Astro.redirect("/account/", 303);
+
+if (Astro.request.method === "POST" && person) {
   const form = await Astro.request.formData();
   const field = (name: string) => String(form.get(name) ?? "");
   values = {
@@ -23,7 +28,6 @@ if (Astro.request.method === "POST") {
     feeling: field("feeling"),
     notes: field("notes"),
   };
-  const person = ensurePerson(Astro.cookies, Astro.url.protocol === "https:");
   const outcome = declareEnough(person.id, values);
   if (outcome.ok) {
     // and then, if they picked one, straight into a break
@@ -44,6 +48,15 @@ if (Astro.request.method === "POST") {
 
 <Page title="Call it enough">
   <h1>Call it enough</h1>
+  {
+    !person ? (
+      <section class="account-box">
+        <p>To call something enough, you need an account. It keeps what you write safe, and lets you open it from any
+        browser. On the feed you'll show only as a block number, never your username.</p>
+        <p><a class="button" href="/account/">Sign in or create an account</a></p>
+      </section>
+    ) : (
+      <>
   {refused && <p class="refused" role="alert">{refused}</p>}
   <form method="post" class="stack">
     <label>
@@ -107,6 +120,9 @@ if (Astro.request.method === "POST") {
 
     <button type="submit">That's enough</button>
   </form>
+      </>
+    )
+  }
 </Page>
 
 <script>

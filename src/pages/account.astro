@@ -5,9 +5,10 @@ import { displayName } from "../lib/db";
 import { PASSWORD_MIN, USERNAME_MAX, USERNAME_MIN } from "../lib/limits";
 import { clearPersonCookie, cookieToken, currentPerson, ensurePerson, setPersonCookie } from "../lib/person";
 
-// Optional accounts: save what you've written under a username and password,
-// or sign in from another browser. Nothing else on the site needs one. The
-// username is shown only here, to its owner.
+// Accounts: anyone can read the feed, but writing needs one (signedInPerson).
+// Creating one keeps whatever this browser already wrote; signing in from
+// another browser gives the same person. The username is shown only here, to
+// its owner.
 const secure = Astro.url.protocol === "https:";
 let refused: { form: "register" | "login"; reason: string } | null = null;
 let typed = "";
@@ -46,10 +47,11 @@ const signedIn = Boolean(person?.username);
 const leavesBehind = person && !person.username && hasRecords(person);
 ---
 
-<Page title="Account">
-  <h1>Save or sign in</h1>
+<Page title="Sign in">
+  <h1>Sign in</h1>
   <p class="hint">
-    You don't need an account. It only lets you see what you've written from another browser or device.
+    Anyone can read the feed. To call something enough, reply or take a break, you need an account: it keeps what you
+    write safe and lets you open it from any browser. On the feed you only ever show as a block number.
   </p>
 
   {
@@ -67,11 +69,11 @@ const leavesBehind = person && !person.username && hasRecords(person);
     ) : (
       <div class="account-forms">
         <section class="account-box" aria-labelledby="register-h">
-          <h2 id="register-h">Save what you've written</h2>
+          <h2 id="register-h">Create an account</h2>
           <p class="hint">
             {person
               ? `Everything you've written as ${displayName(person.id)} stays yours, under this username.`
-              : "Pick a username and password. You can start writing before or after."}
+              : "Pick a username and password."}
           </p>
           {refused?.form === "register" && (
             <p class="refused" role="alert">
@@ -97,7 +99,7 @@ const leavesBehind = person && !person.username && hasRecords(person);
               <input name="password" type="password" required minlength={PASSWORD_MIN} autocomplete="new-password" />
             </label>
             <p class="hint">There's no password reset, so keep it somewhere safe.</p>
-            <button type="submit">Save</button>
+            <button type="submit">Create account</button>
           </form>
         </section>
 

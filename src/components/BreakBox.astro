@@ -1,12 +1,13 @@
 ---
 import { currentBreak, restingNow } from "../lib/db";
 import { BREAK_KINDS } from "../lib/limits";
-import { currentPerson } from "../lib/person";
+import { signedInPerson } from "../lib/person";
 
 // "Take a break": how many people are resting right now (a number, never
 // who), and either the choices of what to go and do or, while you're on one,
 // a button to come back. Plain forms; the feed's script keeps the count live.
-const person = currentPerson(Astro.cookies);
+// anyone sees the count; starting a break needs an account
+const person = signedInPerson(Astro.cookies);
 const mine = person ? currentBreak(person.id) : undefined;
 const count = restingNow();
 const resting = (n: number) => (n === 0 ? "Nobody's on a break right now." : n === 1 ? "1 person is on a break right now." : `${n} people are on a break right now.`);
@@ -18,7 +19,11 @@ const resting = (n: number) => (n === 0 ? "Nobody's on a break right now." : n =
     {resting(count)}
   </p>
   {
-    mine ? (
+    !person ? (
+      <p class="join-hint">
+        <a href="/account/">Sign in</a> to take one.
+      </p>
+    ) : mine ? (
       <form method="post" action="/break/" class="break-back">
         <input type="hidden" name="end" value="1" />
         <input type="hidden" name="back" value={Astro.url.pathname} />

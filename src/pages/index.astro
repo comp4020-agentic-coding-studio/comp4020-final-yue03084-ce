@@ -5,12 +5,15 @@ import Comments from "../components/Comments.astro";
 import Replies from "../components/Replies.astro";
 import Page from "../layouts/Page.astro";
 import { sharedFeed } from "../lib/db";
+import { signedInPerson } from "../lib/person";
 import { BREAK_KINDS, COMMENT_PROMPT, PRESET_REPLIES, REPLY_MAX } from "../lib/limits";
 
 // The public feed: moments when someone stopped. Only shared enoughs, and only
 // their one-line description (CLAUDE.md: "Show stopping, never finishing").
 // New ones and new replies arrive over /api/events without a reload.
 const feed = sharedFeed();
+// reading needs nothing; replying, commenting and reporting need an account
+const canJoin = Boolean(signedInPerson(Astro.cookies));
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Sydney", dateStyle: "medium", timeStyle: "short" });
 ---
@@ -20,6 +23,12 @@ const when = (iso: string) =>
   <h1>Put down for now</h1>
   <p>People who decided something was enough, and put it down.</p>
   <p><a class="button" href="/enough/">Call it enough</a></p>
+  {!canJoin && (
+    <p class="join-hint">
+      You can read without an account. <a href="/account/">Sign in or create one</a> to call something enough, reply
+      or take a break.
+    </p>
+  )}
   <BreakBox />
 
   <ol
@@ -28,6 +37,7 @@ const when = (iso: string) =>
     data-presets={JSON.stringify(PRESET_REPLIES)}
     data-prompt={COMMENT_PROMPT}
     data-max={REPLY_MAX}
+    data-can-join={String(canJoin)}
     data-breaks={JSON.stringify(BREAK_KINDS)}
   >
     {
@@ -40,8 +50,8 @@ const when = (iso: string) =>
           <p class="rest" data-rest={e.id}>
             {e.rest && (e.rest.back ? `Then took a break, and is ${BREAK_KINDS[e.rest.kind].back}.` : `Then ${BREAK_KINDS[e.rest.kind].going}.`)}
           </p>
-          <Replies enoughId={e.id} counts={e.replies} canReply />
-          <Comments enoughId={e.id} comments={e.comments} canComment />
+          <Replies enoughId={e.id} counts={e.replies} canReply={canJoin} />
+          <Comments enoughId={e.id} comments={e.comments} canComment={canJoin} />
         </li>
       ))
     }
@@ -55,6 +65,7 @@ const when = (iso: string) =>
     const presets: Record<string, string> = JSON.parse(feed.dataset.presets ?? "{}");
     const prompt = feed.dataset.prompt ?? "";
     const max = Number(feed.dataset.max);
+    const canJoin = feed.dataset.canJoin === "true";
     const breakKinds: Record<string, { going: string; back: string }> = JSON.parse(feed.dataset.breaks ?? "{}");
 
     // the same words the card above renders for a break taken after an enough
@@ -78,6 +89,11 @@ const when = (iso: string) =>
         const said = document.createElement("span");
         said.className = "said";
         said.textContent = c.text;
+        li.append(who, " ", said);
+        if (!canJoin) {
+          list.append(li);
+          continue;
+        }
         const form = document.createElement("form");
         form.method = "post";
         form.action = "/report/";
@@ -91,8 +107,12 @@ const when = (iso: string) =>
         button.title = "Report this comment";
         button.textContent = "Report";
         form.append(id, button);
-        li.append(who, " ", said, form);
+        li.append(form);
         list.append(li);
+      }
+      if (!canJoin) {
+        box.append(list);
+        return box;
       }
       const form = document.createElement("form");
       form.method = "post";
@@ -158,6 +178,7 @@ const when = (iso: string) =>
         button.name = "preset";
         button.value = key;
         button.dataset.preset = key;
+        button.disabled = !canJoin;
         const count = document.createElement("span");
         count.className = "count";
         count.dataset.count = key;
