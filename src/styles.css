@@ -748,3 +748,16 @@ button.quiet:hover {
   color: var(--muted);
   font-size: 0.9375rem;
 }
+
+/* without an account the replies are counts to read, not buttons to press */
+.replies button:disabled {
+  cursor: default;
+  color: var(--muted);
+  background: transparent;
+  border-style: dashed;
+}
+
+.replies button:disabled:hover {
+  background: transparent;
+  border-color: var(--line);
+}
