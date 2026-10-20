@@ -99,7 +99,7 @@ describe("a work session", () => {
     expect(first.headers.get("location")).toMatch(/session=/);
     // nothing left open to finish
     const second = await me.work({ action: "finish" });
-    expect(second.headers.get("location")).toBe("/mine/");
+    expect(second.headers.get("location")).toBe("/working/");
   });
 
   it("never reaches the feed or the stream, and snoozes show only on the owner's Mine", async () => {
@@ -111,11 +111,11 @@ describe("a work session", () => {
     }, 1_500);
     for (const word of ["snooze", "alarm", "work_session", "sleepy", "Working"]) expect(received).not.toContain(word);
 
-    const mine = await me.get("/mine/");
+    const mine = await me.get("/working/");
     expect(mine).toContain("10 more minutes 2 times");
     const feed = await browser().get("/");
     expect(feed).not.toContain("more minutes");
-    expect(await (await signedIn()).get("/mine/")).not.toContain("more minutes 2 times");
+    expect(await (await signedIn()).get("/working/")).not.toContain("more minutes 2 times");
     await me.work({ action: "finish" });
   });
 
@@ -125,12 +125,12 @@ describe("a work session", () => {
     await me.work({ action: "start", tz: "0", alarm: "interval", minutes: "1" });
     await me.work({ action: "rest", kind: "tea" });
     expect(restingCount(await browser().get("/"))).toBe(before + 1);
-    expect(await me.get("/mine/")).toContain("On a break");
+    expect(await me.get("/working/")).toContain("On a break");
 
-    await me.rest({ end: "1", back: "/mine/" });
+    await me.rest({ end: "1", back: "/working/" });
     expect(restingCount(await browser().get("/"))).toBe(before);
-    const back = await me.get("/mine/");
-    expect(back).toContain(">Working<");
+    const back = await me.get("/working/");
+    expect(back).toContain(">Building<");
     await me.work({ action: "finish" });
   });
 
@@ -138,7 +138,7 @@ describe("a work session", () => {
     const me = await signedIn();
     await me.work({ action: "start", tz: "-300" });
     await me.work({ action: "rest", kind: "walk" });
-    await me.rest({ end: "1", back: "/mine/" });
+    await me.rest({ end: "1", back: "/working/" });
     const done = await me.work({ action: "finish" });
     const filled = spansIn(await me.get(done.headers.get("location") ?? ""));
     for (const part of filled.split(",")) {

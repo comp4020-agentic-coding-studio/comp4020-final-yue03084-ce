@@ -1,0 +1,28 @@
+---
+import WorkPanel from "../components/WorkPanel.astro";
+import Page from "../layouts/Page.astro";
+import { signedInPerson } from "../lib/person";
+import { workView } from "../lib/work";
+
+// Working on it: start a stretch of work, set an Enough alarm, and watch the
+// little one build alongside you. The owner's alone; it needs an account, like
+// anything you write. Finishing goes to Call it enough with the time filled in.
+const person = signedInPerson(Astro.cookies);
+---
+
+<Page title="Working on it">
+  <h1>Working on it</h1>
+  {
+    person ? (
+      <WorkPanel view={workView(person.id)} />
+    ) : (
+      <section class="account-box mine-gate">
+        <p>Start working, and a little one builds alongside you, then gets sleepy when it's time to stop. Sign in to begin.</p>
+        <div class="mine-gate-actions">
+          <a class="button" href="/account/#login">Sign in</a>
+          <a class="button quiet" href="/account/#register">Create an account</a>
+        </div>
+      </section>
+    )
+  }
+</Page>

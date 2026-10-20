@@ -98,9 +98,11 @@ export const RECOVER_MINUTES = 10;
 export const SLOWEST_SPEED = 0.25;
 export const SMALLEST_BLOCK = 0.35;
 // one block on the day's tower for this much work (never shown as a number),
-// up to TOWER_MAX blocks drawn
-export const BLOCK_EVERY_MINUTES = 15;
-export const TOWER_MAX = 12;
+// up to TOWER_MAX blocks drawn. While the page is open the little one also
+// lays blocks you can watch, one a trip; on a reload the tower is redrawn
+// from the time worked, so the two agree roughly, not exactly.
+export const BLOCK_EVERY_MINUTES = 3;
+export const TOWER_MAX = 30;
 // how long one trip to the tower takes when it's fresh
 export const CARRY_SECONDS = 4;
 // the Enough alarm: quick intervals to pick from, the longest allowed, and how

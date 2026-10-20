@@ -38,5 +38,5 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     const outcome = finishWork(person.id);
     if (outcome.ok) return redirect(`/enough/?session=${outcome.value.id}`, 303);
   }
-  return wantsJson ? Response.json({ ok: true }) : redirect("/mine/", 303);
+  return wantsJson ? Response.json({ ok: true }) : redirect("/working/", 303);
 };

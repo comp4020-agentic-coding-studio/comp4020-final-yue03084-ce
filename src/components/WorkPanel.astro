@@ -3,7 +3,7 @@ import { ALARM_INTERVALS, ALARM_MAX_MINUTES, BREAK_KINDS, SNOOZE_MINUTES } from 
 import type { WorkView } from "../lib/work";
 import LittleOne from "./LittleOne.astro";
 
-// "Start working" on Mine, and the little one while you do. The owner's
+// "Start working" on Working on it, and the little one while you do. The owner's
 // alone. Start can set an Enough alarm: after an interval, or at a clock
 // time. While the page is open the alarm sends a notification and, when you
 // look, a soft overlay: "Okay, go and rest" (a break, like anywhere else) or
@@ -17,7 +17,7 @@ const resting = view?.state === "resting";
 ---
 
 <section class="work" aria-labelledby="work-h">
-  <h2 id="work-h">{view ? (resting ? "On a break" : "Working") : "Start working"}</h2>
+  <h2 id="work-h">{view ? (resting ? "On a break" : "Building") : "Start working"}</h2>
   {
     !view ? (
       <form method="post" action="/work/" class="stack work-start">
@@ -79,7 +79,7 @@ const resting = view?.state === "resting";
           {resting ? (
             <form method="post" action="/break/">
               <input type="hidden" name="end" value="1" />
-              <input type="hidden" name="back" value="/mine/" />
+              <input type="hidden" name="back" value="/working/" />
               <button type="submit">I'm back</button>
             </form>
           ) : (

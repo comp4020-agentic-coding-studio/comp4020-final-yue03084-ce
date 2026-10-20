@@ -6,7 +6,6 @@ import { isHtml } from "../lib/notes";
 import { describeSpan, parseSpans, roughly } from "../lib/spans";
 import { currentPerson } from "../lib/person";
 import { workView } from "../lib/work";
-import WorkPanel from "../components/WorkPanel.astro";
 
 // Everything this person has said was enough, private fields included. It
 // reads only their own rows, by their cookie.
@@ -52,7 +51,13 @@ const when = (iso: string) =>
       </section>
     )
   }
-  {person?.username && <WorkPanel view={workView(person.id)} />}
+  {
+    person?.username && workView(person.id) && (
+      <p class="working-now">
+        You're working on something. <a href="/working/">Go to the little one</a>
+      </p>
+    )
+  }
   {person?.username && rows.length === 0 && <p>Nothing yet. <a href="/enough/">Call something enough.</a></p>}
   <ol class="feed mine">
     {

@@ -778,3 +778,11 @@ button.quiet:hover {
 .button.quiet:hover {
   background: var(--accent-soft);
 }
+
+.working-now {
+  margin: 0 0 1.25rem;
+  padding: 0.6rem 0.9rem;
+  border-left: 3px solid var(--c-sage);
+  background: var(--card);
+  border-radius: 0 0.4rem 0.4rem 0;
+}
