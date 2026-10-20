@@ -105,7 +105,17 @@ with `curl` on 2026-10-12.
   enoughs, hours, spans, feeling, notes, rechecks); the length limits; notes
   sanitising; time spans and crayons; owner-only delete that leaves every
   feed live; comments live, and hidden at `REPORTS_TO_HIDE`; the resting
-  count live and a break never showing how long.
+  count live and a break never showing how long. `spec/account.test.ts` (8
+  tests, 2026-10-20) checks the optional accounts: registering keeps the same
+  person and their records; signing in elsewhere is that person; the same
+  refusal for an unknown user and a wrong password; usernames unique in any
+  case; `PASSWORD_MIN`; the username and password never on the feed or the
+  stream; logout empties that browser's Mine; `LOGIN_ATTEMPTS` failures lock
+  a username for `LOGIN_WINDOW_MINUTES`; an account can't delete someone
+  else's enough.
+- The login rate limit is in memory, per username. Tests that register reuse
+  nothing between runs (each makes a fresh username), so a lockout from one
+  test can't fail another.
 - A spec that reads a count off the page must read the visible text, not a
   `data-*` attribute holding the template wording. *(The first breaks test
   failed this way on 2026-10-14; the app was right.)*
