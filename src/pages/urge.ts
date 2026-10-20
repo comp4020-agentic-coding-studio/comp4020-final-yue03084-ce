@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { logEvent } from "../lib/log";
 import { recordUrge } from "../lib/db";
 import { isUrgeChoice } from "../lib/limits";
 import { signedInPerson } from "../lib/person";
@@ -12,6 +13,9 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const person = signedInPerson(cookies);
   const enoughId = Number(form.get("enough"));
   const choice = String(form.get("choice") ?? "");
-  if (person && Number.isInteger(enoughId) && isUrgeChoice(choice)) recordUrge(person.id, enoughId, choice);
+  if (person && Number.isInteger(enoughId) && isUrgeChoice(choice)) {
+    const outcome = recordUrge(person.id, enoughId, choice);
+    logEvent(outcome.ok ? "recheck" : "recheck_refused", { block: person.id, enough: enoughId, choice });
+  }
   return redirect("/mine/", 303);
 };

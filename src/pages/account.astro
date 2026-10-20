@@ -1,4 +1,5 @@
 ---
+import { logEvent } from "../lib/log";
 import Page from "../layouts/Page.astro";
 import { hasRecords, logIn, logOut, register } from "../lib/accounts";
 import { displayName } from "../lib/db";
@@ -23,10 +24,19 @@ if (Astro.request.method === "POST") {
 
   if (action === "register") {
     const outcome = register(ensurePerson(Astro.cookies, secure), username, password);
+    // never the username or password: only that it happened, and to which block
+    logEvent(outcome.ok ? "account_created" : "register_refused", {
+      block: outcome.ok ? outcome.value.id : undefined,
+      reason: outcome.ok ? undefined : outcome.reason,
+    });
     if (outcome.ok) return Astro.redirect("/account/", 303);
     refused = { form: "register", reason: outcome.reason };
   } else if (action === "login") {
     const outcome = logIn(username, password);
+    logEvent(outcome.ok ? "signed_in" : "sign_in_refused", {
+      block: outcome.ok ? outcome.value.person.id : undefined,
+      reason: outcome.ok ? undefined : outcome.reason,
+    });
     if (outcome.ok) {
       setPersonCookie(Astro.cookies, outcome.value.token, secure);
       return Astro.redirect("/mine/", 303);
@@ -34,7 +44,10 @@ if (Astro.request.method === "POST") {
     refused = { form: "login", reason: outcome.reason };
   } else if (action === "logout") {
     const token = cookieToken(Astro.cookies);
+    // who, before the session it names is gone
+    const block = currentPerson(Astro.cookies)?.id;
     if (token) logOut(token);
+    logEvent("signed_out", { block });
     clearPersonCookie(Astro.cookies);
     return Astro.redirect("/account/", 303);
   }

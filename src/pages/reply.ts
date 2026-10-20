@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { logEvent } from "../lib/log";
 import { reply } from "../lib/db";
 import { bus } from "../lib/events";
 import { isPresetKey } from "../lib/limits";
@@ -26,6 +27,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if (!outcome.ok) {
     return wantsJson ? Response.json({ error: outcome.reason }, { status: 400 }) : redirect("/", 303);
   }
+  logEvent("reply_added", { block: person.id, enough: enoughId, preset });
   bus.emit("reply", outcome.value);
   return wantsJson ? Response.json(outcome.value) : redirect("/", 303);
 };

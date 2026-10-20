@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { logEvent } from "../lib/log";
 import { endBreak, restingNow, startBreak } from "../lib/db";
 import { bus } from "../lib/events";
 import { isBreakKind } from "../lib/limits";
@@ -19,6 +20,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if (form.get("end")) {
     card = endBreak(person.id);
     resumeWork(person.id); // a work session on pause picks up again
+    logEvent("break_ended", { block: person.id });
   } else {
     const kind = String(form.get("kind") ?? "");
     if (!isBreakKind(kind)) return redirect(to, 303);
@@ -26,8 +28,11 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     const outcome = startBreak(person.id, kind, Number.isInteger(enough) && enough > 0 ? enough : null);
     if (outcome.ok) card = outcome.value;
     pauseWork(person.id, kind); // and a work session going pauses
+    logEvent("break_started", { block: person.id, kind, after: card ? card.id : undefined });
   }
-  bus.emit("resting", { count: restingNow() });
+  const resting = restingNow();
+  logEvent("resting_now", { count: resting });
+  bus.emit("resting", { count: resting });
   if (card) bus.emit("reply", card);
   return redirect(to, 303);
 };

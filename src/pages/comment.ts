@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { logEvent } from "../lib/log";
 import { comment } from "../lib/db";
 import { bus } from "../lib/events";
 import { signedInPerson } from "../lib/person";
@@ -19,8 +20,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     ? comment(person.id, enoughId, String(form.get("text") ?? ""))
     : ({ ok: false, reason: "Write a few words first." } as const);
   if (!outcome.ok) {
+    logEvent("comment_refused", { block: person.id, enough: enoughId, reason: outcome.reason });
     return wantsJson ? Response.json({ error: outcome.reason }, { status: 400 }) : redirect("/", 303);
   }
+  logEvent("comment_added", { block: person.id, enough: enoughId, comment: outcome.value.comments.at(-1)?.id });
   // the whole public card goes out, so every open feed shows the new comment
   bus.emit("reply", outcome.value);
   return wantsJson ? Response.json(outcome.value) : redirect("/", 303);

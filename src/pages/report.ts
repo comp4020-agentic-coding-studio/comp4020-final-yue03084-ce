@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { logEvent } from "../lib/log";
 import { report } from "../lib/db";
 import { bus } from "../lib/events";
 import { signedInPerson } from "../lib/person";
@@ -21,6 +22,9 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if (!outcome.ok) {
     return wantsJson ? Response.json({ error: outcome.reason }, { status: 400 }) : redirect("/", 303);
   }
+  // hidden: the comment no longer appears on the card everyone gets
+  const hidden = !outcome.value.comments.some((c) => c.id === commentId);
+  logEvent("comment_reported", { block: person.id, comment: commentId, hidden });
   bus.emit("reply", outcome.value);
   return wantsJson ? Response.json({ ok: true }) : redirect("/", 303);
 };

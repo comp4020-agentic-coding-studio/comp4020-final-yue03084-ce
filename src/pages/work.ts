@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { logEvent } from "../lib/log";
 import { restingNow, startBreak } from "../lib/db";
 import { bus } from "../lib/events";
 import { isBreakKind } from "../lib/limits";
@@ -25,18 +26,24 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if (action === "start") {
     const alarm = parseAlarm(field("alarm"), field("minutes"), field("clock"));
     startWork(person.id, parseTz(field("tz")), alarm);
+    logEvent("work_started", { block: person.id, alarm: alarm ? alarm.kind : "none" });
   } else if (action === "snooze") {
     snooze(person.id);
+    logEvent("alarm_snoozed", { block: person.id });
   } else if (action === "rest") {
     const kind = field("kind");
     if (isBreakKind(kind)) {
       startBreak(person.id, kind, null);
       pauseWork(person.id, kind);
+      logEvent("break_started", { block: person.id, kind, from: "alarm" });
       bus.emit("resting", { count: restingNow() });
     }
   } else if (action === "finish") {
     const outcome = finishWork(person.id);
-    if (outcome.ok) return redirect(`/enough/?session=${outcome.value.id}`, 303);
+    if (outcome.ok) {
+      logEvent("work_finished", { block: person.id, session: outcome.value.id });
+      return redirect(`/enough/?session=${outcome.value.id}`, 303);
+    }
   }
   return wantsJson ? Response.json({ ok: true }) : redirect("/working/", 303);
 };

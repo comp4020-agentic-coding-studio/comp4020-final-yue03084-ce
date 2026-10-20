@@ -32,6 +32,14 @@ because they don't depend on that stack.
   route. The username is never public: on the feed everyone is still "A block
   #N". *(Records kept only in a cookie are lost with the browser, and a done
   list has to last; markers also come back the next day. Decided 2026-10-20.)*
+- **Logs say who did what, never what they wrote.** Every request gets one
+  line, and every meaningful action an event line (`src/lib/log.ts`,
+  `src/middleware.ts`), tagged with the request id. Who is a block number.
+  Never a username, password, cookie or token, and never a description,
+  notes, hours, feeling or comment text. *(Crit 10 is narrated from the logs
+  alone, and the logs outlive it. A log line is read by whoever reads the
+  logs, so it holds nothing a person wouldn't want there. Decided
+  2026-10-21.)*
 - **No streaks, rankings or public totals.** Nothing that rewards keeping
   going or compares people. Counts for a person's own look back (how many
   times they checked a project) are allowed, shown only to them. *(These
@@ -143,6 +151,10 @@ with `curl` on 2026-10-12.
   send `sec-fetch-site: same-origin`, as a browser would, or it gets 403 for
   the wrong reason. *(The first run of the spec failed this way, not because
   the app was wrong.)*
+- `spec/log.test.ts` checks the log line format (key=value, request id).
+  Reading the live log: `mise exec -- flyctl logs -a comp4020-final-yue03084-ce`.
+  On 2026-10-21 two simulated people were run against a local build and the
+  log grepped for every private value they sent: none appeared.
 - Schema changes: edit `src/lib/schema.ts`, `pnpm db:generate`, commit what it
   writes to `drizzle/`. Migrations run at boot.
 

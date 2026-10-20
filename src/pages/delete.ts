@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { logEvent } from "../lib/log";
 import { deleteEnough } from "../lib/db";
 import { bus } from "../lib/events";
 import { signedInPerson } from "../lib/person";
@@ -13,6 +14,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const person = signedInPerson(cookies);
   if (!person || !Number.isInteger(enoughId)) return redirect("/mine/", 303);
   const outcome = deleteEnough(person.id, enoughId);
+  if (outcome.ok) logEvent("enough_deleted", { block: person.id, enough: enoughId, shared: outcome.value.wasShared });
+  else logEvent("delete_refused", { block: person.id, enough: enoughId });
   if (outcome.ok && outcome.value.wasShared) bus.emit("removed", { id: enoughId });
   return redirect("/mine/", 303);
 };

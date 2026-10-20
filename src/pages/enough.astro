@@ -1,4 +1,5 @@
 ---
+import { logEvent } from "../lib/log";
 import TimeBar from "../components/TimeBar.astro";
 import Page from "../layouts/Page.astro";
 import { declareEnough, publicEnough, restingNow, startBreak } from "../lib/db";
@@ -41,10 +42,12 @@ if (Astro.request.method === "POST" && person) {
   };
   const outcome = declareEnough(person.id, values);
   if (outcome.ok) {
+    logEvent("enough_called", { block: person.id, enough: outcome.value.id, shared: outcome.value.shared });
     // and then, if they picked one, straight into a break
     const next = field("next");
     if (isBreakKind(next)) {
       startBreak(person.id, next, outcome.value.id);
+      logEvent("break_started", { block: person.id, kind: next, after: outcome.value.id });
       bus.emit("resting", { count: restingNow() });
     }
     // only a shared one goes on the bus, and only its public shape
@@ -53,6 +56,7 @@ if (Astro.request.method === "POST" && person) {
     return Astro.redirect(outcome.value.shared ? "/" : "/mine/", 303);
   }
   refused = outcome.reason;
+  logEvent("enough_refused", { block: person.id, reason: outcome.reason });
   Astro.response.status = 400;
 }
 ---
