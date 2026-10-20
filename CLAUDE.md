@@ -125,6 +125,10 @@ with `curl` on 2026-10-12.
 - The login rate limit is in memory, per username. Tests that register reuse
   nothing between runs (each makes a fresh username), so a lockout from one
   test can't fail another.
+- A spec that checks a private value never reaches the stream must use a
+  value no timestamp or id could contain, and also check the field name is
+  absent. *(On 2026-10-20 CI went red because hours "7.5" matched inside a
+  createdAt of …27.579Z; nothing had leaked, but the deploy was blocked.)*
 - A spec that reads a count off the page must read the visible text, not a
   `data-*` attribute holding the template wording. *(The first breaks test
   failed this way on 2026-10-14; the app was right.)*

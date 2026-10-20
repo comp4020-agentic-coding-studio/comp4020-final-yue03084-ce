@@ -124,7 +124,7 @@ describe("what stays private", () => {
         author.declare({
           description: `essay ${tag}`,
           shared: "on",
-          hours: "7.5",
+          hours: "973.25",
           feeling: "More than I thought",
           notes,
         }),
@@ -132,7 +132,11 @@ describe("what stays private", () => {
       3_000,
     );
     expect(received).toContain(`essay ${tag}`);
-    for (const secret of [notes, "7.5", "More than I thought"]) expect(received).not.toContain(secret);
+    // the hours are a number no timestamp or id contains, and the card on the
+    // stream must have no hours field at all. (With "7.5" this failed once when
+    // a createdAt of …27.579Z happened to contain it; nothing had leaked.)
+    for (const secret of [notes, "973.25", "More than I thought"]) expect(received).not.toContain(secret);
+    expect(received).not.toMatch(/"(hours|spans|feeling|notes)"/);
 
     const someoneElse = browser();
     for (const page of ["/", "/mine/"]) {
@@ -141,7 +145,7 @@ describe("what stays private", () => {
     }
     const own = await author.get("/mine/");
     expect(own).toContain(notes);
-    expect(own).toContain("7.5");
+    expect(own).toContain("973.25");
   });
 });
 
