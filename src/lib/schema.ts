@@ -6,10 +6,27 @@ const createdAt = () =>
     .notNull()
     .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`);
 
-// Anyone who has written something. No account: the token lives in a cookie,
-// and the public name is derived from the id (see displayName in people.ts).
+// Anyone who has written something. No account needed: the token lives in a
+// cookie, and the public name is derived from the id (displayName in db.ts).
+// An account is optional: username and password_hash are added to this same
+// row, so registering never makes a new person. The username is only ever
+// shown to its owner. It's stored lower-cased, so uniqueness ignores case.
 export const people = sqliteTable("people", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  token: text("token").notNull().unique(),
+  username: text("username").unique(),
+  passwordHash: text("password_hash"),
+  createdAt: createdAt(),
+});
+
+// A signed-in browser: logging in issues a fresh token here and sets it as the
+// browser's person cookie; logging out deletes it. A person's original token
+// (people.token) keeps working for the browser that first made them.
+export const sessions = sqliteTable("sessions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  personId: integer("person_id")
+    .notNull()
+    .references(() => people.id),
   token: text("token").notNull().unique(),
   createdAt: createdAt(),
 });

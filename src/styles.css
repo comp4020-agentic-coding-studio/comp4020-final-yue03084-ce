@@ -686,3 +686,60 @@ fieldset.next small {
   font-size: 1.5rem;
   cursor: pointer;
 }
+
+/* accounts */
+footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+}
+
+.account-forms {
+  display: grid;
+  gap: 1rem;
+}
+
+.account-box {
+  padding: 1rem 1.2rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem 0.5rem 0.9rem 0.6rem;
+  background: var(--card);
+}
+
+.account-box h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.2rem;
+}
+
+.account-box .hint {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.warn {
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--c-clay);
+  background: var(--accent-soft);
+  font-size: 0.9375rem;
+}
+
+button.quiet {
+  min-height: 2.5rem;
+  padding: 0.3rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 1.2rem;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+button.quiet:hover {
+  border-color: var(--accent);
+}
+
+@media (min-width: 46rem) {
+  .account-forms {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}

@@ -1,0 +1,132 @@
+---
+import Page from "../layouts/Page.astro";
+import { hasRecords, logIn, logOut, register } from "../lib/accounts";
+import { displayName } from "../lib/db";
+import { PASSWORD_MIN, USERNAME_MAX, USERNAME_MIN } from "../lib/limits";
+import { clearPersonCookie, cookieToken, currentPerson, ensurePerson, setPersonCookie } from "../lib/person";
+
+// Optional accounts: save what you've written under a username and password,
+// or sign in from another browser. Nothing else on the site needs one. The
+// username is shown only here, to its owner.
+const secure = Astro.url.protocol === "https:";
+let refused: { form: "register" | "login"; reason: string } | null = null;
+let typed = "";
+
+if (Astro.request.method === "POST") {
+  // a POST with no form body (not one a page sends) is just ignored
+  const form = await Astro.request.formData().catch(() => new FormData());
+  const action = String(form.get("action") ?? "");
+  const username = String(form.get("username") ?? "");
+  const password = String(form.get("password") ?? "");
+  typed = username;
+
+  if (action === "register") {
+    const outcome = register(ensurePerson(Astro.cookies, secure), username, password);
+    if (outcome.ok) return Astro.redirect("/account/", 303);
+    refused = { form: "register", reason: outcome.reason };
+  } else if (action === "login") {
+    const outcome = logIn(username, password);
+    if (outcome.ok) {
+      setPersonCookie(Astro.cookies, outcome.value.token, secure);
+      return Astro.redirect("/mine/", 303);
+    }
+    refused = { form: "login", reason: outcome.reason };
+  } else if (action === "logout") {
+    const token = cookieToken(Astro.cookies);
+    if (token) logOut(token);
+    clearPersonCookie(Astro.cookies);
+    return Astro.redirect("/account/", 303);
+  }
+  if (refused) Astro.response.status = 400;
+}
+
+const person = currentPerson(Astro.cookies);
+const signedIn = Boolean(person?.username);
+// logging in here would switch away from what this browser wrote without an account
+const leavesBehind = person && !person.username && hasRecords(person);
+---
+
+<Page title="Account">
+  <h1>Save or sign in</h1>
+  <p class="hint">
+    You don't need an account. It only lets you see what you've written from another browser or device.
+  </p>
+
+  {
+    signedIn && person ? (
+      <section class="account-box">
+        <p>
+          Signed in as <strong>{person.username}</strong>. On the feed you still show as {displayName(person.id)}; your
+          username is never shown to anyone else.
+        </p>
+        <form method="post" class="inline-form">
+          <input type="hidden" name="action" value="logout" />
+          <button type="submit" class="quiet">Log out</button>
+        </form>
+      </section>
+    ) : (
+      <div class="account-forms">
+        <section class="account-box" aria-labelledby="register-h">
+          <h2 id="register-h">Save what you've written</h2>
+          <p class="hint">
+            {person
+              ? `Everything you've written as ${displayName(person.id)} stays yours, under this username.`
+              : "Pick a username and password. You can start writing before or after."}
+          </p>
+          {refused?.form === "register" && (
+            <p class="refused" role="alert">
+              {refused.reason}
+            </p>
+          )}
+          <form method="post" class="stack">
+            <input type="hidden" name="action" value="register" />
+            <label>
+              Username <small>({USERNAME_MIN}–{USERNAME_MAX} letters, numbers, _ or -)</small>
+              <input
+                name="username"
+                required
+                minlength={USERNAME_MIN}
+                maxlength={USERNAME_MAX}
+                pattern="[A-Za-z0-9_\-]+"
+                autocomplete="username"
+                value={refused?.form === "register" ? typed : ""}
+              />
+            </label>
+            <label>
+              Password <small>(at least {PASSWORD_MIN} characters)</small>
+              <input name="password" type="password" required minlength={PASSWORD_MIN} autocomplete="new-password" />
+            </label>
+            <p class="hint">There's no password reset, so keep it somewhere safe.</p>
+            <button type="submit">Save</button>
+          </form>
+        </section>
+
+        <section class="account-box" aria-labelledby="login-h">
+          <h2 id="login-h">Sign in</h2>
+          {leavesBehind && (
+            <p class="warn">
+              What you wrote in this browser without an account stays with it; logging in switches you to your account.
+            </p>
+          )}
+          {refused?.form === "login" && (
+            <p class="refused" role="alert">
+              {refused.reason}
+            </p>
+          )}
+          <form method="post" class="stack">
+            <input type="hidden" name="action" value="login" />
+            <label>
+              Username
+              <input name="username" required autocomplete="username" value={refused?.form === "login" ? typed : ""} />
+            </label>
+            <label>
+              Password
+              <input name="password" type="password" required autocomplete="current-password" />
+            </label>
+            <button type="submit">Sign in</button>
+          </form>
+        </section>
+      </div>
+    )
+  }
+</Page>

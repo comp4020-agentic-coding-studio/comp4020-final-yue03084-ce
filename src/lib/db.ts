@@ -17,7 +17,7 @@ import {
 } from "./limits";
 import { cleanNotes } from "./notes";
 import { hoursIn, parseSpans, spansText } from "./spans";
-import { breaks, comments, type Enough, enoughs, type Person, people, replies, reports, urges } from "./schema";
+import { breaks, comments, type Enough, enoughs, type Person, people, replies, reports, sessions, urges } from "./schema";
 
 // One SQLite file is the app's whole persistent state. In production
 // DATA_DIR is the machine's volume (/data), which is how state survives a
@@ -41,8 +41,13 @@ export type { Enough, Person };
 // does let people tell each other apart.
 export const displayName = (personId: number) => `A block #${personId}`;
 
+// The cookie holds either the token a person was made with, or a session
+// token from logging in (accounts.ts).
 export function personByToken(token: string): Person | undefined {
-  return db.select().from(people).where(eq(people.token, token)).get();
+  const own = db.select().from(people).where(eq(people.token, token)).get();
+  if (own) return own;
+  const session = db.select().from(sessions).where(eq(sessions.token, token)).get();
+  return session && db.select().from(people).where(eq(people.id, session.personId)).get();
 }
 
 export function createPerson(token: string): Person {

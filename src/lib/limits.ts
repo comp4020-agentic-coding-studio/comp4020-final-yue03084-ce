@@ -75,3 +75,11 @@ export const BREAK_MAX_MINUTES = 120;
 export const URGE_CHOICES = { let_go: "Okay, I'll leave it", checked: "I'll check it anyway" } as const;
 export type UrgeChoice = keyof typeof URGE_CHOICES;
 export const isUrgeChoice = (key: string): key is UrgeChoice => Object.hasOwn(URGE_CHOICES, key);
+
+// Accounts (optional). Usernames are 3–30 letters, digits, _ or -.
+export const USERNAME_MIN = 3;
+export const USERNAME_MAX = 30;
+export const PASSWORD_MIN = 8;
+// Failed logins allowed per username in a window, before refusing for a while.
+export const LOGIN_ATTEMPTS = 5;
+export const LOGIN_WINDOW_MINUTES = 15;
