@@ -23,8 +23,15 @@ there to speak for you at that moment.
 
 ## What's there now
 
-You can call something enough, choose whether to share it, see what others
-share appear live without reloading, and reply with a preset response.
+You can call something enough, with a one-line description, and choose
+whether to share it. Just for you, you can colour in the hours you worked on a
+time bar with a crayon, say how it felt, and note what you did and checked.
+Others see what's shared appear live, and can reply with a preset response or a
+short comment; three reports hide a comment. You can take a break: the feed
+shows how many people are resting and, after a shared "enough", where they
+went, never for how long. On Mine, "I want to check it again" shows what you
+wrote when you stopped, then lets you leave it or check anyway. You can delete
+anything you've written.
 
 ## Where the idea came from
 

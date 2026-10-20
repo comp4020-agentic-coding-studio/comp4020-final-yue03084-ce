@@ -18,21 +18,22 @@ because they don't depend on that stack.
   *(The app is for perfectionists who pace themselves by the people around
   them; seeing others finish pushes some people to work harder, which is the
   opposite of the point. Decided 2026-10-12.)*
-- **Effort and check records are private.** How much someone put in, which
-  parts they checked, and each time they went back to check are visible only
-  to that person. What's public is the "enough" itself, a one-line
-  description of the thing (with a length limit), being away right now, and
-  replies. *(Same reason: these are the numbers people compare. Decided
-  2026-10-12.)*
+- **Effort and check records are private.** How much someone put in (hours,
+  the coloured-in spans), how it felt, which parts they checked, and each time
+  they wanted to check again are visible only to that person. What's public is
+  the "enough" itself, a one-line description, replies and comments, how many
+  people are on a break, and what someone went to do after a shared "enough".
+  Never how long a break lasted. *(Same reason: these are the numbers people
+  compare. Decided 2026-10-12; breaks added 2026-10-14.)*
 - **No streaks, rankings or public totals.** Nothing that rewards keeping
   going or compares people. Counts for a person's own look back (how many
   times they checked a project) are allowed, shown only to them. *(These
   features turn a record into another source of anxiety. Decided 2026-10-11.)*
-- **Moderation numbers live in one place.** The reply length limit (about 30
-  characters) and how many reports hide a reply (3) are
-  each one constant, read by the page, the server check and any message about
-  them. *(A reply limit enforced in two places will drift; see "One fact, one
-  piece of code".)*
+- **Numbers live in one place.** The comment length limit (30 characters),
+  how many reports hide a comment (3), and how long an unended break counts
+  as going (120 minutes) are each one constant in `src/lib/limits.ts`, read
+  by the page, the server and any message about them. *(A limit enforced in
+  two places will drift; see "One fact, one piece of code".)*
 
 ## The brief, verbatim
 
@@ -100,7 +101,14 @@ with `curl` on 2026-10-12.
   Docker image it built.
 - `spec/invariants.test.ts` is the course's (`/` answers, `/readme/` has every
   README heading in the server's HTML): keep it. `spec/enough.test.ts` is
-  ours: the live push, what stays private, the description limit.
+  ours (21 tests on 2026-10-14): the live push; what stays private (unshared
+  enoughs, hours, spans, feeling, notes, rechecks); the length limits; notes
+  sanitising; time spans and crayons; owner-only delete that leaves every
+  feed live; comments live, and hidden at `REPORTS_TO_HIDE`; the resting
+  count live and a break never showing how long.
+- A spec that reads a count off the page must read the visible text, not a
+  `data-*` attribute holding the template wording. *(The first breaks test
+  failed this way on 2026-10-14; the app was right.)*
 - Astro refuses a cross-site form POST (403). A bare `fetch` in a spec has to
   send `sec-fetch-site: same-origin`, as a browser would, or it gets 403 for
   the wrong reason. *(The first run of the spec failed this way, not because
@@ -118,6 +126,10 @@ with `curl` on 2026-10-12.
 - Never show the contents of `mise.local.toml` or any token in command output.
 - Changing live data (deleting data, or writing through a remote shell) needs
   my permission first.
+- Keep the README's "What's there now" and the Honest notes in step with
+  what's shipped. *(On 2026-10-14 it still described the night-before version
+  after six features had gone live, and it named reporting before reporting
+  existed.)*
 
 ## Keeping this file honest
 
