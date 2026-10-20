@@ -26,21 +26,31 @@ const when = (iso: string) =>
 
 <Page title="Mine">
   <h1>What you put down</h1>
-  {person && <p>On the feed you show as {displayName(person.id)}. Only you can see this page.</p>}
-  <p class="hint">
-    {
-      person?.username ? (
-        <>
-          Signed in as {person.username}. <a href="/account/">Account</a>
-        </>
-      ) : (
-        <>
-          This lives in this browser only. <a href="/account/">Create an account</a> to keep it and to write more.
-        </>
-      )
-    }
-  </p>
-  {rows.length === 0 && <p>Nothing yet. <a href="/enough/">Call something enough.</a></p>}
+  {
+    person?.username ? (
+      <p class="hint">
+        Signed in as <strong>{person.username}</strong> · on the feed you show as {displayName(person.id)}. Only you can
+        see this page. <a href="/account/">Account</a>
+      </p>
+    ) : (
+      /* not signed in: say plainly that this page needs an account, and give
+         both ways in. Someone with records from before accounts (a cookie
+         only) still sees them below, with a nudge to keep them. */
+      <section class="account-box mine-gate">
+        <p>This page holds everything you've called enough, just for you. Sign in to see it.</p>
+        <div class="mine-gate-actions">
+          <a class="button" href="/account/#login">Sign in</a>
+          <a class="button quiet" href="/account/#register">Create an account</a>
+        </div>
+        {rows.length > 0 && (
+          <p class="hint">
+            What's below was written in this browser before accounts. Create an account here to keep it with you.
+          </p>
+        )}
+      </section>
+    )
+  }
+  {person?.username && rows.length === 0 && <p>Nothing yet. <a href="/enough/">Call something enough.</a></p>}
   <ol class="feed mine">
     {
       rows.map((e) => (

@@ -761,3 +761,20 @@ button.quiet:hover {
   background: transparent;
   border-color: var(--line);
 }
+
+/* Mine without an account: two clear ways in */
+.mine-gate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.25rem 0 0.25rem;
+}
+
+.button.quiet {
+  background: var(--card);
+  color: var(--accent);
+}
+
+.button.quiet:hover {
+  background: var(--accent-soft);
+}

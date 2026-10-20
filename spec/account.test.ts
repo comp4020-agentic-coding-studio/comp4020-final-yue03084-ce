@@ -87,7 +87,8 @@ describe("accounts", () => {
     expect(res.status).toBe(303);
     const mine = await second.get("/mine/");
     expect(mine).toContain(`elsewhere ${tag}`);
-    expect(mine).toContain(`Signed in as ${username}`);
+    // the visible text: the username sits in its own <strong>
+    expect(mine.replace(/<[^>]+>/g, "")).toContain(`Signed in as ${username}`);
   });
 
   it("gives the same refusal for an unknown username and a wrong password", async () => {

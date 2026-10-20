@@ -68,7 +68,7 @@ const leavesBehind = person && !person.username && hasRecords(person);
       </section>
     ) : (
       <div class="account-forms">
-        <section class="account-box" aria-labelledby="register-h">
+        <section class="account-box" id="register" aria-labelledby="register-h">
           <h2 id="register-h">Create an account</h2>
           <p class="hint">
             {person
@@ -103,7 +103,7 @@ const leavesBehind = person && !person.username && hasRecords(person);
           </form>
         </section>
 
-        <section class="account-box" aria-labelledby="login-h">
+        <section class="account-box" id="login" aria-labelledby="login-h">
           <h2 id="login-h">Sign in</h2>
           {leavesBehind && (
             <p class="warn">
