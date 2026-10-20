@@ -25,6 +25,13 @@ because they don't depend on that stack.
   people are on a break, and what someone went to do after a shared "enough".
   Never how long a break lasted. *(Same reason: these are the numbers people
   compare. Decided 2026-10-12; breaks added 2026-10-14.)*
+- **Writing needs an account; reading doesn't.** Anyone can read the feed,
+  the resting count and comments. Calling something enough, replying,
+  commenting, reporting, a break, a recheck and deleting all need an account,
+  checked on the server by one function (`signedInPerson`) in every write
+  route. The username is never public: on the feed everyone is still "A block
+  #N". *(Records kept only in a cookie are lost with the browser, and a done
+  list has to last; markers also come back the next day. Decided 2026-10-20.)*
 - **No streaks, rankings or public totals.** Nothing that rewards keeping
   going or compares people. Counts for a person's own look back (how many
   times they checked a project) are allowed, shown only to them. *(These
@@ -101,13 +108,15 @@ with `curl` on 2026-10-12.
   Docker image it built.
 - `spec/invariants.test.ts` is the course's (`/` answers, `/readme/` has every
   README heading in the server's HTML): keep it. `spec/enough.test.ts` is
-  ours (21 tests on 2026-10-14): the live push; what stays private (unshared
+  ours (23 tests on 2026-10-20): the live push; what stays private (unshared
   enoughs, hours, spans, feeling, notes, rechecks); the length limits; notes
   sanitising; time spans and crayons; owner-only delete that leaves every
   feed live; comments live, and hidden at `REPORTS_TO_HIDE`; the resting
-  count live and a break never showing how long. `spec/account.test.ts` (8
-  tests, 2026-10-20) checks the optional accounts: registering keeps the same
-  person and their records; signing in elsewhere is that person; the same
+  count live and a break never showing how long; and without an account,
+  reading works but every write is refused. Writers in specs register first
+  (`signedIn()`); `browser()` alone is a reader. `spec/account.test.ts` (8
+  tests, 2026-10-20) checks accounts: registering lets you write and what you
+  write is yours; signing in elsewhere is that person; the same
   refusal for an unknown user and a wrong password; usernames unique in any
   case; `PASSWORD_MIN`; the username and password never on the feed or the
   stream; logout empties that browser's Mine; `LOGIN_ATTEMPTS` failures lock
