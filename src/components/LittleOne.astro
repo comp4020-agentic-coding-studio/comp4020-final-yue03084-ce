@@ -40,8 +40,14 @@ const pose = view.state === "resting" ? (view.restKind === "nap" ? "nap" : view.
   data-yawning={String(t.yawning)}
   style={`--speed: ${t.speed}; --block: ${t.block}; --carry-seconds: ${CARRY_SECONDS}s`}
 >
-  <svg viewBox="0 0 300 175" role="presentation" focusable="false">
+  <svg viewBox="0 70 300 105" role="presentation" focusable="false">
     <line class="ground" x1="10" y1="165.5" x2="290" y2="165.5" />
+    <!-- the pile it fetches blocks from -->
+    <g class="pile">
+      <rect class="tblock c-mist" x="22" y="154" width="22" height="10" rx="2" transform="rotate(-3 33 159)" />
+      <rect class="tblock c-sage" x="26" y="144" width="18" height="10" rx="2" transform="rotate(4 35 149)" />
+      <rect class="tblock c-rose" x="44" y="155" width="16" height="9" rx="2" transform="rotate(2 52 159)" />
+    </g>
     {
       tower.map((b) => (
         <rect
@@ -173,10 +179,11 @@ const pose = view.state === "resting" ? (view.restKind === "nap" ? "nap" : view.
     animation: carry calc(var(--carry-seconds) / var(--speed)) ease-in-out infinite;
   }
 
+  /* from the pile (left) to the tower and back */
   @keyframes carry {
-    0%, 8% { transform: translateX(0); }
-    45%, 55% { transform: translateX(46px); }
-    92%, 100% { transform: translateX(0); }
+    0%, 8% { transform: translateX(-12px); }
+    45%, 55% { transform: translateX(52px); }
+    92%, 100% { transform: translateX(-12px); }
   }
 
   /* the block it carries is put down at the tower and picked up again */
