@@ -33,6 +33,13 @@ went, never for how long. On Mine, "I want to check it again" shows what you
 wrote when you stopped, then lets you leave it or check anyway. You can delete
 anything you've written.
 
+On Working on it, you can start a stretch of work and set an Enough alarm,
+after a number of minutes or at a time of day. A little one builds a crooked
+tower alongside you. When the alarm goes, it gets sleepy: it slows down,
+carries smaller blocks and yawns, and a soft reminder asks whether to go and
+rest or take ten more minutes. Finishing takes you to Call it enough with the
+time already coloured in.
+
 ## Where the idea came from
 
 - A note on my bedroom wall: "Live with imperfection" (与不完美共存). Whenever
@@ -54,3 +61,5 @@ anxiety.
   harder. This app is designed for people like me.
 - Community culture can't be guaranteed by restrictions. Reporting is only a
   backstop.
+- The little one's slowing down is a metaphor I chose for diminishing returns,
+  not something measured. The numbers behind it are in `src/lib/limits.ts`.
