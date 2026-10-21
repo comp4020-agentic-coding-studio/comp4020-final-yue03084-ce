@@ -140,9 +140,17 @@ const css = `${paletteCss(".little-one")}\n${frameCss}`;
   .page::after {
     content: "";
     position: absolute;
-    width: 3.2rem;
-    height: 1.1rem;
-    background: rgb(231 214 178 / 0.75);
+    width: 3.8rem;
+    height: 1.3rem;
+    /* wine-red washi tape with pale polka dots */
+    background-color: rgb(122 38 52 / 0.88);
+    background-image:
+      radial-gradient(circle, rgb(250 236 228 / 0.9) 0 1.8px, transparent 2.3px),
+      radial-gradient(circle, rgb(250 236 228 / 0.9) 0 1.8px, transparent 2.3px);
+    background-size: 12px 12px;
+    background-position:
+      0 0,
+      6px 6px;
     box-shadow: 0 1px 1px rgb(58 53 47 / 0.08);
   }
 
