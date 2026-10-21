@@ -54,6 +54,10 @@ export const PALETTE = {
   X: "#6f8798",
   z: "#8fb2cf",
   Z: "#fbfbf6",
+  // the umbrella: wine red to match the tape, its shade, and the handle
+  E: "#9a3c4c",
+  W: "#6e2533",
+  C: "#c9707c",
   // the blocks: four colours, each with a light top and a dark side
   "1": "#9fb48f",
   "2": "#d9a3a0",
@@ -100,6 +104,9 @@ export const SKIES = {
     w: "#e8e0c2",
     n: "#6a5236",
     N: "#46351f",
+    E: "#6e3440",
+    W: "#4c1f29",
+    C: "#8e5560",
     v: "#6f8a5c",
     q: "#4f6b40",
     Q: "#3a5030",
@@ -149,7 +156,8 @@ export function paletteCss(scope: string): string {
 }
 
 // Class names shouldn't lean on case, so an upper-case ink gets a suffix:
-// "h" and "H" become "h" and "h2". Digits stay as they are, after a "b".
+// "h" and "H" become "h" and "h2". Digits stay as they are, after a "b" (so
+// "B" is never an ink: it would share "b2" with the block colour "2").
 const code = (ink: string) => (/[A-Z]/.test(ink) ? `${ink.toLowerCase()}2` : /[0-9]/.test(ink) ? `b${ink}` : ink);
 
 // A grid of characters as SVG squares, one rect per horizontal run of one

@@ -284,5 +284,20 @@ for (const [name, rows] of Object.entries(PLANT)) {
 // a watering can, 9×6, set down after watering
 export const CAN = ["..XX.....", ".X..X....", "xxxxxx..X", "xxxxxxXX.", "xxxxxx...", ".XXXX...."];
 
+// An umbrella for rain, 18×9: a wine-red canopy with a highlight and
+// scalloped edge, and a handle running down to where its hand would be. The
+// page lays it over whatever frame the little one is in.
+export const UMBRELLA = [
+  "........nn........",
+  "......WEEEEW......",
+  "....WECCEEEEEW....",
+  "..WECCEEEEEEEEEW..",
+  ".WECEEEEEEEEEEEEW.",
+  "WEEEEEEEEEEEEEEEEW",
+  "W.WW.WW.nW.WW.WW.W",
+  "........n.........",
+  "........n.........",
+];
+
 // a little "z", three by three, rising off a nap
 export const ZED = ["ooo", ".o.", "ooo"];
