@@ -29,9 +29,11 @@ time bar with a crayon, say how it felt, and note what you did and checked.
 Others see what's shared appear live, and can reply with a preset response or a
 short comment; three reports hide a comment. You can take a break: the feed
 shows how many people are resting and, after a shared "enough", where they
-went, never for how long. On Mine, "I want to check it again" shows what you
-wrote when you stopped, then lets you leave it or check anyway. You can delete
-anything you've written.
+went, never for how long. Mine has two pages: Looking back adds up a day, week
+or month for you alone (what you called enough, how it felt, when you worked,
+how often you wanted to check again), and Each one keeps every record in full.
+There, "I want to check it again" shows what you wrote when you stopped, then
+lets you leave it or check anyway. You can delete anything you've written.
 
 On Working on it, you can start a stretch of work and set an Enough alarm,
 after a number of minutes or at a time of day. A little one builds a crooked
