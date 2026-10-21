@@ -17,5 +17,5 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     const outcome = recordUrge(person.id, enoughId, choice);
     logEvent(outcome.ok ? "recheck" : "recheck_refused", { block: person.id, enough: enoughId, choice });
   }
-  return redirect("/mine/", 303);
+  return redirect("/mine/all/", 303);
 };

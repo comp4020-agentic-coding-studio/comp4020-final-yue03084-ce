@@ -116,12 +116,16 @@ with `curl` on 2026-10-12.
   Docker image it built.
 - `spec/invariants.test.ts` is the course's (`/` answers, `/readme/` has every
   README heading in the server's HTML): keep it. `spec/enough.test.ts` is
-  ours (23 tests on 2026-10-20): the live push; what stays private (unshared
+  ours: the live push; what stays private (unshared
   enoughs, hours, spans, feeling, notes, rechecks); the length limits; notes
   sanitising; time spans and crayons; owner-only delete that leaves every
   feed live; comments live, and hidden at `REPORTS_TO_HIDE`; the resting
-  count live and a break never showing how long; and without an account,
-  reading works but every write is refused. Writers in specs register first
+  count live and a break never showing how long; without an account,
+  reading works but every write is refused; and Looking back (26 tests on
+  2026-10-21). Mine is two pages: `/mine/` is Looking back (a day, week or
+  month added up for the owner, `src/lib/summary.ts`, never compared with
+  another period) and `/mine/all/` is Each one, the full cards; specs that
+  check private fields or act on a card read `/mine/all/`. Writers in specs register first
   (`signedIn()`); `browser()` alone is a reader. `spec/account.test.ts` (8
   tests, 2026-10-20) checks accounts: registering lets you write and what you
   write is yours; signing in elsewhere is that person; the same

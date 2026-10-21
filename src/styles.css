@@ -786,3 +786,146 @@ button.quiet:hover {
   background: var(--card);
   border-radius: 0 0.4rem 0.4rem 0;
 }
+
+/* Mine's two pages, and the periods on Looking back: tabs as underlined words, like the site's nav */
+.subnav,
+.periods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed var(--line-strong);
+}
+
+.subnav a,
+.periods a {
+  padding-block: 0.3rem;
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.subnav a:hover,
+.periods a:hover {
+  color: var(--accent);
+}
+
+.subnav a[aria-current="page"],
+.periods a[aria-current="page"] {
+  color: var(--fg);
+  font-weight: 600;
+  text-decoration: underline wavy var(--line-strong);
+  text-underline-offset: 0.35em;
+}
+
+.periods {
+  border-bottom: 0;
+  margin-bottom: 0.25rem;
+  font-size: 0.9375rem;
+}
+
+/* Looking back: one sheet of paper for the whole period */
+.lookback {
+  padding: 1rem 1.25rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem 0.5rem 0.8rem 0.55rem;
+  background: var(--card);
+  box-shadow: 0 1px 0 var(--line), 0 6px 14px -10px rgb(90 70 50 / 0.25);
+}
+
+.period-step {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.period-step h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  text-align: center;
+}
+
+.period-step a {
+  white-space: nowrap;
+}
+
+.period-step a:last-child {
+  justify-self: end;
+}
+
+.lookback h3 {
+  margin: 1.25rem 0 0.35rem;
+  font-family: var(--font-hand);
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.lookback-list,
+.feelings {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lookback-list li {
+  padding: 0.3rem 0;
+  border-bottom: 1px dotted var(--line);
+  overflow-wrap: anywhere;
+}
+
+.lookback-list a {
+  font-family: var(--font-head);
+  color: var(--fg);
+  text-decoration-color: var(--line-strong);
+}
+
+.feeling-dots {
+  display: inline-block;
+  min-width: 1.5rem;
+  color: var(--c-rose);
+  letter-spacing: 0.1em;
+}
+
+/* the day's half-hours, shaded by how often each was coloured in */
+.daystrip {
+  max-width: 32rem;
+}
+
+.daystrip-cells {
+  display: grid;
+  grid-template-columns: repeat(48, 1fr);
+  height: 1.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.4rem 0.25rem 0.45rem 0.3rem;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.daystrip-cell {
+  background: var(--c-clay);
+  opacity: calc(var(--shade) * 0.85);
+}
+
+.daystrip-hours {
+  position: relative;
+  height: 1.1rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.daystrip-hours span {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.daystrip-hours span:first-child {
+  transform: none;
+}
+
+.daystrip-hours span:last-child {
+  transform: translateX(-100%);
+}

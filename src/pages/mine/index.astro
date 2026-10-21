@@ -1,0 +1,141 @@
+---
+import MineTop from "../../components/MineTop.astro";
+import Page from "../../layouts/Page.astro";
+import { mine, myUrges } from "../../lib/db";
+import { DAY_MINUTES, SLOT_MINUTES } from "../../lib/limits";
+import { currentPerson } from "../../lib/person";
+import { roughly } from "../../lib/spans";
+import {
+  DEFAULT_PERIOD,
+  isPeriod,
+  localDate,
+  PERIODS,
+  type Period,
+  periodLabel,
+  periodRange,
+  summarise,
+  TIME_ZONE,
+} from "../../lib/summary";
+
+// Looking back: one day, week or month of this person's own enoughs, added up
+// for them alone. Like Each one, it reads only their own rows, by their cookie.
+const person = currentPerson(Astro.cookies);
+const rows = person ? mine(person.id) : [];
+const asked = Astro.url.searchParams.get("period") ?? "";
+const period: Period = isPeriod(asked) ? asked : DEFAULT_PERIOD;
+const back = Math.max(0, Math.floor(Number(Astro.url.searchParams.get("back")) || 0));
+const range = periodRange(period, back, localDate(Date.now()));
+const summary = summarise(rows, person ? myUrges(person.id) : [], range);
+const link = (p: Period, b: number) => `/mine/?period=${p}${b ? `&back=${b}` : ""}`;
+// "today", "this week", "that month": how the sentences below name the period
+const noun = PERIODS[period].toLowerCase();
+const thePeriod = period === "day" && back === 0 ? "today" : `${back === 0 ? "this" : "that"} ${noun}`;
+// the busiest half-hour is the darkest; the rest are shaded against it
+const busiest = Math.max(1, ...summary.slots);
+const hourMarks = [0, 6, 12, 18, 24];
+const slotLabel = (i: number) => {
+  const m = i * SLOT_MINUTES;
+  return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`;
+};
+const day = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-AU", { timeZone: TIME_ZONE, weekday: "short", day: "numeric", month: "short" });
+---
+
+<Page title="Mine">
+  <h1>What you put down</h1>
+  <MineTop person={person} hasRows={rows.length > 0} />
+  {
+    (person?.username || rows.length > 0) && (
+      <section class="lookback">
+        <nav class="periods" aria-label="How far to look back">
+          {(Object.entries(PERIODS) as [Period, string][]).map(([p, label]) => (
+            <a href={link(p, 0)} aria-current={p === period ? "page" : undefined}>
+              {label}
+            </a>
+          ))}
+        </nav>
+        <div class="period-step">
+          <a href={link(period, back + 1)}>← Earlier</a>
+          <h2>{periodLabel(period, range)}</h2>
+          {back > 0 ? <a href={link(period, back - 1)}>Later →</a> : <span />}
+        </div>
+
+        {summary.enoughs.length === 0 ? (
+          <p class="hint">Nothing called enough {thePeriod}.</p>
+        ) : (
+          <>
+            <h3>What you called enough</h3>
+            <ul class="lookback-list">
+              {summary.enoughs.map((e) => (
+                <li>
+                  <a href={`/mine/all/#enough-${e.id}`}>{e.description}</a>{" "}
+                  <time class="when" datetime={e.createdAt}>
+                    {day(e.createdAt)}
+                  </time>
+                </li>
+              ))}
+            </ul>
+
+            {summary.unsaid < summary.enoughs.length && (
+              <>
+                <h3>How it felt</h3>
+                <ul class="feelings">
+                  {summary.feelings
+                    .filter((f) => f.n > 0)
+                    .map((f) => (
+                      <li>
+                        <span class="feeling-dots" aria-hidden="true">
+                          {"●".repeat(f.n)}
+                        </span>{" "}
+                        {f.feeling} <span class="when">×{f.n}</span>
+                      </li>
+                    ))}
+                </ul>
+              </>
+            )}
+
+            {summary.hours > 0 && (
+              <>
+                <h3>When you worked</h3>
+                <p class="hint">
+                  {roughly(summary.hours).replace(/^a/, "A")} in all. The darker a half-hour, the more often it was
+                  coloured in.
+                </p>
+                <div class="daystrip">
+                  <div class="daystrip-cells">
+                    {summary.slots.map((n, i) => (
+                      <span
+                        class="daystrip-cell"
+                        style={`--shade: ${n / busiest}`}
+                        title={n ? `${slotLabel(i)}, ${n}×` : undefined}
+                      />
+                    ))}
+                  </div>
+                  <div class="daystrip-hours" aria-hidden="true">
+                    {hourMarks.map((h) => (
+                      <span style={`left: ${((h * 60) / DAY_MINUTES) * 100}%`}>{h}</span>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {summary.urges.wanted > 0 && (
+          <>
+            <h3>Wanting to check again</h3>
+            <p>
+              You wanted to go back and check something {summary.urges.wanted}{" "}
+              {summary.urges.wanted === 1 ? "time" : "times"} {thePeriod}, and let it go {summary.urges.letGo} of
+              those.
+            </p>
+          </>
+        )}
+        <p class="hint">
+          <a href="/mine/all/">See each one in full</a>
+        </p>
+      </section>
+    )
+  }
+</Page>

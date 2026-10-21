@@ -1,5 +1,6 @@
 import { describe, expect, inject, it } from "vitest";
 import { DESCRIPTION_MAX, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE } from "../src/lib/limits.ts";
+import { periodLabel, periodRange, summarise } from "../src/lib/summary.ts";
 
 // The product rules that can be checked, against the running app: a shared
 // enough reaches every open page live, and nothing private (an unshared
@@ -112,7 +113,7 @@ describe("what stays private", () => {
     const received = await readStream(() => author.declare({ description: `draft ${tag}` }), tag, 1_500);
     expect(received).not.toContain(tag);
     expect(await browser().get("/")).not.toContain(tag);
-    expect(await author.get("/mine/")).toContain(`draft ${tag}`);
+    expect(await author.get("/mine/all/")).toContain(`draft ${tag}`);
   });
 
   it("hours, feeling and notes reach only their owner, even when shared", async () => {
@@ -139,11 +140,11 @@ describe("what stays private", () => {
     expect(received).not.toMatch(/"(hours|spans|feeling|notes)"/);
 
     const someoneElse = browser();
-    for (const page of ["/", "/mine/"]) {
+    for (const page of ["/", "/mine/", "/mine/all/"]) {
       const html = await someoneElse.get(page);
       expect(html).not.toContain(notes);
     }
-    const own = await author.get("/mine/");
+    const own = await author.get("/mine/all/");
     expect(own).toContain(notes);
     expect(own).toContain("973.25");
   });
@@ -178,7 +179,7 @@ describe("formatted notes", () => {
         `<script>alert(1)</script><p><img src=x onerror="alert(2)"><span style="color:red" class="c-neon">x</span><a href="javascript:alert(3)">link</a></p>`,
       ].join(""),
     });
-    const html = await author.get("/mine/");
+    const html = await author.get("/mine/all/");
     expect(html).toContain(`<strong>bold ${tag}</strong>`);
     expect(html).toContain("<em>italic</em>");
     expect(html).toContain('<span class="c-sage">sage</span>');
@@ -196,7 +197,7 @@ describe("time spans", () => {
     const author = await signedIn();
     const res = await author.declare({ description: `spans ${tag}`, shared: "on", hours: "99", spans: "540-690,840-900" });
     expect(res.status).toBe(303);
-    const own = await author.get("/mine/");
+    const own = await author.get("/mine/all/");
     expect(own).toContain("about 3½ hours");
     expect(own).toContain("9:00–11:30");
     expect(own).toContain("14:00–15:00");
@@ -210,7 +211,7 @@ describe("time spans", () => {
     const author = await signedIn();
     await author.declare({ description: `sage ${marker()}`, spans: "540-600", crayon: "sage" });
     await author.declare({ description: `neon ${marker()}`, spans: "600-660", crayon: "neon" });
-    const own = await author.get("/mine/");
+    const own = await author.get("/mine/all/");
     expect(own).toContain("--crayon: var(--c-sage)");
     expect(own).not.toContain("neon)");
   });
@@ -236,11 +237,11 @@ describe("deleting", () => {
     const tag = marker();
     const author = await signedIn();
     await author.declare({ description: `gone ${tag}`, shared: "on" });
-    const id = idOf(await author.get("/mine/"), `gone ${tag}`);
+    const id = idOf(await author.get("/mine/all/"), `gone ${tag}`);
     const received = await readStream(() => author.remove(id), `"id":${id}`, 3_000);
     expect(received).toContain("event: removed");
     expect(await browser().get("/")).not.toContain(`gone ${tag}`);
-    expect(await author.get("/mine/")).not.toContain(`gone ${tag}`);
+    expect(await author.get("/mine/all/")).not.toContain(`gone ${tag}`);
   });
 
   it("shrugs off a POST with no form body instead of erroring", async () => {
@@ -254,7 +255,7 @@ describe("deleting", () => {
     const tag = marker();
     const author = await signedIn();
     await author.declare({ description: `kept ${tag}`, shared: "on" });
-    const id = idOf(await author.get("/mine/"), `kept ${tag}`);
+    const id = idOf(await author.get("/mine/all/"), `kept ${tag}`);
     await (await signedIn()).remove(id);
     expect(await browser().get("/")).toContain(`kept ${tag}`);
   });
@@ -315,7 +316,7 @@ describe("comments", () => {
     const received = await readStream(() => last.report(cid), `reported ${tag}`, 3_000);
     expect(received).not.toContain(`unkind ${tag}`);
     expect(await browser().get("/")).not.toContain(`unkind ${tag}`);
-    expect(await author.get("/mine/")).not.toContain(`unkind ${tag}`);
+    expect(await author.get("/mine/all/")).not.toContain(`unkind ${tag}`);
   });
 });
 
@@ -364,15 +365,85 @@ describe("rechecking", () => {
     const tag = marker();
     const author = await signedIn();
     await author.declare({ description: `recheck ${tag}`, shared: "on", notes: `<p>checked refs ${tag}</p>` });
-    const mineHtml = await author.get("/mine/");
+    const mineHtml = await author.get("/mine/all/");
     const id = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?recheck ${tag}`).exec(mineHtml)?.[1] ?? "";
     expect(mineHtml).toContain(`checked refs ${tag}`);
     await author.urge(id, "let_go");
     await author.urge(id, "checked");
     await (await signedIn()).urge(id, "checked");
-    const own = await author.get("/mine/");
+    const own = await author.get("/mine/all/");
     expect(own).toContain("Wanted to check it again 2 times; let it go 1.");
     expect(await browser().get("/")).not.toContain("Wanted to check it again");
+  });
+});
+
+// Looking back on Mine: a day, week or month of your own enoughs, for you alone.
+describe("looking back", () => {
+  it("adds up this week's enoughs, feelings, hours and rechecks for the owner only", async () => {
+    const tag = marker();
+    const author = await signedIn();
+    await author.declare({ description: `week one ${tag}`, spans: "540-660", feeling: "Just enough" });
+    await author.declare({ description: `week two ${tag}`, shared: "on", spans: "600-630", feeling: "Just enough" });
+    const id = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?week two ${tag}`).exec(await author.get("/mine/all/"))?.[1] ?? "";
+    await author.urge(id, "let_go");
+    const text = (await author.get("/mine/")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    expect(text).toContain(`week one ${tag}`);
+    expect(text).toContain(`week two ${tag}`);
+    expect(text).toContain("Just enough ×2");
+    expect(text).toContain("About 2½ hours in all");
+    expect(text).toContain("check something 1 time this week, and let it go 1 of those");
+    // each one links to its card on Each one
+    expect(await author.get("/mine/")).toContain(`/mine/all/#enough-${id}`);
+    // nobody else's Looking back, and not the feed, shows the private parts
+    const other = await signedIn();
+    expect(await other.get("/mine/")).not.toContain(tag);
+    const feed = await browser().get("/");
+    expect(feed).toContain(`week two ${tag}`);
+    expect(feed).not.toContain("Just enough ×");
+    expect(feed).not.toContain("hours in all");
+  });
+
+  it("an unknown period falls back to the week; a day and a month have their own label", async () => {
+    const author = await signedIn();
+    for (const [query, heading] of [["?period=nonsense", "Week of"], ["?period=month&back=1", ""], ["?period=day", ""]]) {
+      const res = await author.send(`/mine/${query}`);
+      expect(res.status).toBe(200);
+      if (heading) expect(await res.text()).toContain(heading);
+    }
+  });
+
+  it("works out periods on Sydney dates, weeks from Monday (summary.ts)", () => {
+    // Tuesday 21 October 2026
+    expect(periodRange("day", 0, "2026-10-21")).toEqual({ from: "2026-10-21", to: "2026-10-21" });
+    expect(periodRange("week", 0, "2026-10-21")).toEqual({ from: "2026-10-19", to: "2026-10-25" });
+    expect(periodRange("week", 0, "2026-10-25")).toEqual({ from: "2026-10-19", to: "2026-10-25" });
+    expect(periodRange("week", 1, "2026-10-19")).toEqual({ from: "2026-10-12", to: "2026-10-18" });
+    expect(periodRange("month", 0, "2026-10-21")).toEqual({ from: "2026-10-01", to: "2026-10-31" });
+    expect(periodRange("month", 8, "2026-10-21")).toEqual({ from: "2026-02-01", to: "2026-02-28" });
+    expect(periodRange("month", 10, "2026-10-21")).toEqual({ from: "2025-12-01", to: "2025-12-31" });
+    expect(periodLabel("week", { from: "2026-10-19" })).toBe("Week of 19 October 2026");
+    expect(periodLabel("month", { from: "2026-02-01" })).toBe("February 2026");
+
+    const range = periodRange("day", 0, "2026-10-21");
+    // 23:30 UTC on the 20th is 10:30 on the 21st in Sydney; 14:00 UTC on the 21st is the 22nd
+    const enoughs = [
+      { id: 1, description: "a", createdAt: "2026-10-20T23:30:00.000Z", hours: null, spans: "540-600,570-630", feeling: "Just enough" },
+      { id: 2, description: "b", createdAt: "2026-10-21T01:00:00.000Z", hours: 1.5, spans: null, feeling: null },
+      { id: 3, description: "c", createdAt: "2026-10-21T14:00:00.000Z", hours: 9, spans: null, feeling: "Just enough" },
+    ];
+    const urges = [
+      { choice: "let_go", createdAt: "2026-10-21T02:00:00.000Z" },
+      { choice: "checked", createdAt: "2026-10-21T03:00:00.000Z" },
+      { choice: "let_go", createdAt: "2026-10-22T03:00:00.000Z" },
+    ];
+    const s = summarise(enoughs, urges, range);
+    expect(s.enoughs.map((e) => e.id)).toEqual([1, 2]);
+    expect(s.feelings.find((f) => f.feeling === "Just enough")?.n).toBe(1);
+    expect(s.unsaid).toBe(1);
+    // overlapping spans count once (9:00–10:30), plus the typed 1.5 hours
+    expect(s.hours).toBe(3);
+    expect(s.slots.slice(17, 22)).toEqual([0, 1, 1, 1, 0]);
+    expect(s.urges).toEqual({ wanted: 2, letGo: 1 });
   });
 });
 
@@ -387,7 +458,7 @@ describe("without an account", () => {
     const tag = marker();
     const author = await signedIn();
     await author.declare({ description: `target ${tag}`, shared: "on" });
-    const id = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?target ${tag}`).exec(await author.get("/mine/"))?.[1] ?? "";
+    const id = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?target ${tag}`).exec(await author.get("/mine/all/"))?.[1] ?? "";
 
     const reader = browser();
     const anon = await reader.declare({ description: `anon ${tag}`, shared: "on" });

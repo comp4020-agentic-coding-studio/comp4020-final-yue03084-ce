@@ -331,6 +331,16 @@ function urgeCounts(ids: number[]): Map<number, { letGo: number; checked: number
   return out;
 }
 
+// Every time this person wanted to check one of their own enoughs again, with
+// what they chose and when: for their own look back on Mine, never anyone else's.
+export function myUrges(personId: number): { choice: string; createdAt: string }[] {
+  return db
+    .select({ choice: urges.choice, createdAt: urges.createdAt })
+    .from(urges)
+    .where(eq(urges.personId, personId))
+    .all();
+}
+
 // Record that someone wanted to recheck one of their own enoughs, and what
 // they chose. Private: nothing goes on the bus.
 export function recordUrge(personId: number, enoughId: number, choice: UrgeChoice): Outcome<null> {

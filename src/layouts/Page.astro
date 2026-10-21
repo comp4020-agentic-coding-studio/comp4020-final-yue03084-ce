@@ -49,7 +49,14 @@ const about = "/readme/";
       </filter>
     </svg>
     <nav aria-label="site">
-      {links.map((l) => <a href={l.href} aria-current={here === l.href ? "page" : undefined}>{l.label}</a>)}
+      {
+        links.map((l) => (
+          // a page inside a section (Mine's two pages) still marks the section
+          <a href={l.href} aria-current={here === l.href || (l.href !== "/" && here.startsWith(l.href)) ? "page" : undefined}>
+            {l.label}
+          </a>
+        ))
+      }
     </nav>
     <main>
       <slot />

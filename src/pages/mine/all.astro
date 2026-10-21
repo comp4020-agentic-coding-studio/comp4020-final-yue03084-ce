@@ -1,14 +1,14 @@
 ---
-import Page from "../layouts/Page.astro";
-import { displayName, mine } from "../lib/db";
-import { PRESET_REPLIES, type PresetKey, URGE_CHOICES } from "../lib/limits";
-import { isHtml } from "../lib/notes";
-import { describeSpan, parseSpans, roughly } from "../lib/spans";
-import { currentPerson } from "../lib/person";
-import { workView } from "../lib/work";
+import MineTop from "../../components/MineTop.astro";
+import Page from "../../layouts/Page.astro";
+import { mine } from "../../lib/db";
+import { PRESET_REPLIES, type PresetKey, URGE_CHOICES } from "../../lib/limits";
+import { isHtml } from "../../lib/notes";
+import { describeSpan, parseSpans, roughly } from "../../lib/spans";
+import { currentPerson } from "../../lib/person";
 
-// Everything this person has said was enough, private fields included. It
-// reads only their own rows, by their cookie.
+// Each one: everything this person has said was enough, private fields
+// included, newest first. It reads only their own rows, by their cookie.
 const person = currentPerson(Astro.cookies);
 const rows = person ? mine(person.id) : [];
 // a small read-only copy of the time bar: from the hour before the first
@@ -27,42 +27,12 @@ const when = (iso: string) =>
 
 <Page title="Mine">
   <h1>What you put down</h1>
-  {
-    person?.username ? (
-      <p class="hint">
-        Signed in as <strong>{person.username}</strong> · on the feed you show as {displayName(person.id)}. Only you can
-        see this page. <a href="/account/">Account</a>
-      </p>
-    ) : (
-      /* not signed in: say plainly that this page needs an account, and give
-         both ways in. Someone with records from before accounts (a cookie
-         only) still sees them below, with a nudge to keep them. */
-      <section class="account-box mine-gate">
-        <p>This page holds everything you've called enough, just for you. Sign in to see it.</p>
-        <div class="mine-gate-actions">
-          <a class="button" href="/account/#login">Sign in</a>
-          <a class="button quiet" href="/account/#register">Create an account</a>
-        </div>
-        {rows.length > 0 && (
-          <p class="hint">
-            What's below was written in this browser before accounts. Create an account here to keep it with you.
-          </p>
-        )}
-      </section>
-    )
-  }
-  {
-    person?.username && workView(person.id) && (
-      <p class="working-now">
-        You're working on something. <a href="/working/">Go to the little one</a>
-      </p>
-    )
-  }
+  <MineTop person={person} hasRows={rows.length > 0} />
   {person?.username && rows.length === 0 && <p>Nothing yet. <a href="/enough/">Call something enough.</a></p>}
   <ol class="feed mine">
     {
       rows.map((e) => (
-        <li class="card" data-enough={e.id}>
+        <li class="card" id={`enough-${e.id}`} data-enough={e.id}>
           <p>
             <q>{e.description}</q> <span class="tag">{e.shared ? "shared" : "just you"}</span>
           </p>

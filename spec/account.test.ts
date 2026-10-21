@@ -69,7 +69,7 @@ describe("accounts", () => {
     const res = await me.register(newName(), PASSWORD);
     expect(res.status).toBe(303);
     await me.declare({ description: `after account ${tag}`, notes: `<p>private ${tag}</p>` });
-    const mine = await me.get("/mine/");
+    const mine = await me.get("/mine/all/");
     expect(mine).toMatch(/you show as A block #\d+/);
     expect(mine).toContain(`after account ${tag}`);
     expect(mine).toContain(`private ${tag}`);
@@ -85,7 +85,7 @@ describe("accounts", () => {
     const second = browser();
     const res = await second.login(username.toUpperCase(), PASSWORD);
     expect(res.status).toBe(303);
-    const mine = await second.get("/mine/");
+    const mine = await second.get("/mine/all/");
     expect(mine).toContain(`elsewhere ${tag}`);
     // the visible text: the username sits in its own <strong>
     expect(mine.replace(/<[^>]+>/g, "")).toContain(`Signed in as ${username}`);
@@ -132,11 +132,11 @@ describe("accounts", () => {
 
     const second = browser();
     await second.login(username, PASSWORD);
-    expect(await second.get("/mine/")).toContain(`mine only ${tag}`);
+    expect(await second.get("/mine/all/")).toContain(`mine only ${tag}`);
     await second.logout();
-    expect(await second.get("/mine/")).not.toContain(`mine only ${tag}`);
+    expect(await second.get("/mine/all/")).not.toContain(`mine only ${tag}`);
     // and the session is gone, not just the cookie: the first browser is unaffected
-    expect(await first.get("/mine/")).toContain(`mine only ${tag}`);
+    expect(await first.get("/mine/all/")).toContain(`mine only ${tag}`);
   });
 
   it(`refuses for a while after ${LOGIN_ATTEMPTS} failed logins, even with the right password`, async () => {
@@ -153,7 +153,7 @@ describe("accounts", () => {
     const author = browser();
     await author.register(newName(), PASSWORD);
     await author.declare({ description: `not yours ${tag}`, shared: "on" });
-    const id = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?not yours ${tag}`).exec(await author.get("/mine/"))?.[1] ?? "";
+    const id = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?not yours ${tag}`).exec(await author.get("/mine/all/"))?.[1] ?? "";
 
     const other = browser();
     await other.register(newName(), PASSWORD);

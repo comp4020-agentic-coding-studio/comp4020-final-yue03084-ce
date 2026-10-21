@@ -53,7 +53,7 @@ if (Astro.request.method === "POST" && person) {
     // only a shared one goes on the bus, and only its public shape
     const shown = outcome.value.shared ? publicEnough(outcome.value.id) : undefined;
     if (shown) bus.emit("enough", shown);
-    return Astro.redirect(outcome.value.shared ? "/" : "/mine/", 303);
+    return Astro.redirect(outcome.value.shared ? "/" : "/mine/all/", 303);
   }
   refused = outcome.reason;
   logEvent("enough_refused", { block: person.id, reason: outcome.reason });

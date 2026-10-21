@@ -1,0 +1,53 @@
+---
+import { displayName, type Person } from "../lib/db";
+import { workView } from "../lib/work";
+
+// The top of both Mine pages: who's signed in (or how to sign in), a nudge
+// back to the little one if they're working, and the two pages of Mine.
+interface Props {
+  person: Person | undefined;
+  // whether this browser has records from before accounts (a cookie only)
+  hasRows: boolean;
+}
+const { person, hasRows } = Astro.props;
+const here = Astro.url.pathname;
+const pages = [
+  { href: "/mine/", label: "Looking back" },
+  { href: "/mine/all/", label: "Each one" },
+];
+---
+
+{
+  person?.username ? (
+    <p class="hint">
+      Signed in as <strong>{person.username}</strong> · on the feed you show as {displayName(person.id)}. Only you can
+      see this page. <a href="/account/">Account</a>
+    </p>
+  ) : (
+    /* not signed in: say plainly that this page needs an account, and give
+       both ways in. Someone with records from before accounts (a cookie
+       only) still sees them below, with a nudge to keep them. */
+    <section class="account-box mine-gate">
+      <p>This page holds everything you've called enough, just for you. Sign in to see it.</p>
+      <div class="mine-gate-actions">
+        <a class="button" href="/account/#login">Sign in</a>
+        <a class="button quiet" href="/account/#register">Create an account</a>
+      </div>
+      {hasRows && (
+        <p class="hint">
+          What's below was written in this browser before accounts. Create an account here to keep it with you.
+        </p>
+      )}
+    </section>
+  )
+}
+{
+  person?.username && workView(person.id) && (
+    <p class="working-now">
+      You're working on something. <a href="/working/">Go to the little one</a>
+    </p>
+  )
+}
+<nav class="subnav" aria-label="Mine">
+  {pages.map((p) => <a href={p.href} aria-current={here === p.href ? "page" : undefined}>{p.label}</a>)}
+</nav>
