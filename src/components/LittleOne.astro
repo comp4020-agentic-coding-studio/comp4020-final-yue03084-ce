@@ -534,7 +534,8 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${ringCss}{display:none}
       keeper.dataset.frame = frame;
       const left = dir === 1 ? x : x + WIDTH;
       keeper.setAttribute("transform", `translate(${left} ${GROUND - HEIGHT + 1}) scale(${dir} 1)`);
-      umbrella?.setAttribute("transform", `translate(${x + 1} ${GROUND - HEIGHT + 1 + topOf(frame) - 7})`);
+      // centred on the little one (its handle over the middle of the frame)
+      umbrella?.setAttribute("transform", `translate(${x - 3} ${GROUND - HEIGHT + 1 + topOf(frame) - 10})`);
     };
     // the block it carries rides in its hands, just in front of it
     const hold = (ink: string | null, size = sizes[0]) => {
