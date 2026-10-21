@@ -1,20 +1,39 @@
 ---
-import { CARRY_SECONDS } from "../lib/limits";
+import { CARRY_SECONDS, TOWER_MAX } from "../lib/limits";
 import { gridRects, paletteCss } from "../lib/pixel";
-import { KEEPER, WALK } from "../lib/sprites";
+import { blockRows, CARRY, KEEPER, WALK, ZED } from "../lib/sprites";
 import type { WorkView } from "../lib/work";
+import { tiredness } from "../lib/worktime";
 
 // The little one: works alongside you on Working on it, only ever for its
 // owner. A small pixel world on a page of the notebook: the sky follows the
-// clock on your computer (day, dusk, night), and the little one walks across
-// the grass, blinking when it stops. Decoration, hidden from screen readers;
-// the text beside it says what's going on. With reduced motion it stands
-// still. Every frame is a grid of characters (sprites.ts) drawn once here;
-// the script only switches which one shows, a frame at a time.
+// clock on your computer (day, dusk, night). Working, it crouches at the pile,
+// picks up a block, carries it to the day's crooked tower and puts it on top.
+// Past your alarm it gets sleepy, a little more as time goes on (tiredness()
+// in worktime.ts, the metaphor in limits.ts): its eyelids droop, its tuft
+// flops, it walks slower, sits down to stare now and then, rubs its eyes,
+// yawns, and the blocks get smaller. Sleepy, never sad. On a break it has
+// tea, stretches or naps; back at work it stretches first. The tower is a
+// drawing of today, never a number. Decoration, hidden from screen readers;
+// the text beside it says what's going on. With reduced motion it holds one
+// still frame. Every frame is a grid of characters (sprites.ts) drawn once
+// here; the script only switches which one shows, a frame at a time.
 interface Props {
   view: WorkView;
 }
 const { view } = Astro.props;
+const t = view.state === "resting" ? tiredness(0) : view.tiredness;
+const pose =
+  view.state === "resting"
+    ? view.restKind === "nap"
+      ? "nap"
+      : view.restKind === "move" || view.restKind === "walk"
+        ? "stretch"
+        : "tea"
+    : "work";
+// the still frame for reduced motion, and the first frame before the script runs
+const still =
+  pose === "nap" ? "nap1" : pose === "tea" ? "tea1" : pose === "stretch" ? "stretch1" : t.yawning ? "sit~2" : t.sleepy ? "stand~1" : "stand";
 
 // the world, in pixels: wide enough for a pile and a tower, scaled up whole
 const W = 112;
@@ -56,14 +75,15 @@ const ground = (() => {
 })();
 const sun = gridRects(
   ["..uuu..", ".uuuuu.", "uuuuuuu", "uuuuuuu", "uuuuuuu", ".uuuuu.", "..uuu.."],
-  86,
-  7,
+  // left of the tower, so a tall day never covers it
+  52,
+  6,
 );
 const stars = [
   [12, 6],
   [27, 12],
   [40, 4],
-  [55, 10],
+  [64, 14],
   [70, 5],
   [101, 18],
   [8, 20],
@@ -71,6 +91,28 @@ const stars = [
 ]
   .map(([x, y]) => `<rect class="px-w" x="${x}" y="${y}" width="1" height="1"/>`)
   .join("");
+
+// the pile it fetches from, and the blocks it can carry: one drawing per
+// colour and size, so the script picks one rather than drawing pixels
+const INKS = ["1", "2", "3", "4"];
+const SIZES = [10, 8, 6, 4];
+const pile = [
+  [4, GROUND - 4, 10, 4, "3"],
+  [14, GROUND - 4, 9, 4, "1"],
+  [8, GROUND - 8, 9, 4, "2"],
+  [6, GROUND - 12, 7, 4, "4"],
+]
+  .map(([x, y, w, h, ink]) => gridRects(blockRows(w as number, h as number, ink as string), x as number, y as number))
+  .join("");
+// each block twice: as carried, and as a layer of the tower (3 pixels tall)
+const blocks = INKS.flatMap((ink) =>
+  SIZES.map(
+    (w) =>
+      `<g data-b="${ink}-${w}">${gridRects(blockRows(w, Math.max(2, Math.round(w * 0.4)), ink))}</g>` +
+      `<g data-l="${ink}-${w}">${gridRects(blockRows(w, 3, ink))}</g>`,
+  ),
+).join("");
+const zed = gridRects(ZED);
 
 const frames = Object.entries(KEEPER.frames)
   .map(([name, rows]) => `<g data-f="${name}">${gridRects(rows)}</g>`)
@@ -86,9 +128,17 @@ const css = `${paletteCss(".little-one")}\n${frameCss}`;
   class="little-one"
   aria-hidden="true"
   data-state={view.state}
+  data-pose={pose}
   data-sky="day"
+  data-sleepy-from={view.sleepyFrom ?? ""}
+  data-carry={view.carry}
+  data-tower={view.tower}
+  data-tower-max={TOWER_MAX}
   data-carry-seconds={CARRY_SECONDS}
   data-walk={JSON.stringify(WALK)}
+  data-carry-frames={JSON.stringify(CARRY)}
+  data-inks={JSON.stringify(INKS)}
+  data-sizes={JSON.stringify(SIZES)}
 >
   <style set:html={css}></style>
   <div class="page">
@@ -106,13 +156,19 @@ const css = `${paletteCss(".little-one")}\n${frameCss}`;
       <g class="sun" set:html={sun} />
       <g set:html={hills} />
       <g set:html={ground} />
+      <g class="pile" set:html={pile} />
+      <!-- the day's tower; the script lays its blocks, starting from today's work -->
+      <g class="tower"></g>
+      <!-- the drawings the script copies a block from -->
+      <defs set:html={blocks} />
       <g
         class="keeper"
-        data-frame="stand"
-        data-x="24"
-        transform={`translate(24 ${GROUND - KEEPER.height + 1})`}
+        data-frame={still}
+        transform={`translate(26 ${GROUND - KEEPER.height + 1})`}
         set:html={frames}
       />
+      <g class="held"></g>
+      <g class="zed" set:html={zed} />
     </svg>
   </div>
 </figure>
@@ -191,23 +247,52 @@ const css = `${paletteCss(".little-one")}\n${frameCss}`;
   [data-sky="night"] .stars {
     display: inline;
   }
+
+  /* a z drifts up off a nap, a pixel at a time */
+  .zed {
+    display: none;
+  }
+
+  [data-pose="nap"] .zed {
+    display: inline;
+    animation: zed 3s steps(6) infinite;
+  }
+
+  @keyframes zed {
+    0% { transform: translate(40px, 30px); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translate(44px, 22px); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-pose="nap"] .zed {
+      animation: none;
+      transform: translate(42px, 26px);
+    }
+  }
 </style>
 
 <script>
   import { skyFor } from "../lib/pixel";
   import { tiredness } from "../lib/worktime";
 
+  const SVG = "http://www.w3.org/2000/svg";
   const GROUND = 50;
   const HEIGHT = 24;
   const WIDTH = 16;
-  // where it walks between: in front of where the pile and tower will stand
-  const LEFT = 18;
-  const RIGHT = 78;
+  // where it stands: beside the pile on the left, beside the tower on the right
+  const PILE = 22;
+  const TOWER = 84;
+  const BESIDE_TOWER = TOWER - WIDTH - 2;
   const STEP = 2;
+  // a block every ~10 frames; how long one frame shows when it's fresh
+  const FRAME_MS = 140;
 
   for (const fig of document.querySelectorAll<HTMLElement>(".little-one")) {
     const keeper = fig.querySelector<SVGGElement>(".keeper");
-    if (!keeper) continue;
+    const tower = fig.querySelector<SVGGElement>(".tower");
+    const held = fig.querySelector<SVGGElement>(".held");
+    if (!keeper || !tower || !held) continue;
 
     // the sky follows the clock where you are
     const setSky = () => (fig.dataset.sky = skyFor(new Date().getHours()));
@@ -215,58 +300,198 @@ const css = `${paletteCss(".little-one")}\n${frameCss}`;
     setInterval(setSky, 60_000);
 
     const walkFrames: string[] = JSON.parse(fig.dataset.walk ?? "[]");
+    const carryFrames: string[] = JSON.parse(fig.dataset.carryFrames ?? "[]");
+    const inks: string[] = JSON.parse(fig.dataset.inks ?? "[]");
+    const sizes: number[] = JSON.parse(fig.dataset.sizes ?? "[]");
+    const max = Number(fig.dataset.towerMax) || 30;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let x = Number(keeper.dataset.x) || LEFT;
 
-    const place = (frame: string, facing: 1 | -1) => {
-      keeper.dataset.frame = frame;
-      const left = facing === 1 ? x : x + WIDTH;
-      keeper.setAttribute("transform", `translate(${left} ${GROUND - HEIGHT + 1}) scale(${facing} 1)`);
+    // a copy of one of the block drawings, placed at (x, y)
+    const block = (ink: string, size: number, x: number, y: number) => {
+      const src = fig.querySelector(`[data-b="${ink}-${size}"]`);
+      const g = document.createElementNS(SVG, "g");
+      g.innerHTML = src?.innerHTML ?? "";
+      g.setAttribute("transform", `translate(${x} ${y})`);
+      return g;
     };
-    place("stand", 1);
-    if (reduced) continue;
+    const heightOf = (size: number) => Math.max(2, Math.round(size * 0.4));
+    const sizeFor = (scale: number) => sizes.find((s) => s <= 10 * scale + 0.5) ?? sizes[sizes.length - 1];
+
+    // the tower: each block a pixel or two off-centre, as wide as the little
+    // one could carry then, all the same height so a full day still fits under
+    // the top of the picture
+    const LAYER = 3;
+    let laid = 0;
+    let top = GROUND;
+    const full = () => laid >= max || top - LAYER < 4;
+    const lay = (size: number) => {
+      if (full()) return;
+      const h = LAYER;
+      const wobble = ((laid * 37) % 5) - 2;
+      const x = TOWER - Math.floor(size / 2) + wobble;
+      top -= h;
+      const g = block(inks[laid % inks.length], size, x, top);
+      g.innerHTML = fig.querySelector(`[data-l="${inks[laid % inks.length]}-${size}"]`)?.innerHTML ?? g.innerHTML;
+      tower.append(g);
+      laid += 1;
+    };
+    // today's work so far, laid at once (a foundation block even at the start)
+    for (let i = 0; i < Math.max(1, Number(fig.dataset.tower) || 0); i++) lay(sizes[0]);
+
+    let x = PILE;
+    let facing: 1 | -1 = 1;
+    const place = (frame: string, dir: 1 | -1 = facing) => {
+      facing = dir;
+      keeper.dataset.frame = frame;
+      const left = dir === 1 ? x : x + WIDTH;
+      keeper.setAttribute("transform", `translate(${left} ${GROUND - HEIGHT + 1}) scale(${dir} 1)`);
+    };
+    // the block it carries rides in its hands, just in front of it
+    const hold = (ink: string | null, size = sizes[0]) => {
+      held.replaceChildren();
+      if (!ink) return;
+      const bx = facing === 1 ? x + 12 : x + 4 - size;
+      held.append(block(ink, size, bx, GROUND - 9 - heightOf(size)));
+    };
+    const still = keeper.dataset.frame ?? "stand";
+    place(still, 1);
+    if (fig.dataset.state !== "working") x = 30;
+    if (reduced) {
+      place(still, 1);
+      continue;
+    }
 
     const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
-    const speed = () => tiredness(0).speed;
 
-    // standing still, it blinks now and then
-    const idle = async (ms: number) => {
-      const until = performance.now() + ms;
+    // how tired it is now, from the same curve the server uses (worktime.ts)
+    const sleepyFrom = fig.dataset.sleepyFrom ? Date.parse(fig.dataset.sleepyFrom) : null;
+    const carry = Number(fig.dataset.carry) || 0;
+    const now = () => tiredness(sleepyFrom === null ? carry : carry + Math.max(0, (Date.now() - sleepyFrom) / 60_000));
+    // three looks: fresh, drooping, nearly asleep; the frame names carry it
+    const tier = (t: ReturnType<typeof now>) => (!t.sleepy ? "" : t.yawning ? "~2" : "~1");
+    const ms = (t: ReturnType<typeof now>) => FRAME_MS / t.speed;
+
+    // standing still, it blinks now and then (only when it's wide awake)
+    const idle = async (time: number) => {
+      const t = now();
+      const until = performance.now() + time;
       while (performance.now() < until) {
-        place("stand", 1);
+        place(`stand${tier(t)}`);
         await pause(1400 + Math.random() * 1600);
-        place("blink", 1);
-        await pause(140);
+        if (!t.sleepy) {
+          place("blink");
+          await pause(140);
+        }
       }
-      place("stand", 1);
     };
 
     // walking is a frame at a time, a couple of pixels a frame: no gliding
-    const walk = async (to: number) => {
-      const facing = to >= x ? 1 : -1;
+    const walk = async (to: number, holding: string | null, size: number, brisk = false) => {
+      const t = now();
+      if (brisk) t.speed = Math.max(t.speed, 1.4);
+      const dir = to >= x ? 1 : -1;
+      const frames = holding ? carryFrames : walkFrames;
+      // tired, it shuffles: smaller steps
+      const step = t.yawning ? 1 : STEP;
       let i = 0;
       while (x !== to) {
-        x += facing * Math.min(STEP, Math.abs(to - x));
-        place(walkFrames[i % walkFrames.length], facing);
+        x += dir * Math.min(step, Math.abs(to - x));
+        place(`${frames[i % frames.length]}${tier(t)}`, dir);
+        hold(holding, size);
         i += 1;
-        await pause(140 / speed());
+        await pause(ms(t));
       }
-      place(walkFrames[1], facing);
+      place(`${frames[1]}${tier(t)}`, dir);
     };
 
+    // sleepy, now and then: a rub of the eyes, a yawn, or sitting down to stare
+    const drowse = async () => {
+      const t = now();
+      if (!t.sleepy) return;
+      const r = Math.random();
+      if (r < 0.3) {
+        place("rub", 1);
+        await pause(900);
+      } else if (t.yawning && r < 0.6) {
+        place("yawn", 1);
+        await pause(1300);
+      } else if (t.yawning && r < 0.85) {
+        place("sit~2", 1);
+        await pause(2500 + Math.random() * 2000);
+      }
+    };
+
+    // resting: tea (sips now and then), a stretch, or a nap that breathes
     if (fig.dataset.state !== "working") {
+      const pose = fig.dataset.pose;
       void (async () => {
-        for (;;) await idle(10_000);
+        for (;;) {
+          if (pose === "nap") {
+            place("nap1", 1);
+            await pause(1600);
+            place("nap2", 1);
+            await pause(1600);
+          } else if (pose === "stretch") {
+            place("stand", 1);
+            await pause(1800);
+            place("stretch1", 1);
+            await pause(900);
+            place("stretch2", 1);
+            await pause(1200);
+            place("stretch1", 1);
+            await pause(600);
+          } else {
+            for (let i = 0; i < 6; i++) {
+              place(i % 2 ? "tea2" : "tea1", 1);
+              await pause(700);
+            }
+            place("sip", 1);
+            await pause(1200);
+          }
+        }
       })();
       continue;
     }
 
     void (async () => {
+      // back at work (or just starting): a stretch first, tuft up
+      if (!now().sleepy) {
+        place("stretch1", 1);
+        await pause(700);
+        place("stretch2", 1);
+        await pause(900);
+        place("stand", 1);
+        await pause(500);
+      }
+      // the first trip after a rest is brisk
+      let brisk = true;
       for (;;) {
-        await idle(1800);
-        await walk(RIGHT);
-        await idle(1200);
-        await walk(LEFT);
+        const t = now();
+        const ink = inks[laid % inks.length];
+        const size = sizeFor(t.block);
+        // crouch at the pile and pick a block up
+        x = PILE;
+        place(`crouch${tier(t)}`, 1);
+        await pause(ms(t) * 4);
+        hold(ink, size);
+        await walk(BESIDE_TOWER, ink, size, brisk);
+        // put it on top, then stand back
+        place(`crouch${tier(t)}`, 1);
+        hold(null);
+        await pause(ms(t) * 3);
+        lay(size);
+        place(`stand${tier(t)}`, 1);
+        await pause(ms(t) * 3);
+        await drowse();
+        if (full()) {
+          // today's tower is as tall as it gets: it stays beside it
+          await idle(1e9);
+          return;
+        }
+        await walk(PILE, null, size);
+        brisk = false;
+        await drowse();
+        await idle(600);
       }
     })();
   }

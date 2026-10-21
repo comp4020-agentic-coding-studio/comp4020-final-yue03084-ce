@@ -9,11 +9,28 @@ export interface Actor {
   frames: Record<string, readonly string[]>;
 }
 
-// The little one: about 16×24, a big head on a small body, a tuft of hair on
-// top and an apron. Facing you when it stands; turned a little to the right
-// when it walks (the page mirrors it to walk left).
-const tuft = ["........oo......", ".......oHo......", ".......o........"];
-const hair = [
+type Rows = readonly string[];
+
+// Lay `top` over `base` at (x, y); "." in `top` lets the base show through.
+const over = (base: Rows, x: number, y: number, top: Rows): string[] =>
+  base.map((row, r) => {
+    const o = top[r - y];
+    if (!o) return row;
+    return [...row].map((ch, c) => (o[c - x] && o[c - x] !== "." ? o[c - x] : ch)).join("");
+  });
+// Move some rows one pixel right (the head leaning forward when it's tired).
+const lean = (rows: Rows) => rows.map((r) => `.${r.slice(0, -1)}`);
+const blank = (n: number) => Array.from({ length: n }, () => "................");
+
+// The little one: 16×24, a big head on a small body, a tuft of hair on top
+// and an apron. Facing you when it stands; turned to the right when it walks
+// or works (the page mirrors it to face left).
+const TUFT = {
+  up: ["........oo......", ".......oHo......", ".......o........"],
+  droop: ["................", "........oo......", "........oHoo...."],
+  flat: ["................", "................", "........oooHo..."],
+};
+const HAIR = [
   "....oooooooo....",
   "..oohhhhhhhhoo..",
   ".ohhHHhhhhhhhho.",
@@ -21,53 +38,150 @@ const hair = [
   ".ohhhhhhhhhhhho.",
   ".ohhhshhhhshhho.",
 ];
-const face = (eyes: [string, string], cheeks: string) => [
+// eyes are two rows of ten between the hair at the sides; "k" is an eyelid
+const EYES: Record<string, readonly string[]> = {
+  open: ["sesssssses", "sesssssses"],
+  half: ["skssssssks", "sesssssses"],
+  low: ["ssssssssss", "skssssssks"],
+  shut: ["ssssssssss", "seessssees"],
+  sideOpen: ["ssesssssse", "ssesssssse"],
+  sideHalf: ["sskssssssk", "ssesssssse"],
+  sideLow: ["ssssssssss", "sskssssssk"],
+};
+// the mouth row, cheeks either side; a yawn is a dark open mouth
+const MOUTH = { front: "csssmmsssc", side: "scsssmmssc", yawn: "cssseesssc" };
+const face = (eyes: readonly [string, string] | readonly string[], mouth: string) => [
   ".ohssssssssssho.",
   `.oh${eyes[0]}ho.`,
   `.oh${eyes[1]}ho.`,
-  `.oh${cheeks}ho.`,
+  `.oh${mouth}ho.`,
   "..okssssssssko..",
 ];
-const body = [
-  "......kSSk......",
-  "....TttaattT....",
-  "...TttaaaattT...",
-  "...sTaaaaaaTs...",
-  "....AaaaaaaA....",
-  "....AaaaaaaA....",
-  "....AAAAAAAA....",
-];
-const legs = {
-  stand: [".....pp..pp.....", ".....pp..pp.....", "....bbb..bbb...."],
-  leftUp: [".....pp..pp.....", ".....bbb.pp.....", ".........bbb...."],
-  rightUp: [".....pp..pp.....", ".....pp..bbb....", "....bbb........."],
+const NECK = "......kSSk......";
+const SHIRT = ["....TttaattT....", "...TttaaaattT..."];
+const HANDS = { down: "...sTaaaaaaTs...", front: "....TaaaaaaTss..", none: "....TaaaaaaT...." };
+const APRON = ["....AaaaaaaA....", "....AaaaaaaA....", "....AAAAAAAA...."];
+const LEGS = {
+  stand: [".....pp..pp.....", ".....pp..pp.....", "....ooo..ooo...."],
+  leftUp: [".....pp..pp.....", ".....ooo.pp.....", ".........ooo...."],
+  rightUp: [".....pp..pp.....", ".....pp..ooo....", "....ooo........."],
 };
 
-const open: [string, string] = ["sesssssses", "sesssssses"];
-const shut: [string, string] = ["ssssssssss", "seessssees"];
-const turned: [string, string] = ["ssesssssse", "ssesssssse"];
-
-const front = (eyes: [string, string], feet: readonly string[]) => [
-  ...tuft,
-  ...hair,
-  ...face(eyes, "csssmmsssc"),
-  ...body,
-  ...feet,
-];
-const side = (feet: readonly string[]) => [...tuft, ...hair, ...face(turned, "scsssmmssc"), ...body, ...feet];
-
-export const KEEPER: Actor = {
-  width: 16,
-  height: 24,
-  frames: {
-    stand: front(open, legs.stand),
-    blink: front(shut, legs.stand),
-    walk1: side(legs.leftUp),
-    walk2: side(legs.stand),
-    walk3: side(legs.rightUp),
-    walk4: side(legs.stand),
-  },
+// How tired it looks, in three steps: fresh; drooping eyelids and a bent
+// tuft; eyes nearly shut, the tuft flat, the head leaning forward.
+type Tier = 0 | 1 | 2;
+const tuftAt = (t: Tier) => (t === 0 ? TUFT.up : t === 1 ? TUFT.droop : TUFT.flat);
+const eyesAt = (t: Tier, side: boolean) =>
+  side ? (t === 0 ? EYES.sideOpen : t === 1 ? EYES.sideHalf : EYES.sideLow) : t === 0 ? EYES.open : t === 1 ? EYES.half : EYES.low;
+const head = (t: Tier, side: boolean, eyes = eyesAt(t, side), mouth = side ? MOUTH.side : MOUTH.front) => {
+  const rows = [...tuftAt(t), ...HAIR, ...face(eyes, mouth)];
+  return side && t === 2 ? lean(rows) : rows;
 };
+
+const standing = (t: Tier, eyes?: readonly string[], mouth?: string) => [
+  ...head(t, false, eyes, mouth),
+  NECK,
+  ...SHIRT,
+  HANDS.down,
+  ...APRON,
+  ...LEGS.stand,
+];
+const walking = (t: Tier, legs: Rows, hands: string) => [...head(t, true), NECK, ...SHIRT, hands, ...APRON, ...legs];
+// bending down to the pile or the tower, hands out in front
+const crouching = (t: Tier) => [
+  ...blank(4),
+  ...head(t, true),
+  NECK,
+  "....TttaattTss..",
+  "...TaaaaaaaT....",
+  "...AaaaaaaaA....",
+  "...ppAAAAAApp...",
+  "...oo......oo...",
+];
+// sitting on the grass, legs out in front
+const SIT_BODY = ["....TttaattT....", "...sTaaaaaaTs...", "....AaaaaaaApppo", "....AAAAAAAApppo"];
+const sitting = (t: Tier, eyes?: readonly string[], mouth?: string) => [
+  ...blank(5),
+  ...head(t, true, eyes ?? eyesAt(t, true), mouth),
+  NECK,
+  ...SIT_BODY,
+];
+
+// a cup held at the chest, with a puff of steam that sways
+const cupDown = (steam: 0 | 1) => over(sitting(0), 13, 18, [steam ? "..a" : ".a.", steam ? ".a." : "..a", "aaA", "aaA"]);
+// a sip: the cup up at the mouth, eyes shut
+const cupUp = over(sitting(0, EYES.shut), 11, 16, ["aaA", "aaA"]);
+
+// a stretch: arms straight up beside the head, then a yawn at the top
+const stretching = (yawn: boolean) => {
+  const base = standing(0, yawn ? EYES.shut : EYES.open, yawn ? MOUTH.yawn : MOUTH.front).map((r) =>
+    r === HANDS.down ? HANDS.none : r,
+  );
+  return base.map((row, r) => {
+    // hands above the head, sleeves down the sides, joining the shoulders
+    const arm = r >= 2 && r <= 3 ? "s" : r >= 4 && r <= 15 ? "t" : null;
+    if (r === 16) return `.tt${row.slice(3, -3)}tt.`;
+    return arm ? `${arm}${row.slice(1, -1)}${arm}` : row;
+  });
+};
+
+// asleep sitting up, head nodding forward; two frames for breathing
+const napping = (down: boolean) => {
+  const rows = sitting(2, EYES.shut);
+  if (!down) return rows;
+  // the head and tuft drop a pixel onto the neck
+  const top = rows.slice(5, 19);
+  return [...blank(6), ...top, ...SIT_BODY];
+};
+
+const frames: Record<string, Rows> = {
+  blink: standing(0, EYES.shut),
+  rub: over(standing(1, EYES.shut), 9, 10, ["SSs", "SSs", ".s."]),
+  yawn: standing(2, EYES.shut, MOUTH.yawn),
+  tea1: cupDown(0),
+  tea2: cupDown(1),
+  sip: cupUp,
+  stretch1: stretching(false),
+  stretch2: stretching(true),
+  nap1: napping(false),
+  nap2: napping(true),
+};
+const tiers: Tier[] = [0, 1, 2];
+for (const t of tiers) {
+  const s = t === 0 ? "" : `~${t}`;
+  frames[`stand${s}`] = standing(t);
+  frames[`walk1${s}`] = walking(t, LEGS.leftUp, HANDS.down);
+  frames[`walk2${s}`] = walking(t, LEGS.stand, HANDS.down);
+  frames[`walk3${s}`] = walking(t, LEGS.rightUp, HANDS.down);
+  frames[`walk4${s}`] = walking(t, LEGS.stand, HANDS.down);
+  frames[`carry1${s}`] = walking(t, LEGS.leftUp, HANDS.front);
+  frames[`carry2${s}`] = walking(t, LEGS.stand, HANDS.front);
+  frames[`carry3${s}`] = walking(t, LEGS.rightUp, HANDS.front);
+  frames[`carry4${s}`] = walking(t, LEGS.stand, HANDS.front);
+  frames[`crouch${s}`] = crouching(t);
+  frames[`sit${s}`] = sitting(t);
+}
+// every frame must be exactly 16×24, or the drawing has a mistake in it
+for (const [name, rows] of Object.entries(frames)) {
+  if (rows.length !== 24 || rows.some((r) => r.length !== 16)) throw new Error(`frame "${name}" isn't 16×24`);
+}
+
+export const KEEPER: Actor = { width: 16, height: 24, frames };
 
 // the order the walking frames play in
 export const WALK = ["walk1", "walk2", "walk3", "walk4"] as const;
+export const CARRY = ["carry1", "carry2", "carry3", "carry4"] as const;
+
+// A block for the tower: a light top (a checker of cream over the colour),
+// a darker bottom and right edge (a checker of brown), w×h pixels.
+export function blockRows(w: number, h: number, ink: string): string[] {
+  return Array.from({ length: h }, (_, r) =>
+    Array.from({ length: w }, (_, c) => {
+      if (r === 0 && h > 2) return c % 2 === 0 ? "a" : ink;
+      if (r === h - 1 || c === w - 1) return (r + c) % 2 === 0 ? "p" : ink;
+      return ink;
+    }).join(""),
+  );
+}
+// a little "z", three by three, rising off a nap
+export const ZED = ["ooo", ".o.", "ooo"];
