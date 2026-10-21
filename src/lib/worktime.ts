@@ -1,6 +1,6 @@
 import {
-  BLOCK_EVERY_MINUTES,
   BLOCK_FACTOR,
+  BRICKS,
   DIMMEST_GLOW,
   GLOW_FACTOR,
   DAY_MINUTES,
@@ -10,7 +10,9 @@ import {
   SLOWEST_SPEED,
   SMALLEST_BLOCK,
   SPEED_FACTOR,
-  TOWER_MAX,
+  TOWER_AT_ALARM,
+  TOWER_HEIGHT,
+  TOWER_WIDTH,
   YAWN_AFTER_MINUTES,
 } from "./limits";
 import type { Span } from "./spans";
@@ -73,10 +75,60 @@ export function tiredness(minutesPast: number): Tiredness {
 export const carriedAfterRest = (minutesPast: number, restMinutes: number) =>
   Math.max(0, minutesPast) * Math.max(0, 1 - restMinutes / RECOVER_MINUTES);
 
-// How many blocks the day's tower has, from the minutes worked today (never
-// shown as a number; it only sets how tall the drawing is).
-export const towerBlocks = (workedMinutes: number) =>
-  Math.min(TOWER_MAX, Math.floor(workedMinutes / BLOCK_EVERY_MINUTES));
+// The tower for a stretch of work planned to last `minutes` (to the alarm):
+// which bricks, how many to a layer, how many before the alarm (filling
+// TOWER_AT_ALARM of the height) and how many it can hold in all once the
+// half-height sleepy bricks fill the rest. The numbers only shape the
+// drawing; none is ever shown.
+export interface TowerPlan {
+  minutes: number;
+  width: number;
+  height: number;
+  sleepyHeight: number;
+  perLayer: number;
+  layersBefore: number;
+  before: number;
+  capacity: number;
+}
+export function towerPlan(minutes: number): TowerPlan {
+  const plan = Math.max(1, minutes);
+  const brick = BRICKS.find((b) => plan <= b.upToMinutes) ?? BRICKS[BRICKS.length - 1];
+  const perLayer = Math.max(1, Math.floor(TOWER_WIDTH / brick.width));
+  const sleepyHeight = Math.max(1, Math.round(brick.height / 2));
+  const layersBefore = Math.floor((TOWER_HEIGHT * TOWER_AT_ALARM) / brick.height);
+  const layersAfter = Math.floor((TOWER_HEIGHT - layersBefore * brick.height) / sleepyHeight);
+  return {
+    minutes: plan,
+    width: brick.width,
+    height: brick.height,
+    sleepyHeight,
+    perLayer,
+    layersBefore,
+    before: layersBefore * perLayer,
+    capacity: (layersBefore + layersAfter) * perLayer,
+  };
+}
+
+// Minutes of work past the alarm as the slowing little one does them: each
+// minute counts for its speed then (tiredness()), so the bricks come slower.
+export function sleepyEffort(minutesPast: number): number {
+  let effort = 0;
+  let m = 0;
+  while (m < minutesPast) {
+    const step = Math.min(SLOW_EVERY_MINUTES - (m % SLOW_EVERY_MINUTES), minutesPast - m);
+    effort += tiredness(m + step / 2).speed * step;
+    m += step;
+  }
+  return effort;
+}
+
+// How many bricks are on the tower after `worked` minutes: an even pace up to
+// the alarm, then the sleepy effort at the same pace, until it's full.
+export function bricksLaid(plan: TowerPlan, worked: number): number {
+  const perBrick = plan.minutes / plan.before;
+  if (worked <= plan.minutes) return Math.min(plan.before, Math.floor(worked / perBrick + 1e-9));
+  return Math.min(plan.capacity, plan.before + Math.floor(sleepyEffort(worked - plan.minutes) / perBrick + 1e-9));
+}
 
 // The crayon spans for some stretches of work, in local time: each stretch
 // rounded to the nearest SLOT_MINUTES (at least one slot), clipped to one day.

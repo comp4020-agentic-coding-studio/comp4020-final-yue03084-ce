@@ -6,9 +6,23 @@ import {
   SLOW_EVERY_MINUTES,
   SLOWEST_SPEED,
   SPEED_FACTOR,
+  TOWER_AT_ALARM,
+  TOWER_HEIGHT,
+  TOWER_PLAN_MINUTES,
+  TOWER_WIDTH,
   YAWN_AFTER_MINUTES,
 } from "../src/lib/limits.ts";
-import { carriedAfterRest, localDay, localMinutes, nextAlarm, spansFor, tiredness } from "../src/lib/worktime.ts";
+import {
+  bricksLaid,
+  carriedAfterRest,
+  localDay,
+  localMinutes,
+  nextAlarm,
+  sleepyEffort,
+  spansFor,
+  tiredness,
+  towerPlan,
+} from "../src/lib/worktime.ts";
 
 // Work sessions, the little one and the Enough alarm. Against the running
 // app: they're the owner's alone (never on the feed or the stream, another
@@ -172,6 +186,34 @@ const sceneIn = (html: string) => ({
   checkedWeather: /name="weather" value="([a-z]+)" checked/.exec(html)?.[1],
 });
 
+// what the page hands the little one's script for the tower
+const towerIn = (html: string) => ({
+  minutes: Number(/data-tower-minutes="([\d.]+)"/.exec(html)?.[1]),
+  worked: Number(/data-worked="([\d.]+)"/.exec(html)?.[1]),
+});
+
+describe("the little one's tower", () => {
+  it("starts again from nothing each session, planned to that session's alarm", async () => {
+    const me = await signedIn();
+    await me.work({ action: "start", tz: "0", alarm: "interval", minutes: "30" });
+    await new Promise((r) => setTimeout(r, 1200));
+    const first = towerIn(await me.get("/working/"));
+    expect(first.minutes).toBe(30);
+    expect(first.worked).toBeGreaterThan(0);
+    await me.work({ action: "finish" });
+    // a second session the same day: a new tower, at its own pace
+    await me.work({ action: "start", tz: "0", alarm: "interval", minutes: "120" });
+    const second = towerIn(await me.get("/working/"));
+    expect(second.minutes).toBe(120);
+    expect(second.worked).toBeLessThan(first.worked);
+    await me.work({ action: "finish" });
+    // no alarm: the default plan
+    await me.work({ action: "start", tz: "0" });
+    expect(towerIn(await me.get("/working/")).minutes).toBe(TOWER_PLAN_MINUTES);
+    await me.work({ action: "finish" });
+  });
+});
+
 describe("the little one's picture", () => {
   it("keeps what you choose, after a reload and the next time you work", async () => {
     const me = await signedIn();
@@ -278,6 +320,40 @@ describe("work arithmetic (worktime.ts)", () => {
     expect(tiredness(10_000).speed).toBe(SLOWEST_SPEED);
     // the lamp dims with it but never goes out
     expect(tiredness(10_000).glow).toBe(DIMMEST_GLOW);
+  });
+
+  it("plans the tower to the alarm: few big blocks for a short stretch, many small bricks for a long one", () => {
+    const short = towerPlan(10);
+    const half = towerPlan(30);
+    const long = towerPlan(180);
+    expect(short.before).toBeLessThan(half.before);
+    expect(half.before).toBeLessThan(long.before);
+    for (const p of [short, half, long]) {
+      // two thirds of the way up at the alarm, and it all fits in the picture
+      expect(p.layersBefore * p.height).toBeLessThanOrEqual(TOWER_HEIGHT * TOWER_AT_ALARM);
+      expect(p.layersBefore * p.height).toBeGreaterThan(TOWER_HEIGHT * TOWER_AT_ALARM - p.height);
+      const after = (p.capacity - p.before) / p.perLayer;
+      expect(p.layersBefore * p.height + after * p.sleepyHeight).toBeLessThanOrEqual(TOWER_HEIGHT);
+      expect(p.perLayer * p.width).toBeLessThanOrEqual(TOWER_WIDTH);
+      // past the alarm the bricks are thinner
+      expect(p.sleepyHeight).toBeLessThanOrEqual(p.height);
+    }
+  });
+
+  it("lays bricks at an even pace to the alarm, then slower, and stops when full", () => {
+    const p = towerPlan(30);
+    expect(bricksLaid(p, 0)).toBe(0);
+    expect(bricksLaid(p, 15)).toBe(Math.floor(p.before / 2));
+    expect(bricksLaid(p, 30)).toBe(p.before);
+    // the first SLOW_EVERY_MINUTES past the alarm are still full speed
+    // (tiredness()), so compare twenty minutes: fewer bricks after, and thinner
+    const before = bricksLaid(p, 30) - bricksLaid(p, 10);
+    const after = bricksLaid(p, 50) - bricksLaid(p, 30);
+    expect(after).toBeLessThan(before);
+    expect(after * p.sleepyHeight).toBeLessThan(before * p.height);
+    expect(sleepyEffort(SLOW_EVERY_MINUTES)).toBeCloseTo(SLOW_EVERY_MINUTES);
+    expect(sleepyEffort(2 * SLOW_EVERY_MINUTES)).toBeCloseTo(SLOW_EVERY_MINUTES * (1 + SPEED_FACTOR));
+    expect(bricksLaid(p, 100_000)).toBe(p.capacity);
   });
 
   it("recovers fully after a long enough rest, partly after a short one", () => {

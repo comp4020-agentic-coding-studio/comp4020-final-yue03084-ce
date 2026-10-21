@@ -133,17 +133,19 @@ with `curl` on 2026-10-12.
   case; `PASSWORD_MIN`; the username and password never on the feed or the
   stream; logout empties that browser's Mine; `LOGIN_ATTEMPTS` failures lock
   a username for `LOGIN_WINDOW_MINUTES`; an account can't delete someone
-  else's enough. `spec/work.test.ts` (16 tests, 2026-10-21) checks work
+  else's enough. `spec/work.test.ts` (19 tests, 2026-10-22) checks work
   sessions and the Enough alarm: Finish fills in the time bar for the owner
   only; one open session at a time; sessions and snoozes never on the feed
   or the stream, the snooze count only on the owner's Mine; resting from a
   session raises the resting count and coming back resumes work; no start
-  without an account. And what's in the little one's picture (`/scene/`):
+  without an account; each session's tower starts from nothing and is
+  planned to that session's alarm. And what's in the little one's picture (`/scene/`):
   the choice is kept with the account across sessions; unknown keys are
   ignored; no change without an account; one person's choice is never
   another's; it never reaches the feed or the stream. The arithmetic in
   `src/lib/worktime.ts` (spans leave breaks out, rounding, local day,
-  alarms, the tiredness curve with the lamp's glow, recovery) is tested
+  alarms, the tiredness curve with the lamp's glow, recovery, the tower's
+  bricks and pace, `towerPlan`/`bricksLaid`) is tested
   directly, because the spec can't move the app's clock.
 - The little one is pixel art drawn as character grids (`src/lib/sprites.ts`)
   in one palette (`src/lib/pixel.ts`). An upper-case ink becomes a class with

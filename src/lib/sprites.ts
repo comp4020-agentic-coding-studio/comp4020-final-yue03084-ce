@@ -187,6 +187,13 @@ export function blockRows(w: number, h: number, ink: string): string[] {
     }).join(""),
   );
 }
+// A small brick for a long stretch's tower: solid colour, too small for the
+// checkered light and shade, with one dark pixel in its lower right corner so
+// bricks side by side still read as separate bricks.
+export function brickRows(w: number, h: number, ink: string): string[] {
+  if (w >= 8) return blockRows(w, h, ink);
+  return Array.from({ length: h }, (_, r) => (r === h - 1 ? `${ink.repeat(w - 1)}p` : ink.repeat(w)));
+}
 // A standing lamp, 7×16: a shade, the bulb under it, a pole and a foot.
 export const LAMP = [
   "..fff..",

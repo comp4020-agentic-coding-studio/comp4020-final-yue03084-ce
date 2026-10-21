@@ -1,6 +1,6 @@
 import { and, asc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db, type Outcome } from "./db";
-import { ALARM_MAX_MINUTES, BREAK_KINDS, type BreakKind, DAY_MINUTES, SNOOZE_MINUTES } from "./limits";
+import { ALARM_MAX_MINUTES, BREAK_KINDS, type BreakKind, DAY_MINUTES, SNOOZE_MINUTES, TOWER_PLAN_MINUTES } from "./limits";
 import { workSessions, workStretches } from "./schema";
 import type { Span } from "./spans";
 import {
@@ -10,7 +10,6 @@ import {
   nextAlarm,
   spansFor,
   tiredness,
-  towerBlocks,
   type Tiredness,
 } from "./worktime";
 
@@ -193,7 +192,10 @@ export interface WorkView {
   carry: number;
   alarmAt: string | null;
   snoozes: number;
-  tower: number;
+  // this session's tower: the minutes it's planned for (to the alarm), and
+  // the minutes worked so far, breaks left out
+  towerMinutes: number;
+  worked: number;
   startedAt: string;
   alarmLabel: string | null;
 }
@@ -205,18 +207,17 @@ export function workView(personId: number, now = Date.now()): WorkView | null {
   const open = stretches.find((st) => st.endedAt === null);
   const last = open ?? stretches.at(-1);
   const past = last ? minutesPast(last, open ? now : ms(last.endedAt as string)) : 0;
-  // the day's tower: today's sessions' working minutes. A session that
-  // crosses midnight keeps the day it started on, so it doesn't reset.
-  const today = db
-    .select({ id: workSessions.id })
-    .from(workSessions)
-    .where(and(eq(workSessions.personId, personId), eq(workSessions.dayKey, s.dayKey)))
-    .all();
+  // this session's tower (a new one each time you start): the minutes worked
+  // in it so far, and the minutes it's planned for, to the alarm
   let worked = 0;
-  for (const t of today) {
-    for (const st of stretchesOf(t.id)) worked += ((st.endedAt ? ms(st.endedAt) : now) - ms(st.startedAt)) / MINUTE;
-  }
+  for (const st of stretches) worked += ((st.endedAt ? ms(st.endedAt) : now) - ms(st.startedAt)) / MINUTE;
   const alarm = alarmOf(s);
+  const started = ms(s.startedAt);
+  const towerMinutes = !alarm
+    ? TOWER_PLAN_MINUTES
+    : alarm.kind === "interval"
+      ? alarm.minutes
+      : Math.max(1, ((nextAlarm(alarm, started, s.tz, false) ?? started) - started) / MINUTE);
   const clock = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
   return {
     state: s.pausedAt ? "resting" : "working",
@@ -227,7 +228,8 @@ export function workView(personId: number, now = Date.now()): WorkView | null {
     carry: open?.carry ?? 0,
     alarmAt: s.pausedAt ? null : s.alarmAt,
     snoozes: s.snoozes,
-    tower: towerBlocks(worked),
+    towerMinutes,
+    worked,
     startedAt: s.startedAt,
     alarmLabel: !alarm ? null : alarm.kind === "interval" ? `after ${alarm.minutes} minutes` : `at ${clock(alarm.minute)}`,
   };

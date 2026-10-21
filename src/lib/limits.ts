@@ -103,12 +103,23 @@ export const SMALLEST_BLOCK = 0.35;
 export const GLOW_FACTOR = 0.85;
 export const DIMMEST_GLOW = 0.4;
 export const FLICKER_BELOW = 0.75;
-// one block on the day's tower for this much work (never shown as a number),
-// up to TOWER_MAX blocks drawn. While the page is open the little one also
-// lays blocks you can watch, one a trip; on a reload the tower is redrawn
-// from the time worked, so the two agree roughly, not exactly.
-export const BLOCK_EVERY_MINUTES = 3;
-export const TOWER_MAX = 30;
+// The tower: a new one each time you start working (a break doesn't knock it
+// down), never shown as a number. It's built to reach TOWER_AT_ALARM of
+// TOWER_HEIGHT pixels when the alarm goes, at an even pace, so the little one
+// is always busy with it; the rest of the height fills past the alarm in
+// half-height bricks, as slowly as it gets sleepy. With no alarm the plan is
+// TOWER_PLAN_MINUTES. The bricks are the first of BRICKS that fits the plan:
+// a short stretch gets a few big blocks, a long one many small bricks, laid
+// side by side TOWER_WIDTH pixels wide.
+export const TOWER_HEIGHT = 46;
+export const TOWER_WIDTH = 12;
+export const TOWER_AT_ALARM = 2 / 3;
+export const TOWER_PLAN_MINUTES = 60;
+export const BRICKS = [
+  { upToMinutes: 15, width: 12, height: 3 },
+  { upToMinutes: 45, width: 4, height: 2 },
+  { upToMinutes: Infinity, width: 3, height: 2 },
+] as const;
 // What else is in the little one's picture, chosen by its owner and kept
 // with their account: the lamp, nothing but the view (the page is the
 // window), or a little plant. And the weather. Keys stored, words shown.
