@@ -21,8 +21,10 @@ const over = (base: Rows, x: number, y: number, top: Rows): string[] =>
 // Move some rows one pixel right (the head leaning forward when it's tired).
 const lean = (rows: Rows) => rows.map((r) => `.${r.slice(0, -1)}`);
 const blank = (n: number) => Array.from({ length: n }, () => "................");
+// two empty pixels either side, so every frame has room for arms out wide
+const pad = (rows: Rows) => rows.map((r) => (r.length === 20 ? r : `..${r}..`));
 
-// The little one: 16×24, a big head on a small body, a tuft of hair on top
+// The little one: 16×24 (in a 20-wide frame), a big head on a small body, a tuft of hair on top
 // and an apron. Facing you when it stands; turned to the right when it walks
 // or works (the page mirrors it to face left).
 const TUFT = {
@@ -112,17 +114,20 @@ const cupDown = (steam: 0 | 1) => over(sitting(0), 13, 18, [steam ? "..a" : ".a.
 // a sip: the cup up at the mouth, eyes shut
 const cupUp = over(sitting(0, EYES.shut), 11, 16, ["aaA", "aaA"]);
 
-// a stretch: arms straight up beside the head, then a yawn at the top
+// a stretch: little arms raised from the shoulders, hands up by its face
+// (the frame is two pixels wider each side for them), then a yawn
 const stretching = (yawn: boolean) => {
   const base = standing(0, yawn ? EYES.shut : EYES.open, yawn ? MOUTH.yawn : MOUTH.front).map((r) =>
     r === HANDS.down ? HANDS.none : r,
   );
-  return base.map((row, r) => {
-    // hands above the head, sleeves down the sides, joining the shoulders
-    const arm = r >= 2 && r <= 3 ? "s" : r >= 4 && r <= 15 ? "t" : null;
-    if (r === 16) return `.tt${row.slice(3, -3)}tt.`;
-    return arm ? `${arm}${row.slice(1, -1)}${arm}` : row;
-  });
+  return over(pad(base), 0, 10, [
+    "ss................ss",
+    ".s................s.",
+    ".t................t.",
+    "..t..............t..",
+    "..tt............tt..",
+    "....tt........tt....",
+  ]);
 };
 
 // asleep sitting up, head nodding forward; two frames for breathing
@@ -161,12 +166,13 @@ for (const t of tiers) {
   frames[`crouch${s}`] = crouching(t);
   frames[`sit${s}`] = sitting(t);
 }
-// every frame must be exactly 16×24, or the drawing has a mistake in it
+// every frame must be exactly 20×24 once padded, or the drawing has a mistake in it
 for (const [name, rows] of Object.entries(frames)) {
-  if (rows.length !== 24 || rows.some((r) => r.length !== 16)) throw new Error(`frame "${name}" isn't 16×24`);
+  frames[name] = pad(rows);
+  if (frames[name].length !== 24 || frames[name].some((r) => r.length !== 20)) throw new Error(`frame "${name}" isn't 20×24`);
 }
 
-export const KEEPER: Actor = { width: 16, height: 24, frames };
+export const KEEPER: Actor = { width: 20, height: 24, frames };
 
 // the order the walking frames play in
 export const WALK = ["walk1", "walk2", "walk3", "walk4"] as const;

@@ -164,7 +164,7 @@ const css = `${paletteCss(".little-one")}\n${frameCss}`;
       <g
         class="keeper"
         data-frame={still}
-        transform={`translate(26 ${GROUND - KEEPER.height + 1})`}
+        transform={`translate(24 ${GROUND - KEEPER.height + 1})`}
         set:html={frames}
       />
       <g class="held"></g>
@@ -279,11 +279,12 @@ const css = `${paletteCss(".little-one")}\n${frameCss}`;
   const SVG = "http://www.w3.org/2000/svg";
   const GROUND = 50;
   const HEIGHT = 24;
-  const WIDTH = 16;
+  // the frame is 20 wide: the little one is 16, with room for arms out
+  const WIDTH = 20;
   // where it stands: beside the pile on the left, beside the tower on the right
-  const PILE = 22;
+  const PILE = 20;
   const TOWER = 84;
-  const BESIDE_TOWER = TOWER - WIDTH - 2;
+  const BESIDE_TOWER = TOWER - WIDTH;
   const STEP = 2;
   // a block every ~10 frames; how long one frame shows when it's fresh
   const FRAME_MS = 140;
@@ -350,12 +351,12 @@ const css = `${paletteCss(".little-one")}\n${frameCss}`;
     const hold = (ink: string | null, size = sizes[0]) => {
       held.replaceChildren();
       if (!ink) return;
-      const bx = facing === 1 ? x + 12 : x + 4 - size;
+      const bx = facing === 1 ? x + 14 : x + 6 - size;
       held.append(block(ink, size, bx, GROUND - 9 - heightOf(size)));
     };
     const still = keeper.dataset.frame ?? "stand";
     place(still, 1);
-    if (fig.dataset.state !== "working") x = 30;
+    if (fig.dataset.state !== "working") x = 28;
     if (reduced) {
       place(still, 1);
       continue;
