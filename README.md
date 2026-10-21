@@ -35,9 +35,12 @@ anything you've written.
 
 On Working on it, you can start a stretch of work and set an Enough alarm,
 after a number of minutes or at a time of day. A little one builds a crooked
-tower alongside you. When the alarm goes, it gets sleepy: it slows down,
-carries smaller blocks and yawns, and a soft reminder asks whether to go and
-rest or take ten more minutes. Finishing takes you to Call it enough with the
+tower alongside you, in a small pixel picture taped into the page. The sky
+follows your clock, and you can choose what else is in the picture (a lamp, a
+little plant, or just the view) and the weather. When the alarm goes, it gets
+sleepy: it slows down, carries smaller blocks and yawns, and the lamp dims or
+the plant droops, and a soft reminder asks whether to go and rest or take ten
+more minutes. Finishing takes you to Call it enough with the
 time already coloured in.
 
 ## Where the idea came from

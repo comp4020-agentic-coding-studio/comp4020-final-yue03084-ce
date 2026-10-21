@@ -129,14 +129,28 @@ with `curl` on 2026-10-12.
   case; `PASSWORD_MIN`; the username and password never on the feed or the
   stream; logout empties that browser's Mine; `LOGIN_ATTEMPTS` failures lock
   a username for `LOGIN_WINDOW_MINUTES`; an account can't delete someone
-  else's enough. `spec/work.test.ts` (12 tests, 2026-10-20) checks work
+  else's enough. `spec/work.test.ts` (16 tests, 2026-10-21) checks work
   sessions and the Enough alarm: Finish fills in the time bar for the owner
   only; one open session at a time; sessions and snoozes never on the feed
   or the stream, the snooze count only on the owner's Mine; resting from a
   session raises the resting count and coming back resumes work; no start
-  without an account. The arithmetic in `src/lib/worktime.ts` (spans leave
-  breaks out, rounding, local day, alarms, the tiredness curve, recovery) is
-  tested directly, because the spec can't move the app's clock.
+  without an account. And what's in the little one's picture (`/scene/`):
+  the choice is kept with the account across sessions; unknown keys are
+  ignored; no change without an account; one person's choice is never
+  another's; it never reaches the feed or the stream. The arithmetic in
+  `src/lib/worktime.ts` (spans leave breaks out, rounding, local day,
+  alarms, the tiredness curve with the lamp's glow, recovery) is tested
+  directly, because the spec can't move the app's clock.
+- The little one is pixel art drawn as character grids (`src/lib/sprites.ts`)
+  in one palette (`src/lib/pixel.ts`). An upper-case ink becomes a class with
+  a "2" suffix and a digit ink one with a "b" prefix, so "B" can't be an ink:
+  it would share `px-b2` with block colour "2". *(On 2026-10-21 the
+  umbrella's edge, drawn in "B", turned every pink block wine red.)*
+- A local server started with a relative path runs that folder's
+  migrations and escapes `pkill -f` on the full path. Start it with the
+  folder as the working directory and the absolute `entry.mjs`, and stop it
+  by the port's PID. *(On 2026-10-21 two rounds of screenshots read a stale
+  server, and one read main's migrations without the new table.)*
 - The login rate limit is in memory, per username. Tests that register reuse
   nothing between runs (each makes a fresh username), so a lockout from one
   test can't fail another.
