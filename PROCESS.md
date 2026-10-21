@@ -39,10 +39,29 @@ and adjusting the design went smoothly in crit 7, and I expect to polish this
 app many times ([ADR 0001](docs/adr/0001-stack.md), [55f87d5](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/55f87d5)). The
 agent then built the first real-time version ([0c23536](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/0c23536)).
 
+Most features are one small commit each, checked with `pnpm check` and
+deployed by CI on every push ([310c75a...949f48a](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/compare/310c75a...949f48a)).
+For the bigger login system, a sub-agent built it on a separate branch, and I
+checked it myself before it was merged ([faf32c2](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/faf32c2)).
+
+## From prototype to a fuller site
+
+At first this felt like a prototype. As I kept building, it grew more
+complete: a crayon bar for time spent ([0fdb40d](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/0fdb40d)), comments and reporting
+([8658080](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/8658080)), breaks and "I want to check it again" ([574b8f5](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/574b8f5)). With so
+much personal record-keeping, a site without accounts felt very incomplete.
+Accounts started as optional ([faf32c2](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/faf32c2)), then I changed the decision:
+anyone can read, but writing needs an account ([7804228](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/7804228),
+[ADR 0003](docs/adr/0003-who-sees-and-changes-what.md)).
+
+I also wanted a reminder you can see, not just an alarm: people mean to rest
+after a while, then get absorbed and forget. So a little one builds a tower
+while you work and slows down as you get tired ([240c133](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/240c133)).
+
 ## Directing and correcting the agent
 
 I rewrote `CLAUDE.md` for the new direction: I dropped the *Friends* rules,
-picked which crit 7 rules to carry over, and added four product rules, such as
+picked which crit 7 rules to carry over, and added product rules, such as
 "show stopping, never finishing" ([e34cc4a](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/e34cc4a)). The tests check the
 ones that can be checked: nothing private reaches anyone else.
 
@@ -54,3 +73,12 @@ you did to be public, it pointed out the clash with my own rule, and I kept it
 private. For the look, the design skill first proposed a purple landing page; I
 asked for something quiet and imperfect, and chose the looping scene of figures
 who build a crooked tower, then rest ([10e3f24](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/10e3f24)).
+
+When I checked it myself, the little one was only sliding sideways and never
+moved a block. The agent couldn't catch this from screenshots, and it was fixed
+so that each trip lays a block on the tower ([134e2ea](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/134e2ea)). Some
+corrections went into the harness so they wouldn't happen again. CI went red
+once because a test's hours value "7.5" matched inside a timestamp. Nothing had
+leaked, but the rule for writing such tests is now in `CLAUDE.md`
+([5ada816](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5ada816)). A form sent with no body crashed the server with a 500, and
+now there's a test for it ([7d755f0](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/7d755f0)).
