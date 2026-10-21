@@ -187,5 +187,50 @@ export function blockRows(w: number, h: number, ink: string): string[] {
     }).join(""),
   );
 }
+// A standing lamp, 7×16: a shade, the bulb under it, a pole and a foot.
+export const LAMP = [
+  "..fff..",
+  ".fffff.",
+  "fffffff",
+  "FFFFFFF",
+  "..iii..",
+  "...n...",
+  "...n...",
+  "...n...",
+  "...n...",
+  "...n...",
+  "...n...",
+  "...n...",
+  "...n...",
+  "...N...",
+  ".nnnnn.",
+  "NNNNNNN",
+];
+// the shade with the bulb off-ish, for a flicker
+export const LAMP_DIM = LAMP.map((r) => r.replace(/i/g, "F"));
+
+// The pool of light: rings of pixels around (0, 0), each a solid band (the
+// page makes the outer ones fainter), with only the outermost ring dithered
+// in a checker so the edge of the light breaks up instead of ending in a
+// line. Each ring is its own group so the script can show fewer of them.
+export function glowRings(rings: number, step: number): string[][] {
+  const out: string[][] = [];
+  for (let k = 0; k < rings; k++) {
+    const inner = k * step;
+    const outer = (k + 1) * step;
+    const pts: string[] = [];
+    for (let y = -outer; y <= outer; y++) {
+      for (let x = -outer; x <= outer; x++) {
+        const d = Math.hypot(x, y * 1.3);
+        if (d < inner || d >= outer) continue;
+        if (k === rings - 1 && (x + y) % 2 !== 0) continue;
+        pts.push(`${x},${y}`);
+      }
+    }
+    out.push(pts);
+  }
+  return out;
+}
+
 // a little "z", three by three, rising off a nap
 export const ZED = ["ooo", ".o.", "ooo"];

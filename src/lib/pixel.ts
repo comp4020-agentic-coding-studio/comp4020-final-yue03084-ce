@@ -35,6 +35,14 @@ export const PALETTE = {
   // the sun (the moon at night) and the stars, which only show at night
   u: "#fbe3a1",
   w: "#cfe3e6",
+  // the lamp: its brass, the shade and its shadow, the bulb, and the light
+  // it throws (only ever drawn as a scatter of single pixels)
+  n: "#8a6a3e",
+  N: "#5e4528",
+  f: "#e9a85c",
+  F: "#c27c3c",
+  i: "#fff3c4",
+  j: "#ffe9a8",
   // the blocks: four colours, each with a light top and a dark side
   "1": "#9fb48f",
   "2": "#d9a3a0",
@@ -79,6 +87,10 @@ export const SKIES = {
     D: "#4a3c33",
     u: "#efe6c8",
     w: "#e8e0c2",
+    n: "#6a5236",
+    N: "#46351f",
+    f: "#d9944a",
+    F: "#a8652c",
     "1": "#6f7f66",
     "2": "#9a7774",
     "3": "#76848f",

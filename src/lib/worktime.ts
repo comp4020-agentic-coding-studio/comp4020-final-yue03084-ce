@@ -1,6 +1,8 @@
 import {
   BLOCK_EVERY_MINUTES,
   BLOCK_FACTOR,
+  DIMMEST_GLOW,
+  GLOW_FACTOR,
   DAY_MINUTES,
   RECOVER_MINUTES,
   SLOT_MINUTES,
@@ -44,21 +46,24 @@ export function nextAlarm(alarm: Alarm | null, from: number, tz: number, clockAl
 }
 
 // How tired the little one is, from minutes past the alarm (the metaphor in
-// limits.ts): speed and block size fall by a factor every SLOW_EVERY_MINUTES,
-// with a floor; it yawns past YAWN_AFTER_MINUTES. Before the alarm, fresh.
+// limits.ts): speed, block size and the lamp's glow fall by a factor every
+// SLOW_EVERY_MINUTES, each with a floor; it yawns past YAWN_AFTER_MINUTES.
+// Before the alarm, fresh.
 export interface Tiredness {
   sleepy: boolean;
   speed: number;
   block: number;
+  glow: number;
   yawning: boolean;
 }
 export function tiredness(minutesPast: number): Tiredness {
-  if (minutesPast <= 0) return { sleepy: false, speed: 1, block: 1, yawning: false };
+  if (minutesPast <= 0) return { sleepy: false, speed: 1, block: 1, glow: 1, yawning: false };
   const steps = Math.floor(minutesPast / SLOW_EVERY_MINUTES);
   return {
     sleepy: true,
     speed: Math.max(SLOWEST_SPEED, SPEED_FACTOR ** steps),
     block: Math.max(SMALLEST_BLOCK, BLOCK_FACTOR ** steps),
+    glow: Math.max(DIMMEST_GLOW, GLOW_FACTOR ** steps),
     yawning: minutesPast >= YAWN_AFTER_MINUTES,
   };
 }

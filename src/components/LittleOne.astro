@@ -1,7 +1,7 @@
 ---
-import { CARRY_SECONDS, TOWER_MAX } from "../lib/limits";
+import { CARRY_SECONDS, FLICKER_BELOW, TOWER_MAX } from "../lib/limits";
 import { gridRects, paletteCss } from "../lib/pixel";
-import { blockRows, CARRY, KEEPER, WALK, ZED } from "../lib/sprites";
+import { blockRows, CARRY, glowRings, KEEPER, LAMP, LAMP_DIM, WALK, ZED } from "../lib/sprites";
 import type { WorkView } from "../lib/work";
 import { tiredness } from "../lib/worktime";
 
@@ -13,7 +13,10 @@ import { tiredness } from "../lib/worktime";
 // in worktime.ts, the metaphor in limits.ts): its eyelids droop, its tuft
 // flops, it walks slower, sits down to stare now and then, rubs its eyes,
 // yawns, and the blocks get smaller. Sleepy, never sad. On a break it has
-// tea, stretches or naps; back at work it stretches first. The tower is a
+// tea, stretches or naps; back at work it stretches first. A lamp stands on
+// the grass beside it: its pool of light shrinks and dims as the little one
+// gets sleepier (the same tiredness()), flickers now and then, and comes back
+// in full on a break. Never a countdown: it never goes out. The tower is a
 // drawing of today, never a number. Decoration, hidden from screen readers;
 // the text beside it says what's going on. With reduced motion it holds one
 // still frame. Every frame is a grid of characters (sprites.ts) drawn once
@@ -114,6 +117,29 @@ const blocks = INKS.flatMap((ink) =>
 ).join("");
 const zed = gridRects(ZED);
 
+// the lamp past the tower, out of the little one's way, its light falling
+// on the day's work: RINGS rings around the bulb, the outer ones sparser;
+// glow decides how many show
+const LAMP_X = 94;
+const LAMP_Y = GROUND - LAMP.length + 1;
+const BULB = { x: LAMP_X + 3, y: LAMP_Y + 4 };
+const RINGS = 6;
+const lamp = gridRects(LAMP, LAMP_X, LAMP_Y);
+const lampDim = gridRects(LAMP_DIM, LAMP_X, LAMP_Y);
+const rings = glowRings(RINGS, 3).map(
+  (pts, k) =>
+    `<g data-ring="${k}" style="opacity:${(0.55 * (1 - k / RINGS) + 0.12).toFixed(2)}">${pts
+      .map((p) => {
+        const [x, y] = p.split(",").map(Number);
+        return `<rect class="${k < 2 ? "px-i" : "px-j"}" x="${BULB.x + x}" y="${BULB.y + y}" width="1" height="1"/>`;
+      })
+      .join("")}</g>`,
+);
+// how many rings show for a glow, and whether the lamp flickers: the same
+// sum in the page and the script
+const ringsFor = (glow: number) => Math.max(2, Math.round(RINGS * glow));
+const lit = ringsFor(t.glow);
+
 const frames = Object.entries(KEEPER.frames)
   .map(([name, rows]) => `<g data-f="${name}">${gridRects(rows)}</g>`)
   .join("");
@@ -121,7 +147,13 @@ const frames = Object.entries(KEEPER.frames)
 const frameCss = Object.keys(KEEPER.frames)
   .map((name) => `.little-one .keeper[data-frame="${name}"] [data-f="${name}"]{display:inline}`)
   .join("\n");
-const css = `${paletteCss(".little-one")}\n${frameCss}`;
+// rings beyond how many are lit stay hidden: with L lit, rings L and up
+const ringCss = Array.from({ length: RINGS }, (_, lit) =>
+  Array.from({ length: RINGS - lit }, (_, j) => `.little-one[data-lit="${lit}"] [data-ring="${lit + j}"]`),
+)
+  .flat()
+  .join(",");
+const css = `${paletteCss(".little-one")}\n${frameCss}\n${ringCss}{display:none}`;
 ---
 
 <figure
@@ -139,6 +171,9 @@ const css = `${paletteCss(".little-one")}\n${frameCss}`;
   data-carry-frames={JSON.stringify(CARRY)}
   data-inks={JSON.stringify(INKS)}
   data-sizes={JSON.stringify(SIZES)}
+  data-rings={RINGS}
+  data-lit={lit}
+  data-flicker-below={FLICKER_BELOW}
 >
   <style set:html={css}></style>
   <div class="page">
@@ -156,6 +191,9 @@ const css = `${paletteCss(".little-one")}\n${frameCss}`;
       <g class="sun" set:html={sun} />
       <g set:html={hills} />
       <g set:html={ground} />
+      <g class="glow" set:html={rings.join("")} />
+      <g class="lamp" set:html={lamp} />
+      <g class="lamp-dim" set:html={lampDim} />
       <g class="pile" set:html={pile} />
       <!-- the day's tower; the script lays its blocks, starting from today's work -->
       <g class="tower"></g>
@@ -245,6 +283,38 @@ const css = `${paletteCss(".little-one")}\n${frameCss}`;
   }
 
   [data-sky="night"] .stars {
+    display: inline;
+  }
+
+  /* the light is brighter at night, softer in the day; a flicker dims it
+     for a moment and swaps the bulb out */
+  .glow {
+    opacity: 0.6;
+    transition: opacity 0.6s steps(3);
+  }
+
+  [data-sky="dusk"] .glow {
+    opacity: 0.75;
+  }
+
+  [data-sky="night"] .glow {
+    opacity: 0.9;
+  }
+
+  .lamp-dim {
+    display: none;
+  }
+
+  [data-flicker="on"] .glow {
+    opacity: 0.25;
+    transition: none;
+  }
+
+  [data-flicker="on"] .lamp {
+    display: none;
+  }
+
+  [data-flicker="on"] .lamp-dim {
     display: inline;
   }
 
@@ -371,6 +441,32 @@ const css = `${paletteCss(".little-one")}\n${frameCss}`;
     // three looks: fresh, drooping, nearly asleep; the frame names carry it
     const tier = (t: ReturnType<typeof now>) => (!t.sleepy ? "" : t.yawning ? "~2" : "~1");
     const ms = (t: ReturnType<typeof now>) => FRAME_MS / t.speed;
+
+    // the lamp keeps up with it: fewer rings of light as the glow falls, and
+    // below FLICKER_BELOW a flicker now and then (two quick dips). On a break
+    // the server already sent full glow, so it's lit and steady.
+    const rings = Number(fig.dataset.rings) || 6;
+    const flickerBelow = Number(fig.dataset.flickerBelow) || 0.75;
+    if (fig.dataset.state === "working") {
+      const light = () => {
+        const t = now();
+        fig.dataset.lit = String(Math.max(2, Math.round(rings * t.glow)));
+        return t.glow;
+      };
+      light();
+      setInterval(light, 20_000);
+      void (async () => {
+        for (;;) {
+          await pause(6000 + Math.random() * 9000);
+          if (light() >= flickerBelow) continue;
+          for (const ms of [90, 70, 160, 60]) {
+            fig.dataset.flicker = fig.dataset.flicker === "on" ? "" : "on";
+            await pause(ms);
+          }
+          fig.dataset.flicker = "";
+        }
+      })();
+    }
 
     // standing still, it blinks now and then (only when it's wide awake)
     const idle = async (time: number) => {

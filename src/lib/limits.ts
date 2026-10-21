@@ -97,6 +97,12 @@ export const YAWN_AFTER_MINUTES = 20;
 export const RECOVER_MINUTES = 10;
 export const SLOWEST_SPEED = 0.25;
 export const SMALLEST_BLOCK = 0.35;
+// the lamp beside it dims with it: its glow falls by GLOW_FACTOR every
+// SLOW_EVERY_MINUTES past the alarm, never below DIMMEST_GLOW (it never goes
+// out), and flickers now and then once it's below FLICKER_BELOW
+export const GLOW_FACTOR = 0.85;
+export const DIMMEST_GLOW = 0.4;
+export const FLICKER_BELOW = 0.75;
 // one block on the day's tower for this much work (never shown as a number),
 // up to TOWER_MAX blocks drawn. While the page is open the little one also
 // lays blocks you can watch, one a trip; on a reload the tower is redrawn

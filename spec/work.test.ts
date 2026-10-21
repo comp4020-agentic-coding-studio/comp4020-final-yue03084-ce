@@ -1,5 +1,13 @@
 import { describe, expect, inject, it } from "vitest";
-import { BLOCK_FACTOR, SLOW_EVERY_MINUTES, SLOWEST_SPEED, SPEED_FACTOR, YAWN_AFTER_MINUTES } from "../src/lib/limits.ts";
+import {
+  BLOCK_FACTOR,
+  DIMMEST_GLOW,
+  GLOW_FACTOR,
+  SLOW_EVERY_MINUTES,
+  SLOWEST_SPEED,
+  SPEED_FACTOR,
+  YAWN_AFTER_MINUTES,
+} from "../src/lib/limits.ts";
 import { carriedAfterRest, localDay, localMinutes, nextAlarm, spansFor, tiredness } from "../src/lib/worktime.ts";
 
 // Work sessions, the little one and the Enough alarm. Against the running
@@ -193,13 +201,16 @@ describe("work arithmetic (worktime.ts)", () => {
   });
 
   it("slows by a factor each step past the alarm, yawns later, never stops", () => {
-    expect(tiredness(0)).toEqual({ sleepy: false, speed: 1, block: 1, yawning: false });
+    expect(tiredness(0)).toEqual({ sleepy: false, speed: 1, block: 1, glow: 1, yawning: false });
     const one = tiredness(SLOW_EVERY_MINUTES);
     expect(one.speed).toBeCloseTo(SPEED_FACTOR);
     expect(one.block).toBeCloseTo(BLOCK_FACTOR);
+    expect(one.glow).toBeCloseTo(GLOW_FACTOR);
     expect(one.yawning).toBe(false);
     expect(tiredness(YAWN_AFTER_MINUTES).yawning).toBe(true);
     expect(tiredness(10_000).speed).toBe(SLOWEST_SPEED);
+    // the lamp dims with it but never goes out
+    expect(tiredness(10_000).glow).toBe(DIMMEST_GLOW);
   });
 
   it("recovers fully after a long enough rest, partly after a short one", () => {
