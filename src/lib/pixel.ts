@@ -43,6 +43,17 @@ export const PALETTE = {
   F: "#c27c3c",
   i: "#fff3c4",
   j: "#ffe9a8",
+  // the plant: leaves (light, mid, dark), its pot and the pot's rim; the
+  // watering can; rain and snow
+  v: "#a7c77f",
+  q: "#6f9a4f",
+  Q: "#4f7238",
+  r: "#c47a55",
+  R: "#9a5638",
+  x: "#9fb4c4",
+  X: "#6f8798",
+  z: "#8fb2cf",
+  Z: "#fbfbf6",
   // the blocks: four colours, each with a light top and a dark side
   "1": "#9fb48f",
   "2": "#d9a3a0",
@@ -89,6 +100,15 @@ export const SKIES = {
     w: "#e8e0c2",
     n: "#6a5236",
     N: "#46351f",
+    v: "#6f8a5c",
+    q: "#4f6b40",
+    Q: "#3a5030",
+    r: "#8e5c45",
+    R: "#6c4232",
+    x: "#76879a",
+    X: "#56667a",
+    z: "#7f97b8",
+    Z: "#d9dce6",
     f: "#d9944a",
     F: "#a8652c",
     "1": "#6f7f66",
@@ -98,6 +118,13 @@ export const SKIES = {
   },
 } as const satisfies Record<string, Partial<Record<Ink, string>>>;
 export type Sky = keyof typeof SKIES;
+
+// Weather tints the day and dusk skies (the night stays as it is): rain
+// greys them, snow pales them.
+export const WEATHER_SKIES = {
+  rain: { y: "#b9c6cc", Y: "#cdd5d4", u: "#e7e2cc" },
+  snow: { y: "#dfe6ea", Y: "#eef1f0", u: "#f3efdc" },
+} as const satisfies Record<string, Partial<Record<Ink, string>>>;
 
 // Which sky a local hour gets.
 export const skyFor = (hour: number): Sky => (hour >= 7 && hour < 17 ? "day" : hour >= 17 && hour < 19 ? "dusk" : "night");
@@ -112,6 +139,10 @@ export function paletteCss(scope: string): string {
   const lines = [`${scope}{${vars(PALETTE)}}`];
   for (const [sky, inks] of Object.entries(SKIES)) {
     if (Object.keys(inks).length) lines.push(`${scope}[data-sky="${sky}"]{${vars(inks)}}`);
+  }
+  for (const [weather, inks] of Object.entries(WEATHER_SKIES)) {
+    const v = vars(inks);
+    lines.push(`${scope}[data-weather="${weather}"][data-sky="day"]{${v}}`);
   }
   for (const k of Object.keys(PALETTE)) lines.push(`${scope} .px-${code(k)}{fill:var(--px-${code(k)})}`);
   return lines.join("\n");

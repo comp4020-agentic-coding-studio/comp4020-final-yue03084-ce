@@ -167,3 +167,17 @@ export const workStretches = sqliteTable("work_stretches", {
 
 export type Person = typeof people.$inferSelect;
 export type Enough = typeof enoughs.$inferSelect;
+
+// What a person keeps in the little one's picture: one row each, written only
+// through /scene/ by its owner and read only for their own Working on it.
+// Never on the feed or the stream. Keys from SCENE_THINGS and WEATHERS.
+export const scenes = sqliteTable("scenes", {
+  personId: integer("person_id")
+    .primaryKey()
+    .references(() => people.id),
+  thing: text("thing").notNull(),
+  weather: text("weather").notNull(),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+});

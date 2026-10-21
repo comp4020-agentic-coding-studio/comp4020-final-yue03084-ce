@@ -1,20 +1,28 @@
 ---
+import ScenePicker from "../components/ScenePicker.astro";
 import WorkPanel from "../components/WorkPanel.astro";
 import Page from "../layouts/Page.astro";
 import { signedInPerson } from "../lib/person";
+import { sceneOf } from "../lib/scene";
 import { workView } from "../lib/work";
 
 // Working on it: start a stretch of work, set an Enough alarm, and watch the
 // little one build alongside you. The owner's alone; it needs an account, like
 // anything you write. Finishing goes to Call it enough with the time filled in.
+// While you work you can choose what else is in its picture, and the weather.
 const person = signedInPerson(Astro.cookies);
+const view = person ? workView(person.id) : null;
+const scene = person ? sceneOf(person.id) : null;
 ---
 
 <Page title="Working on it">
   <h1>Working on it</h1>
   {
     person ? (
-      <WorkPanel view={workView(person.id)} />
+      <>
+        <WorkPanel view={view} scene={scene ?? undefined} />
+        {view && scene && <ScenePicker scene={scene} />}
+      </>
     ) : (
       <section class="account-box mine-gate">
         <p>Start working, and a little one builds alongside you, then gets sleepy when it's time to stop. Sign in to begin.</p>

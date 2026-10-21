@@ -232,5 +232,57 @@ export function glowRings(rings: number, step: number): string[][] {
   return out;
 }
 
+// A little potted plant, 11×14, in three moods: perked up; drooping (leaves
+// hanging, the tip bowed); and sleepy (leaves down by the pot). Never wilted
+// or brown: sleepy, not sad.
+const POT = ["..RRRRRRR..", "..rrrrrrr..", "...rrrrr...", "...rrrrr...", "....RRR...."];
+export const PLANT = {
+  up: [
+    ".....v.....",
+    "....vqv....",
+    ".v..vqv..v.",
+    "vqv..q..vqv",
+    ".vqv.q.vqv.",
+    "..vqvqvqv..",
+    "....vqv....",
+    ".....q.....",
+    ".....Q.....",
+    ...POT,
+  ],
+  droop: [
+    "...........",
+    "......vv...",
+    ".....vqqv..",
+    ".....q..v..",
+    "..vvvq.vvv.",
+    ".vqqvqvqqv.",
+    ".v...q...v.",
+    ".....q.....",
+    ".....Q.....",
+    ...POT,
+  ],
+  sleepy: [
+    "...........",
+    "...........",
+    "...........",
+    ".......vv..",
+    "......vqqv.",
+    ".....q...v.",
+    "..vvvq.....",
+    ".vqq.qvvv..",
+    "vq...Qqqqv.",
+    "v.RRRRRRRv.",
+    "..rrrrrrr..",
+    "...rrrrr...",
+    "...rrrrr...",
+    "....RRR....",
+  ],
+};
+for (const [name, rows] of Object.entries(PLANT)) {
+  if (rows.length !== 14 || rows.some((r) => r.length !== 11)) throw new Error(`plant "${name}" isn't 11×14`);
+}
+// a watering can, 9×6, set down after watering
+export const CAN = ["..XX.....", ".X..X....", "xxxxxx..X", "xxxxxxXX.", "xxxxxx...", ".XXXX...."];
+
 // a little "z", three by three, rising off a nap
 export const ZED = ["ooo", ".o.", "ooo"];

@@ -1,0 +1,64 @@
+---
+import { SCENE_THINGS, WEATHERS } from "../lib/limits";
+import type { Scene } from "../lib/scene";
+
+// Choose what's in the little one's picture and the weather, kept with your
+// account. Two groups of radio buttons in one plain form: labelled, and the
+// arrow keys move within a group. The owner's alone.
+interface Props {
+  scene: Scene;
+}
+const { scene } = Astro.props;
+---
+
+<form method="post" action="/scene/" class="scene-picker">
+  <fieldset class="choices">
+    <legend>In the picture</legend>
+    {
+      Object.entries(SCENE_THINGS).map(([key, label]) => (
+        <label class="inline">
+          <input type="radio" name="thing" value={key} checked={scene.thing === key} /> {label}
+        </label>
+      ))
+    }
+  </fieldset>
+  <fieldset class="choices">
+    <legend>Weather</legend>
+    {
+      Object.entries(WEATHERS).map(([key, label]) => (
+        <label class="inline">
+          <input type="radio" name="weather" value={key} checked={scene.weather === key} /> {label}
+        </label>
+      ))
+    }
+  </fieldset>
+  <button type="submit" class="quiet">Keep this</button>
+</form>
+
+<style>
+  .scene-picker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.75rem 1.5rem;
+    margin-top: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .scene-picker fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.9rem;
+  }
+
+  .scene-picker legend {
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+
+  .scene-picker label {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+  }
+</style>

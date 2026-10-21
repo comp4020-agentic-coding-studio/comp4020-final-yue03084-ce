@@ -1,5 +1,6 @@
 ---
 import { ALARM_INTERVALS, ALARM_MAX_MINUTES, BREAK_KINDS, SNOOZE_MINUTES } from "../lib/limits";
+import type { Scene } from "../lib/scene";
 import type { WorkView } from "../lib/work";
 import LittleOne from "./LittleOne.astro";
 
@@ -11,8 +12,9 @@ import LittleOne from "./LittleOne.astro";
 // filled in. All plain forms; the script adds the alarm and the time zone.
 interface Props {
   view: WorkView | null;
+  scene?: Scene;
 }
-const { view } = Astro.props;
+const { view, scene } = Astro.props;
 const resting = view?.state === "resting";
 ---
 
@@ -64,7 +66,7 @@ const resting = view?.state === "resting";
       </form>
     ) : (
       <div class="work-on">
-        <LittleOne view={view} />
+        <LittleOne view={view} scene={scene} />
         <p class="work-status" aria-live="polite">
           {resting
             ? `You're on a break (${view.restLabel?.toLowerCase() ?? "resting"}). The little one is resting too.`

@@ -35,6 +35,7 @@ function browser() {
     get: async (path: string) => (await send(path)).text(),
     work: (fields: Record<string, string>) => post("/work/", fields),
     rest: (fields: Record<string, string>) => post("/break/", fields),
+    scene: (fields: Record<string, string>) => post("/scene/", fields),
     register: (username: string) =>
       post("/account/", { action: "register", username, password: "a-long-enough-password" }),
   };
@@ -159,6 +160,72 @@ describe("a work session", () => {
   it("without an account, can't start", async () => {
     const res = await browser().work({ action: "start", tz: "0" });
     expect(res.headers.get("location")).toContain("/account/");
+  });
+});
+
+// what the little one's picture holds, read off the page: the attributes the
+// server rendered, and the radio button checked in each group
+const sceneIn = (html: string) => ({
+  thing: /data-thing="([a-z]+)"/.exec(html)?.[1],
+  weather: /data-weather="([a-z]+)"/.exec(html)?.[1],
+  checkedThing: /name="thing" value="([a-z]+)" checked/.exec(html)?.[1],
+  checkedWeather: /name="weather" value="([a-z]+)" checked/.exec(html)?.[1],
+});
+
+describe("the little one's picture", () => {
+  it("keeps what you choose, after a reload and the next time you work", async () => {
+    const me = await signedIn();
+    await me.work({ action: "start", tz: "660" });
+    // before choosing: the lamp, clear skies
+    expect(sceneIn(await me.get("/working/"))).toMatchObject({ thing: "lamp", weather: "clear" });
+
+    const res = await me.scene({ thing: "plant", weather: "snow" });
+    expect(res.status).toBe(303);
+    expect(sceneIn(await me.get("/working/"))).toEqual({
+      thing: "plant",
+      weather: "snow",
+      checkedThing: "plant",
+      checkedWeather: "snow",
+    });
+    // it belongs to the account, not to one session
+    await me.work({ action: "finish" });
+    await me.work({ action: "start", tz: "660" });
+    expect(sceneIn(await me.get("/working/"))).toMatchObject({ thing: "plant", weather: "snow" });
+    await me.work({ action: "finish" });
+  });
+
+  it("ignores a choice that isn't on the list", async () => {
+    const me = await signedIn();
+    await me.work({ action: "start", tz: "0" });
+    await me.scene({ thing: "window", weather: "rain" });
+    await me.scene({ thing: "candle", weather: "rain" });
+    await me.scene({ thing: "plant", weather: "hail" });
+    expect(sceneIn(await me.get("/working/"))).toMatchObject({ thing: "window", weather: "rain" });
+    await me.work({ action: "finish" });
+  });
+
+  it("can't be changed without an account, and is never anyone else's", async () => {
+    const res = await browser().scene({ thing: "plant", weather: "rain" });
+    expect(res.headers.get("location")).toContain("/account/");
+
+    const me = await signedIn();
+    const other = await signedIn();
+    await me.work({ action: "start", tz: "0" });
+    await other.work({ action: "start", tz: "0" });
+    await me.scene({ thing: "plant", weather: "rain" });
+    expect(sceneIn(await other.get("/working/"))).toMatchObject({ thing: "lamp", weather: "clear" });
+    await me.work({ action: "finish" });
+    await other.work({ action: "finish" });
+  });
+
+  it("never reaches the feed or the stream", async () => {
+    const me = await signedIn();
+    await me.work({ action: "start", tz: "0" });
+    const received = await readStream(() => me.scene({ thing: "plant", weather: "snow" }), 1_000);
+    for (const word of ["plant", "snow", "scene", "weather"]) expect(received).not.toContain(word);
+    const feed = await browser().get("/");
+    for (const word of ["data-thing", "data-weather", "A little plant", "/scene/"]) expect(feed).not.toContain(word);
+    await me.work({ action: "finish" });
   });
 });
 

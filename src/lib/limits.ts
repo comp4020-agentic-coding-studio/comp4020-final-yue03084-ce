@@ -109,6 +109,25 @@ export const FLICKER_BELOW = 0.75;
 // from the time worked, so the two agree roughly, not exactly.
 export const BLOCK_EVERY_MINUTES = 3;
 export const TOWER_MAX = 30;
+// What else is in the little one's picture, chosen by its owner and kept
+// with their account: the lamp, nothing but the view (the page is the
+// window), or a little plant. And the weather. Keys stored, words shown.
+export const SCENE_THINGS = {
+  lamp: "A lamp",
+  window: "Just the view",
+  plant: "A little plant",
+} as const;
+export type SceneThing = keyof typeof SCENE_THINGS;
+export const isSceneThing = (key: string): key is SceneThing => Object.hasOwn(SCENE_THINGS, key);
+export const DEFAULT_SCENE_THING: SceneThing = "lamp";
+export const WEATHERS = {
+  clear: "Clear",
+  rain: "Rain",
+  snow: "Snow",
+} as const;
+export type Weather = keyof typeof WEATHERS;
+export const isWeather = (key: string): key is Weather => Object.hasOwn(WEATHERS, key);
+export const DEFAULT_WEATHER: Weather = "clear";
 // how long one trip to the tower takes when it's fresh
 export const CARRY_SECONDS = 4;
 // the Enough alarm: quick intervals to pick from, the longest allowed, and how
