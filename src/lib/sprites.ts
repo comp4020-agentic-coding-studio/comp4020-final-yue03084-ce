@@ -120,10 +120,8 @@ const stretching = (yawn: boolean) => {
   const base = standing(0, yawn ? EYES.shut : EYES.open, yawn ? MOUTH.yawn : MOUTH.front).map((r) =>
     r === HANDS.down ? HANDS.none : r,
   );
-  return over(pad(base), 0, 10, [
-    "ss................ss",
-    ".s................s.",
-    ".t................t.",
+  return over(pad(base), 0, 12, [
+    ".ss..............ss.",
     "..t..............t..",
     "..tt............tt..",
     "....tt........tt....",
