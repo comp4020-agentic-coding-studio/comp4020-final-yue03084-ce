@@ -137,6 +137,22 @@ const napping = (down: boolean) => {
   return [...blank(6), ...top, ...SIT_BODY];
 };
 
+// tending the tower between bricks: a little wooden mallet held out in
+// front, raised, then knocked against the tower's side (it stands facing the
+// tower). The head is light wood with a darker underside, so it reads
+// against the bricks.
+const MALLET_UP = [
+  ".................ddd",
+  ".................DDD",
+  "..................p.",
+  "..................p.",
+  ".................p..",
+  "..............Tssp..",
+];
+const MALLET_DOWN = ["..................dd", "..............Tsspdd", "..................DD"];
+const tapping = (t: Tier, down: boolean) =>
+  over(pad(walking(t, LEGS.stand, HANDS.none)), 0, down ? 15 : 10, down ? MALLET_DOWN : MALLET_UP);
+
 const frames: Record<string, Rows> = {
   blink: standing(0, EYES.shut),
   rub: over(standing(1, EYES.shut), 9, 10, ["SSs", "SSs", ".s."]),
@@ -163,6 +179,8 @@ for (const t of tiers) {
   frames[`carry4${s}`] = walking(t, LEGS.stand, HANDS.front);
   frames[`crouch${s}`] = crouching(t);
   frames[`sit${s}`] = sitting(t);
+  frames[`tap1${s}`] = tapping(t, false);
+  frames[`tap2${s}`] = tapping(t, true);
 }
 // every frame must be exactly 20×24 once padded, or the drawing has a mistake in it
 for (const [name, rows] of Object.entries(frames)) {
