@@ -33,7 +33,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   } else if (action === "rest") {
     const kind = field("kind");
     if (isBreakKind(kind)) {
-      startBreak(person.id, kind, null);
+      // from the alarm: counted towards the Collection (resting when it rang)
+      startBreak(person.id, kind, null, true);
       pauseWork(person.id, kind);
       logEvent("break_started", { block: person.id, kind, from: "alarm" });
       emitResting();

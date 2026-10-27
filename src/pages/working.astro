@@ -3,16 +3,23 @@ import ScenePicker from "../components/ScenePicker.astro";
 import WorkPanel from "../components/WorkPanel.astro";
 import Page from "../layouts/Page.astro";
 import { signedInPerson } from "../lib/person";
+import { sceneThingsFor } from "../lib/collection";
+import { countsFor, outfitOf } from "../lib/outfit";
 import { sceneOf } from "../lib/scene";
 import { workView } from "../lib/work";
 
 // Working on it: start a stretch of work, set an Enough alarm, and watch the
 // little one build alongside you. The owner's alone; it needs an account, like
 // anything you write. Finishing goes to Call it enough with the time filled in.
-// While you work you can choose what else is in its picture, and the weather.
+// While you work you can choose what else is in its picture, and the weather;
+// it wears what they chose on Mine's Collection page.
 const person = signedInPerson(Astro.cookies);
 const view = person ? workView(person.id) : null;
-const scene = person ? sceneOf(person.id) : null;
+const counts = person ? countsFor(person.id) : null;
+const scene = person && counts ? sceneOf(person.id, counts) : null;
+// what the little one wears and has with it, from their Collection
+const outfit = person && counts ? outfitOf(person.id, counts) : undefined;
+const things = counts ? sceneThingsFor(counts) : [];
 ---
 
 <Page title="Working on it">
@@ -20,8 +27,8 @@ const scene = person ? sceneOf(person.id) : null;
   {
     person ? (
       <>
-        <WorkPanel view={view} scene={scene ?? undefined} />
-        {view && scene && <ScenePicker scene={scene} />}
+        <WorkPanel view={view} scene={scene ?? undefined} outfit={outfit} />
+        {view && scene && <ScenePicker scene={scene} things={things} />}
       </>
     ) : (
       <section class="account-box mine-gate">

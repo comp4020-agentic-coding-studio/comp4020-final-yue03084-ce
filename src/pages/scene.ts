@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
-import { isSceneThing, isWeather } from "../lib/limits";
+import { sceneThingAllowed } from "../lib/collection";
+import { isWeather } from "../lib/limits";
 import { logEvent } from "../lib/log";
+import { countsFor } from "../lib/outfit";
 import { signedInPerson } from "../lib/person";
 import { setScene } from "../lib/scene";
 
@@ -14,7 +16,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if (!person) return redirect("/account/", 303);
   const thing = String(form.get("thing") ?? "");
   const weather = String(form.get("weather") ?? "");
-  if (!isSceneThing(thing) || !isWeather(weather)) {
+  // the sunflower only once it's come from their Collection
+  if (!sceneThingAllowed(thing, countsFor(person.id)) || !isWeather(weather)) {
     logEvent("scene_refused", { block: person.id });
     return redirect("/working/", 303);
   }

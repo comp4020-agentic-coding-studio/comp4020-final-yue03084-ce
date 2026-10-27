@@ -98,17 +98,18 @@ export function restingNow(): number {
   return db.select({ n: sql<number>`count(distinct ${breaks.personId})` }).from(breaks).where(stillGoing()).get()?.n ?? 0;
 }
 
-// What the people on a break are doing, for the meadow: a list of kinds, one
-// per person, in the order they went. Never who, and never for how long.
-export function restingKinds(): BreakKind[] {
+// Who is on a break and what they're doing, one per person, in the order they
+// went: for the meadow, which turns it into what's drawn (meadowNow in
+// outfit.ts) and drops the person before anything leaves the server.
+export function restingPeople(): { personId: number; kind: BreakKind }[] {
   return db
-    .select({ kind: breaks.kind })
+    .select({ personId: breaks.personId, kind: breaks.kind })
     .from(breaks)
     .where(stillGoing())
     .groupBy(breaks.personId)
     .orderBy(sql`min(${breaks.id})`)
     .all()
-    .map((r) => r.kind as BreakKind);
+    .map((r) => ({ personId: r.personId, kind: r.kind as BreakKind }));
 }
 
 function visibleComments(ids: number[]): Map<number, PublicComment[]> {
@@ -306,15 +307,21 @@ export function currentBreak(personId: number) {
 }
 
 // Start a break: ends any one already going, and can name the enough it
-// follows (only one of their own). Returns the enough's public card if that
-// one is shared, so the feed can show where they went.
-export function startBreak(personId: number, kind: BreakKind, enoughId: number | null): Outcome<PublicEnough | null> {
+// follows (only one of their own). fromAlarm marks one taken when the Enough
+// alarm rang (the Collection counts those). Returns the enough's public card
+// if that one is shared, so the feed can show where they went.
+export function startBreak(
+  personId: number,
+  kind: BreakKind,
+  enoughId: number | null,
+  fromAlarm = false,
+): Outcome<PublicEnough | null> {
   if (enoughId !== null) {
     const own = db.select().from(enoughs).where(and(eq(enoughs.id, enoughId), eq(enoughs.personId, personId))).get();
     if (!own) enoughId = null;
   }
   endBreak(personId);
-  db.insert(breaks).values({ personId, kind, enoughId }).run();
+  db.insert(breaks).values({ personId, kind, enoughId, fromAlarm }).run();
   return { ok: true, value: enoughId === null ? null : (publicEnough(enoughId) ?? null) };
 }
 

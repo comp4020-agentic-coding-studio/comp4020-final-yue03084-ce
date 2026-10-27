@@ -1,0 +1,207 @@
+---
+import MineTop from "../../components/MineTop.astro";
+import Page from "../../layouts/Page.astro";
+import { ITEMS, isUnlocked, itemsFor, progressText } from "../../lib/collection";
+import { mine } from "../../lib/db";
+import { COLLECTION, COLLECTION_KINDS, COLLECTION_WAYS, type CollectionItem, OUTFIT_SLOTS } from "../../lib/limits";
+import { countsFor, outfitOf } from "../../lib/outfit";
+import { currentPerson } from "../../lib/person";
+import { gridRects, paletteCss } from "../../lib/pixel";
+import { frameSvg, isWearable, KITE, LANTERN, PICNIC, SUNFLOWER, TABBY } from "../../lib/sprites";
+
+// The Collection: things that come from stopping (COLLECTION in limits.ts),
+// each unlocking by itself, and a plain form to choose what the little one
+// wears and has with it. Like the rest of Mine, only for its owner: how far
+// along each thing is never leaves this page. No currency, no score, no
+// percentages; just "Unlocked" or how many more times of stopping.
+const person = currentPerson(Astro.cookies);
+const signedIn = Boolean(person?.username);
+const rows = person && !signedIn ? mine(person.id) : [];
+const counts = person && signedIn ? countsFor(person.id) : null;
+const outfit = person && counts ? outfitOf(person.id, counts) : null;
+const refused = Astro.url.searchParams.has("refused");
+
+// every drawing fits a 24×24 box, centred, so the cards line up
+const BOX = 24;
+const centred = (rows: readonly string[], w = rows[0].length, h = rows.length) =>
+  gridRects(rows, Math.floor((BOX - w) / 2), Math.floor((BOX - h) / 2));
+const art = (item: CollectionItem): string => {
+  // a wearable is shown on the little one's head and shoulders
+  if (isWearable(item)) return `<g transform="translate(2 1)">${frameSvg("stand", [item])}</g>`;
+  if (item === "lantern") return centred(LANTERN);
+  if (item === "tabby") return centred(TABBY.sit);
+  if (item === "kite") return centred(KITE);
+  if (item === "sunflower") return centred(SUNFLOWER.up);
+  // the blanket on a strip of grass
+  return `${centred(PICNIC)}<rect class="px-g" x="0" y="${Math.floor(BOX / 2) + 1}" width="${BOX}" height="2"/>`;
+};
+const css = `${paletteCss(".collection", { weather: false })}\n.collection [data-f="stand"]{display:inline}`;
+const slotLabel = (slot: string) => COLLECTION_KINDS[slot as keyof typeof COLLECTION_KINDS];
+---
+
+<Page title="Collection">
+  <h1>What you put down</h1>
+  <MineTop person={person} hasRows={rows.length > 0} />
+  {
+    counts && outfit && (
+      <section class="collection" data-sky="day">
+        <style set:html={css} />
+        <p class="hint">Things that come from stopping. They turn up by themselves, and once they come they stay.</p>
+        <ul class="collection-grid">
+          {ITEMS.map((item) => {
+            const open = isUnlocked(item, counts);
+            const { kind, condition } = COLLECTION[item];
+            return (
+              <li class:list={["card", "collection-card", { locked: !open }]} data-item={item}>
+                <svg
+                  viewBox={`0 0 ${BOX} ${BOX}`}
+                  width={BOX * 3}
+                  height={BOX * 3}
+                  shape-rendering="crispEdges"
+                  aria-hidden="true"
+                  focusable="false"
+                  set:html={art(item)}
+                />
+                <h2>{COLLECTION[item].label}</h2>
+                <p class="where">{COLLECTION_KINDS[kind]}</p>
+                <p class="progress">{progressText(item, counts)}</p>
+                {!open && <p class="how">{COLLECTION_WAYS[condition.what].how}</p>}
+              </li>
+            );
+          })}
+        </ul>
+
+        <h2 class="choose-h">What your little one has with it</h2>
+        {refused && <p class="refused">That one hasn't come yet, or doesn't go there.</p>}
+        {
+          OUTFIT_SLOTS.some((slot) => itemsFor(slot).some((item) => isUnlocked(item, counts))) ? (
+            <form method="post" action="/outfit/" class="outfit-form">
+              <p class="hint">
+                It wears these while you work, and on the meadow when you're on a break, where anyone can see them
+                but not whose they are.
+              </p>
+              {OUTFIT_SLOTS.filter((slot) => itemsFor(slot).some((item) => isUnlocked(item, counts))).map((slot) => (
+                <fieldset class="choices">
+                  <legend>{slotLabel(slot)}</legend>
+                  <label class="inline">
+                    <input type="radio" name={slot} value="" checked={outfit[slot] === null} /> Nothing
+                  </label>
+                  {itemsFor(slot)
+                    .filter((item) => isUnlocked(item, counts))
+                    .map((item) => (
+                      <label class="inline">
+                        <input type="radio" name={slot} value={item} checked={outfit[slot] === item} />{" "}
+                        {COLLECTION[item].label}
+                      </label>
+                    ))}
+                </fieldset>
+              ))}
+              <button type="submit" class="quiet">Keep this</button>
+              {isUnlocked("sunflower", counts) && (
+                <p class="hint">The sunflower goes in the picture: choose it on <a href="/working/">Working on it</a>.</p>
+              )}
+            </form>
+          ) : (
+            <p class="hint">Nothing to choose yet. When something comes, you can give it to your little one here.</p>
+          )
+        }
+      </section>
+    )
+  }
+</Page>
+
+<style>
+  .collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: 1rem;
+    margin: 1rem 0 1.5rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .collection-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin: 0;
+    padding: 0.9rem 0.6rem 0.8rem;
+  }
+
+  .collection-card:nth-child(3n + 1) { transform: rotate(-0.4deg); }
+  .collection-card:nth-child(3n + 2) { transform: rotate(0.35deg); }
+
+  .collection-card svg {
+    display: block;
+    image-rendering: pixelated;
+  }
+
+  .collection-card h2 {
+    margin: 0.4rem 0 0;
+    font-family: var(--font-hand);
+    font-size: 1.45rem;
+    font-weight: 500;
+    line-height: 1.1;
+  }
+
+  .collection-card p {
+    margin: 0.15rem 0 0;
+    font-size: 0.85rem;
+  }
+
+  .where,
+  .how {
+    color: var(--muted);
+  }
+
+  .progress {
+    font-weight: 600;
+  }
+
+  /* not come yet: a faint silhouette, and quieter words */
+  .locked svg :global(rect) {
+    fill: var(--muted);
+  }
+
+  .locked svg {
+    opacity: 0.22;
+  }
+
+  .locked h2,
+  .locked .progress {
+    color: var(--muted);
+  }
+
+  .locked .progress {
+    font-weight: 400;
+  }
+
+  .choose-h {
+    margin-top: 0.5rem;
+  }
+
+  .outfit-form {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 0.75rem;
+  }
+
+  .outfit-form fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.9rem;
+  }
+
+  .outfit-form legend {
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+
+  .outfit-form label {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+  }
+</style>

@@ -2,6 +2,7 @@
 // actor is a set of named frames of the same size; the page draws every frame
 // once and the script shows one at a time. A pet (a tabby cat) will be a
 // second actor here, with its own frames, drawn the same way.
+import { gridRects } from "./pixel";
 
 export interface Actor {
   width: number;
@@ -330,3 +331,176 @@ export const UMBRELLA = [
 
 // a little "z", three by three, rising off a nap
 export const ZED = ["ooo", ".o.", "ooo"];
+
+// The Collection (COLLECTION in limits.ts): things that come from stopping.
+// What's worn is drawn once and laid on any frame at the frame's own head or
+// neck, found by looking for them in the drawing: the top of the hair is its
+// row of eight outline pixels, the neck its "kSSk". So a hat sits on the hair
+// whether the little one stands, walks, crouches, sits, leans when sleepy or
+// nods off; there's no table of offsets to keep in step with the frames.
+type At = { x: number; y: number };
+export function anchorsOf(rows: Rows): { hair: At | null; neck: At | null } {
+  let hair: At | null = null;
+  let neck: At | null = null;
+  for (let y = 0; y < rows.length; y++) {
+    const h = rows[y].indexOf("oooooooo");
+    if (!hair && h >= 0) hair = { x: h, y };
+    const n = rows[y].indexOf("kSSk");
+    if (!neck && n >= 0) neck = { x: n, y };
+  }
+  // nodding off, the head drops onto the neck: the scarf goes just above the
+  // shirt's collar instead
+  if (!neck) {
+    const y = rows.findIndex((r) => r.includes("TttaattT"));
+    if (y > 0) neck = { x: rows[y].indexOf("TttaattT") + 2, y: y - 1 };
+  }
+  return { hair, neck };
+}
+
+// Each wearable: its drawing, which anchor it hangs from, and where its
+// top-left goes from there.
+export const WEARABLES = {
+  // a wide straw brim over the hair, a wine band, a knot of straw on top
+  strawhat: {
+    at: "hair",
+    dx: -5,
+    dy: -3,
+    rows: [
+      ".........KK.......",
+      "......KKKKKK......",
+      ".....KKKKKKKK.....",
+      ".....EEEEEEEE.....",
+      "KKKKKKKKKKKKKKKKKK",
+      ".LLLLLLLLLLLLLLLL.",
+    ],
+  },
+  // a ring of leaves round the top of the head, with pink, white and yellow flowers
+  flowercrown: {
+    at: "hair",
+    dx: -2,
+    dy: 0,
+    rows: ["..c..Z..U...", ".qcqqZqqUqcq", "..q......q.."],
+  },
+  // wound once round the neck, an end hanging down the front
+  scarf: {
+    at: "neck",
+    dx: -1,
+    dy: 0,
+    rows: ["ECEEEE", "...EW.", "...W.."],
+  },
+} as const satisfies Record<string, { at: "hair" | "neck"; dx: number; dy: number; rows: Rows }>;
+export type Wearable = keyof typeof WEARABLES;
+export const isWearable = (key: string): key is Wearable => Object.hasOwn(WEARABLES, key);
+
+// Where a wearable goes on one frame, or null if that frame has no head to put it on.
+export function wornAt(frame: Rows, item: Wearable): { x: number; y: number; rows: Rows } | null {
+  const w = WEARABLES[item];
+  const anchor = anchorsOf(frame)[w.at];
+  return anchor && { x: anchor.x + w.dx, y: anchor.y + w.dy, rows: w.rows };
+}
+
+// One frame of the little one as SVG, with the wearables laid on it, each in
+// its own group (data-w) so a page can show only the ones a little one wears.
+export function frameSvg(name: string, items: readonly Wearable[] = []): string {
+  const rows = KEEPER.frames[name];
+  const worn = items
+    .map((item) => {
+      const at = wornAt(rows, item);
+      return at ? `<g data-w="${item}">${gridRects(at.rows, at.x, at.y)}</g>` : "";
+    })
+    .join("");
+  return `<g data-f="${name}">${gridRects(rows)}${worn}</g>`;
+}
+
+// a little lantern, 5×7, set down beside it: brass frame, a warm light inside
+export const LANTERN = [".nnn.", "n...n", ".NNN.", "NijiN", "NjijN", "NijiN", ".NNN."];
+
+// The tabby cat, 10×7, sitting and facing you, its tail curled up behind; in
+// the second frame the tail's tip flicks.
+export const TABBY = {
+  sit: ["F...F.....", "fFfFf.....", "fefef.....", ".fcf....F.", ".afFfFf.F.", ".aafFfFfF.", ".ff..f.ff."],
+  flick: ["F...F.....", "fFfFf.....", "fefef....F", ".fcf....F.", ".afFfFf.F.", ".aafFfFfF.", ".ff..f.ff."],
+};
+
+// A picnic blanket, 22×2, laid on the grass under it on the meadow: a wine
+// and cream check.
+export const PICNIC = ["EaEaEaEaEaEaEaEaEaEaEa", "aEaEaEaEaEaEaEaEaEaEaE"];
+
+// A kite, 7×11, high above it on the meadow: a diamond in the blocks' colours
+// and a tail with two little bows.
+export const KITE = [
+  "...2...",
+  "..223..",
+  ".22233.",
+  "2222333",
+  ".44111.",
+  "..441..",
+  "...4...",
+  "...E...",
+  "..E.E..",
+  "....E..",
+  "...E.E.",
+];
+
+// A sunflower in a pot, 11×20, in three moods like the plant: perked up;
+// drooping (the head bowed, the leaves hanging); and sleepy (the head hung
+// right down, the leaves by the pot). Never wilted: sleepy, not sad.
+export const SUNFLOWER = {
+  up: [
+    "....UUU....",
+    "..UUUUUUU..",
+    ".UUVDDDVUU.",
+    ".UUDpDpDUU.",
+    ".UUDDpDDUU.",
+    ".UUVDDDVUU.",
+    "..UUUUUUU..",
+    "....UUU....",
+    ".....q.....",
+    "..vv.q.....",
+    ".vqqvq.....",
+    ".....q.vv..",
+    ".....qvqqv.",
+    ".....q.....",
+    ".....Q.....",
+    ...POT,
+  ],
+  droop: [
+    "...........",
+    "...........",
+    "......UUU..",
+    "....UUUUUU.",
+    "...UVDDDVUU",
+    "...UDpDpDUU",
+    "...UUDDDVU.",
+    "....UUUUU..",
+    "......q....",
+    ".....q.....",
+    "..vv.q.....",
+    ".v..vq.....",
+    ".....q.vv..",
+    ".....qv..v.",
+    ".....Q.....",
+    ...POT,
+  ],
+  sleepy: [
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    ".....qqq...",
+    ".....q..q..",
+    ".....q.qVq.",
+    ".....qUUUUU",
+    ".....qVUUUV",
+    ".....q.UUU.",
+    ".....q..U..",
+    "..vv.q.vv..",
+    ".v..vqv..v.",
+    "v....Q....v",
+    ...POT,
+  ],
+};
+for (const [name, rows] of Object.entries(SUNFLOWER)) {
+  if (rows.length !== 20 || rows.some((r) => r.length !== 11)) throw new Error(`sunflower "${name}" isn't 11×20`);
+}

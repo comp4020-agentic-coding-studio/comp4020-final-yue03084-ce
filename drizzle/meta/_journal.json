@@ -57,6 +57,13 @@
       "when": 1792548914304,
       "tag": "0007_noisy_proteus",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793077880793,
+      "tag": "0008_tense_mantis",
+      "breakpoints": true
     }
   ]
 }

@@ -1,23 +1,25 @@
 ---
-import { SCENE_THINGS, WEATHERS } from "../lib/limits";
+import { SCENE_THINGS, type SceneThing, WEATHERS } from "../lib/limits";
 import type { Scene } from "../lib/scene";
 
 // Choose what's in the little one's picture and the weather, kept with your
 // account. Two groups of radio buttons in one plain form: labelled, and the
-// arrow keys move within a group. The owner's alone.
+// arrow keys move within a group. The owner's alone. Only the things they can
+// choose are offered: the sunflower once it's come from their Collection.
 interface Props {
   scene: Scene;
+  things: SceneThing[];
 }
-const { scene } = Astro.props;
+const { scene, things } = Astro.props;
 ---
 
 <form method="post" action="/scene/" class="scene-picker">
   <fieldset class="choices">
     <legend>In the picture</legend>
     {
-      Object.entries(SCENE_THINGS).map(([key, label]) => (
+      things.map((key) => (
         <label class="inline">
-          <input type="radio" name="thing" value={key} checked={scene.thing === key} /> {label}
+          <input type="radio" name="thing" value={key} checked={scene.thing === key} /> {SCENE_THINGS[key]}
         </label>
       ))
     }

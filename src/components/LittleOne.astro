@@ -2,7 +2,26 @@
 import { BRICKS, CARRY_SECONDS, DEFAULT_SCENE_THING, DEFAULT_WEATHER, FLICKER_BELOW } from "../lib/limits";
 import { gridRects, paletteCss } from "../lib/pixel";
 import type { Scene } from "../lib/scene";
-import { blockRows, brickRows, CAN, CARRY, glowRings, KEEPER, LAMP, LAMP_DIM, PLANT, UMBRELLA, WALK, ZED } from "../lib/sprites";
+import { NO_OUTFIT, type Outfit } from "../lib/collection";
+import {
+  blockRows,
+  brickRows,
+  CAN,
+  CARRY,
+  frameSvg,
+  glowRings,
+  isWearable,
+  KEEPER,
+  LAMP,
+  LAMP_DIM,
+  LANTERN,
+  PLANT,
+  SUNFLOWER,
+  TABBY,
+  UMBRELLA,
+  WALK,
+  ZED,
+} from "../lib/sprites";
 import type { WorkView } from "../lib/work";
 import { tiredness, towerPlan } from "../lib/worktime";
 
@@ -28,11 +47,16 @@ import { tiredness, towerPlan } from "../lib/worktime";
 // the text beside it says what's going on. With reduced motion it holds one
 // still frame. Every frame is a grid of characters (sprites.ts) drawn once
 // here; the script only switches which one shows, a frame at a time.
+// What it wears and has with it comes from its owner's Collection (outfit.ts):
+// a hat or crown, a scarf, a lantern set down beside it, a tabby keeping it
+// company. Only what they chose is drawn; nothing else is in the page.
 interface Props {
   view: WorkView;
   scene?: Scene;
+  outfit?: Outfit;
 }
-const { view, scene } = Astro.props;
+const { view, scene, outfit = NO_OUTFIT } = Astro.props;
+const worn = [outfit.head, outfit.neck].filter((k): k is NonNullable<typeof k> => k !== null).filter(isWearable);
 const thing = scene?.thing ?? DEFAULT_SCENE_THING;
 const weather = scene?.weather ?? DEFAULT_WEATHER;
 const t = view.state === "resting" ? tiredness(0) : view.tiredness;
@@ -161,6 +185,20 @@ const plant = Object.entries(PLANT)
   .map(([mood, rows]) => `<g data-mood="${mood}">${gridRects(rows, PLANT_X, PLANT_Y)}</g>`)
   .join("");
 const can = gridRects(CAN, PLANT_X - 10, GROUND - CAN.length + 1);
+// the sunflower (from the Collection) stands there too, taller, with the same
+// moods: its head bows as the little one gets sleepy
+const sunflower = Object.entries(SUNFLOWER)
+  .map(([mood, rows]) => `<g data-mood="${mood}">${gridRects(rows, PLANT_X, GROUND - rows.length + 1)}</g>`)
+  .join("");
+// from the Collection, on the grass: the lantern set down beside where it rests, and the
+// tabby sitting where the little one rests, its tail flicking now and then
+const lantern = outfit.held === "lantern" ? gridRects(LANTERN, 61, GROUND - LANTERN.length + 1) : "";
+const tabby =
+  outfit.companion === "tabby"
+    ? Object.entries(TABBY)
+        .map(([pose, rows]) => `<g data-cat="${pose}">${gridRects(rows, 50, GROUND - rows.length + 1)}</g>`)
+        .join("")
+    : "";
 
 // weather: rain is short upright streaks, snow single flakes, each in its own
 // column at its own height so they don't fall in rows. The script moves
@@ -179,8 +217,9 @@ const rain = fall("rain");
 const umbrella = gridRects(UMBRELLA);
 const snow = fall("snow");
 
-const frames = Object.entries(KEEPER.frames)
-  .map(([name, rows]) => `<g data-f="${name}">${gridRects(rows)}</g>`)
+// each frame with what it wears laid on it, at that frame's own head and neck
+const frames = Object.keys(KEEPER.frames)
+  .map((name) => frameSvg(name, worn))
   .join("");
 // which frame shows is one attribute on the actor; CSS hides the rest
 const frameCss = Object.keys(KEEPER.frames)
@@ -241,6 +280,16 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${ringCss}{display:none}
         <g class="plant" set:html={plant} />
         <g class="can" set:html={can} />
       </g>
+      {
+        thing === "sunflower" && (
+          <g class="for-sunflower">
+            <g class="plant" set:html={sunflower} />
+            <g class="can" set:html={can} />
+          </g>
+        )
+      }
+      {lantern && <g class="lantern" set:html={lantern} />}
+      {tabby && <g class="tabby" set:html={tabby} />}
       <g class="pile" set:html={pile} />
       <!-- this session's tower; the script lays its bricks, starting from the work so far -->
       <g class="tower"></g>
@@ -396,6 +445,38 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${ringCss}{display:none}
   [data-thing="lamp"] .for-lamp,
   [data-thing="plant"] .for-plant {
     display: inline;
+  }
+
+  /* the tabby sits still, and every few seconds its tail flicks */
+  .tabby :global([data-cat="flick"]) {
+    visibility: hidden;
+    animation: flick 5s steps(1) infinite;
+  }
+
+  .tabby :global([data-cat="sit"]) {
+    animation: unflick 5s steps(1) infinite;
+  }
+
+  @keyframes flick {
+    0% { visibility: hidden; }
+    90% { visibility: visible; }
+    96% { visibility: hidden; }
+  }
+
+  @keyframes unflick {
+    0% { visibility: visible; }
+    90% { visibility: hidden; }
+    96% { visibility: visible; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tabby :global([data-cat]) {
+      animation: none;
+    }
+
+    .tabby :global([data-cat="sit"]) {
+      visibility: visible;
+    }
   }
 
   /* the plant shows one mood at a time */

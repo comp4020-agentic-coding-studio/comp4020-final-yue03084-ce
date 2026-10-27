@@ -2,8 +2,8 @@
 import { displayName, type Person } from "../lib/db";
 import { workView } from "../lib/work";
 
-// The top of both Mine pages: who's signed in (or how to sign in), a nudge
-// back to the little one if they're working, and the two pages of Mine.
+// The top of every Mine page: who's signed in (or how to sign in), a nudge
+// back to the little one if they're working, and the pages of Mine.
 interface Props {
   person: Person | undefined;
   // whether this browser has records from before accounts (a cookie only)
@@ -14,6 +14,7 @@ const here = Astro.url.pathname;
 const pages = [
   { href: "/mine/", label: "Looking back" },
   { href: "/mine/all/", label: "Each one" },
+  { href: "/mine/collection/", label: "Collection" },
 ];
 ---
 

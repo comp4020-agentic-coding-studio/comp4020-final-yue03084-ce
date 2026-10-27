@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
+import { type Counts, sceneThingAllowed } from "./collection";
 import { db } from "./db";
-import { DEFAULT_SCENE_THING, DEFAULT_WEATHER, isSceneThing, isWeather, type SceneThing, type Weather } from "./limits";
+import { DEFAULT_SCENE_THING, DEFAULT_WEATHER, isWeather, type SceneThing, type Weather } from "./limits";
 import { scenes } from "./schema";
 
 // What's in a person's little picture on Working on it: one of SCENE_THINGS
@@ -12,10 +13,12 @@ export interface Scene {
   weather: Weather;
 }
 
-export function sceneOf(personId: number): Scene {
+// A thing from the Collection (the sunflower) shows only while it's theirs
+// (counts from countsFor in outfit.ts).
+export function sceneOf(personId: number, counts: Counts): Scene {
   const row = db.select().from(scenes).where(eq(scenes.personId, personId)).get();
   return {
-    thing: row && isSceneThing(row.thing) ? row.thing : DEFAULT_SCENE_THING,
+    thing: row && sceneThingAllowed(row.thing, counts) ? row.thing : DEFAULT_SCENE_THING,
     weather: row && isWeather(row.weather) ? row.weather : DEFAULT_WEATHER,
   };
 }

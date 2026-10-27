@@ -124,11 +124,13 @@ export const BRICKS = [
 ] as const;
 // What else is in the little one's picture, chosen by its owner and kept
 // with their account: the lamp, nothing but the view (the page is the
-// window), or a little plant. And the weather. Keys stored, words shown.
+// window), or a little plant; or a sunflower, from the Collection. And the weather. Keys stored, words shown.
 export const SCENE_THINGS = {
   lamp: "A lamp",
   window: "Just the view",
   plant: "A little plant",
+  // only once it's come from the Collection (COLLECTION.sunflower)
+  sunflower: "A sunflower",
 } as const;
 export type SceneThing = keyof typeof SCENE_THINGS;
 export const isSceneThing = (key: string): key is SceneThing => Object.hasOwn(SCENE_THINGS, key);
@@ -148,3 +150,51 @@ export const CARRY_SECONDS = 4;
 export const ALARM_INTERVALS = [60, 90, 120] as const;
 export const ALARM_MAX_MINUTES = 12 * 60;
 export const SNOOZE_MINUTES = 10;
+// The Collection: things that come from stopping, never from working
+// (CLAUDE.md: "No streaks, rankings or public totals"). Each unlocks by
+// itself once its owner has stopped enough times in one way: breaks taken,
+// letting a recheck go, resting when the Enough alarm rang, or days they've
+// used the site (any days, added up; never in a row, never reset). Once
+// something comes it stays. The key is stored, the words shown. `kind` is
+// where it goes: worn on the head or neck, held, a companion beside it, on
+// the meadow under it (ground) or above it (sky), or in the Working on it
+// picture (scene, chosen with the lamp and the plant). How far along anyone
+// is stays theirs; only what they choose to show goes on the meadow.
+export const COLLECTION_KINDS = {
+  head: "On its head",
+  neck: "Round its neck",
+  held: "Beside it",
+  companion: "Keeping it company",
+  ground: "Under it on the meadow",
+  sky: "Above it on the meadow",
+  scene: "In the picture",
+} as const;
+export type CollectionKind = keyof typeof COLLECTION_KINDS;
+// the ways of stopping a thing can come from, and how its progress reads:
+// "2 more breaks", "1 more day here"
+export const COLLECTION_WAYS = {
+  breaks: { how: "Comes from taking breaks.", one: "break", many: "breaks" },
+  letGo: { how: "Comes from letting a recheck go.", one: "time letting it go", many: "times letting it go" },
+  alarmRests: {
+    how: "Comes from resting when the alarm rings.",
+    one: "rest when the alarm rings",
+    many: "rests when the alarm rings",
+  },
+  days: { how: "Comes from days you've spent here, any days.", one: "day here", many: "days here" },
+} as const;
+export type CollectionWay = keyof typeof COLLECTION_WAYS;
+export const COLLECTION = {
+  strawhat: { label: "Straw hat", kind: "head", condition: { what: "breaks", n: 3 } },
+  scarf: { label: "Scarf", kind: "neck", condition: { what: "letGo", n: 3 } },
+  flowercrown: { label: "Flower crown", kind: "head", condition: { what: "alarmRests", n: 3 } },
+  picnic: { label: "Picnic blanket", kind: "ground", condition: { what: "days", n: 7 } },
+  tabby: { label: "Tabby cat", kind: "companion", condition: { what: "breaks", n: 10 } },
+  lantern: { label: "Little lantern", kind: "held", condition: { what: "letGo", n: 10 } },
+  sunflower: { label: "Sunflower", kind: "scene", condition: { what: "alarmRests", n: 10 } },
+  kite: { label: "Kite", kind: "sky", condition: { what: "days", n: 14 } },
+} as const satisfies Record<string, { label: string; kind: CollectionKind; condition: { what: CollectionWay; n: number } }>;
+export type CollectionItem = keyof typeof COLLECTION;
+export const isCollectionItem = (key: string): key is CollectionItem => Object.hasOwn(COLLECTION, key);
+// the slots a person fills from the Collection page (the scene is chosen with the picture)
+export const OUTFIT_SLOTS = ["head", "neck", "held", "companion", "ground", "sky"] as const;
+export type OutfitSlot = (typeof OUTFIT_SLOTS)[number];
