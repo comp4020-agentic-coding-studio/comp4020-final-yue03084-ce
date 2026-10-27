@@ -98,6 +98,19 @@ export function restingNow(): number {
   return db.select({ n: sql<number>`count(distinct ${breaks.personId})` }).from(breaks).where(stillGoing()).get()?.n ?? 0;
 }
 
+// What the people on a break are doing, for the meadow: a list of kinds, one
+// per person, in the order they went. Never who, and never for how long.
+export function restingKinds(): BreakKind[] {
+  return db
+    .select({ kind: breaks.kind })
+    .from(breaks)
+    .where(stillGoing())
+    .groupBy(breaks.personId)
+    .orderBy(sql`min(${breaks.id})`)
+    .all()
+    .map((r) => r.kind as BreakKind);
+}
+
 function visibleComments(ids: number[]): Map<number, PublicComment[]> {
   const out = new Map<number, PublicComment[]>();
   if (ids.length === 0) return out;

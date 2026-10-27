@@ -340,6 +340,22 @@ describe("breaks", () => {
     expect(ended).toContain(`"count":${before}`);
   });
 
+  it("put each resting person's little one on the meadow, live: what they're doing, never who", async () => {
+    const someone = await signedIn();
+    const started = await readStream(() => someone.rest({ kind: "nap" }), "event: resting", 3_000);
+    const data = JSON.parse(/event: resting\ndata: (.*)/.exec(started)?.[1] ?? "{}");
+    expect(data.kinds).toContain("nap");
+    expect(data.kinds).toHaveLength(data.count);
+    // only the count and the kinds: no block number, person, time or id
+    expect(Object.keys(data).sort()).toEqual(["count", "kinds"]);
+    expect(data.kinds.every((k: unknown) => typeof k === "string" && /^[a-z]+$/.test(k))).toBe(true);
+    // and the page draws the meadow from the same list, for anyone
+    const feed = await browser().get("/");
+    expect(feed).toContain('class="meadow"');
+    expect(/data-kinds="([^"]*)"/.exec(feed)?.[1]).toContain("nap");
+    await someone.rest({ end: "1" });
+  });
+
   it("after a shared enough, show where they went and when they're back, never how long", async () => {
     const tag = marker();
     const author = await signedIn();

@@ -69,6 +69,8 @@ export type BreakKind = keyof typeof BREAK_KINDS;
 export const isBreakKind = (key: string): key is BreakKind => Object.hasOwn(BREAK_KINDS, key);
 // a break nobody ended counts as over after this long, so "resting now" stays true
 export const BREAK_MAX_MINUTES = 120;
+// how many little ones the meadow on the feed draws; more are "just out of the picture"
+export const MEADOW_MAX = 7;
 
 // What someone can choose when they want to go back and check something
 // they already called enough.

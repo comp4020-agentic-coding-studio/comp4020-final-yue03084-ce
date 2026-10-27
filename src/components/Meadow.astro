@@ -1,0 +1,241 @@
+---
+import { restingKinds } from "../lib/db";
+import { MEADOW_MAX } from "../lib/limits";
+import { gridRects, HAIRS, paletteCss } from "../lib/pixel";
+import { KEEPER, WALK } from "../lib/sprites";
+
+// The meadow: everyone on a break right now, as little ones on the grass of
+// one shared picture on the feed. Each is doing what they went to do: tea,
+// a nap, a walk, a stretch, watching something. It changes live, for every
+// open page, the moment someone goes or comes back (the "resting" event).
+// What it shows is what the resting count already says, drawn: never who,
+// never for how long (CLAUDE.md: "Effort and check records are private").
+// Hair colours only tell the little ones apart, by place in the line. Up to
+// MEADOW_MAX are drawn; the rest are "just out of the picture".
+// Decoration: hidden from screen readers, as the count beside it says it in
+// words. With reduced motion everyone holds still.
+const kinds = restingKinds();
+const W = 160;
+const H = 44;
+const GROUND = 38;
+
+// the sky and a soft line of hills, then grass and a strip of soil
+const hills = (() => {
+  let d = `M0 ${GROUND}`;
+  for (let x = 0; x < W; x++) d += ` V${Math.round(30 - 3 * Math.sin((x + 20) / 17) - 1.5 * Math.sin(x / 6))} H${x + 1}`;
+  return `<path class="px-l" d="${d} V${GROUND} Z"/>`;
+})();
+const ground = (() => {
+  let out = `<rect class="px-g" x="0" y="${GROUND}" width="${W}" height="3"/>`;
+  out += `<rect class="px-d" x="0" y="${GROUND + 3}" width="${W}" height="${H - GROUND - 3}"/>`;
+  for (let x = 2; x < W; x += 4) if ((x * 7) % 5 < 2) out += `<rect class="px-g2" x="${x}" y="${GROUND - 1}" width="1" height="1"/>`;
+  return out;
+})();
+// the frames a resting little one can show; the rest stay in the drawing but hidden
+const POSES = ["tea1", "tea2", "sip", "nap1", "nap2", "stretch1", "stretch2", "stand", "blink", "sit", ...WALK];
+const frames = POSES.map((name) => `<g data-f="${name}">${gridRects(KEEPER.frames[name])}</g>`).join("");
+const frameCss = POSES.map((n) => `.meadow .one[data-frame="${n}"] [data-f="${n}"]{display:inline}`).join("\n");
+const hairCss = HAIRS.map(
+  (c, i) => `.meadow .one[data-hair="${i}"]{--px-h:${c.h};--px-o:${c.o};--px-h2:${c.H}}`,
+).join("\n");
+const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCss}`;
+---
+
+<figure class="meadow" aria-hidden="true" data-sky="day" data-max={MEADOW_MAX} data-kinds={JSON.stringify(kinds)}>
+  <style set:html={css}></style>
+  <div class="meadow-page">
+    <svg viewBox={`0 0 ${W} ${H}`} width={W * 3} height={H * 3} shape-rendering="crispEdges" role="presentation" focusable="false">
+      <rect class="px-y" x="0" y="0" width={W} height={H} />
+      <rect class="px-y2" x="0" y="22" width={W} height={GROUND - 22} />
+      <g set:html={hills} />
+      <g set:html={ground} />
+      <!-- the drawing every little one is copied from -->
+      <template id="meadow-one" set:html={frames} />
+      <!-- the script places the little ones; without it the picture is just the meadow -->
+      <g class="ones"></g>
+    </svg>
+    <p class="meadow-more" hidden={kinds.length <= MEADOW_MAX}>
+      and {Math.max(0, kinds.length - MEADOW_MAX)} more just out of the picture
+    </p>
+    <p class="meadow-empty" hidden={kinds.length > 0}>The meadow's empty. Anyone can sit down on it.</p>
+  </div>
+</figure>
+
+<style>
+  .meadow {
+    margin: 0.5rem 0 0;
+  }
+
+  .meadow-page {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    padding: 0.4rem;
+    background: var(--card);
+    box-shadow:
+      0 1px 2px rgb(58 53 47 / 0.12),
+      0 4px 10px rgb(58 53 47 / 0.08);
+    transform: rotate(0.4deg);
+  }
+
+  /* one strip of wine-red polka-dot tape across the top, like the little one's picture */
+  .meadow-page::before {
+    content: "";
+    position: absolute;
+    top: -0.5rem;
+    left: 50%;
+    width: 4.2rem;
+    height: 1.2rem;
+    transform: translateX(-50%) rotate(-2deg);
+    background-color: rgb(122 38 52 / 0.88);
+    background-image:
+      radial-gradient(circle, rgb(250 236 228 / 0.9) 0 1.8px, transparent 2.3px),
+      radial-gradient(circle, rgb(250 236 228 / 0.9) 0 1.8px, transparent 2.3px);
+    background-size: 12px 12px;
+    background-position:
+      0 0,
+      6px 6px;
+  }
+
+  svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+  }
+
+  /* as wide as the break box allows: the page fills it */
+  .meadow-page {
+    width: 100%;
+  }
+
+  svg {
+    width: 100%;
+  }
+
+  .meadow :global([data-f]) {
+    display: none;
+  }
+
+  .meadow-more,
+  .meadow-empty {
+    margin: 0.3rem 0.2rem 0;
+    font-family: var(--font-hand);
+    font-size: 1.15rem;
+    color: var(--muted);
+  }
+
+</style>
+
+<script>
+  import { HAIRS, skyFor } from "../lib/pixel";
+  import { WALK } from "../lib/sprites";
+
+  // Where each little one sits, what it does, and the live updates: a new
+  // list of kinds arrives with every "resting" event (the feed's script hands
+  // it over as a "meadow" event on the document), and the picture is redrawn.
+  const W = 160;
+  const GROUND = 38;
+  const WIDTH = 20;
+
+  for (const fig of document.querySelectorAll<HTMLElement>(".meadow")) {
+    const ones = fig.querySelector<SVGGElement>(".ones");
+    const template = fig.querySelector<HTMLTemplateElement>("#meadow-one");
+    const more = fig.querySelector<HTMLElement>(".meadow-more");
+    const empty = fig.querySelector<HTMLElement>(".meadow-empty");
+    if (!ones || !template) continue;
+    const max = Number(fig.dataset.max) || 7;
+    // the sky follows the clock where you are, as in the little one's picture
+    const setSky = () => (fig.dataset.sky = skyFor(new Date().getHours()));
+    setSky();
+    setInterval(setSky, 60_000);
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const still: Record<string, string> = { tea: "tea1", nap: "nap1", move: "stretch1", walk: "walk2", watch: "sit" };
+
+    // spread across the grass, a little uneven so it doesn't look like a queue
+    const spotFor = (i: number, n: number) => {
+      const gap = (W - WIDTH - 8) / Math.max(1, n);
+      return Math.round(4 + gap * i + (gap - WIDTH) / 2 + (((i * 37) % 7) - 3));
+    };
+    const at = (g: SVGGElement, x: number, dir: 1 | -1) =>
+      g.setAttribute("transform", `translate(${dir === 1 ? x : x + WIDTH} ${GROUND - 24 + 1}) scale(${dir} 1)`);
+
+    // one loop per little one; a token stops it when the picture is redrawn
+    let generation = 0;
+    const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const live = (g: SVGGElement, kind: string, home: number, gen: number) => {
+      if (reduced) return;
+      void (async () => {
+        let x = home;
+        let dir: 1 | -1 = Math.random() < 0.5 ? 1 : -1;
+        await pause(Math.random() * 1500);
+        while (gen === generation) {
+          if (kind === "tea") {
+            for (let i = 0; i < 6 && gen === generation; i++) {
+              g.dataset.frame = i % 2 ? "tea2" : "tea1";
+              await pause(700);
+            }
+            g.dataset.frame = "sip";
+            await pause(1200);
+          } else if (kind === "nap") {
+            g.dataset.frame = "nap1";
+            await pause(1700);
+            g.dataset.frame = "nap2";
+            await pause(1700);
+          } else if (kind === "move") {
+            g.dataset.frame = "stand";
+            await pause(1500);
+            g.dataset.frame = "stretch1";
+            await pause(900);
+            g.dataset.frame = "stretch2";
+            await pause(1100);
+          } else if (kind === "walk") {
+            // a slow stroll a little way either side of its spot
+            const to = Math.max(0, Math.min(W - WIDTH, home + dir * (6 + Math.floor(Math.random() * 8))));
+            let i = 0;
+            while (x !== to && gen === generation) {
+              x += Math.sign(to - x);
+              g.dataset.frame = WALK[i++ % WALK.length];
+              at(g, x, dir);
+              await pause(260);
+            }
+            g.dataset.frame = "stand";
+            await pause(1200 + Math.random() * 1500);
+            dir = dir === 1 ? -1 : 1;
+          } else {
+            g.dataset.frame = "sit";
+            await pause(2500);
+            g.dataset.frame = "blink";
+            await pause(160);
+          }
+        }
+      })();
+    };
+
+    const draw = (kinds: string[]) => {
+      generation += 1;
+      const shown = kinds.slice(0, max);
+      ones.replaceChildren();
+      shown.forEach((kind, i) => {
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("class", "one");
+        g.dataset.kind = kind;
+        g.dataset.hair = String(i % HAIRS.length);
+        g.dataset.frame = still[kind] ?? "sit";
+        g.innerHTML = template.innerHTML;
+        const x = spotFor(i, shown.length);
+        at(g, x, i % 2 ? -1 : 1);
+        ones.append(g);
+        live(g, kind, x, generation);
+      });
+      if (more) {
+        more.hidden = kinds.length <= max;
+        more.textContent = `and ${Math.max(0, kinds.length - max)} more just out of the picture`;
+      }
+      if (empty) empty.hidden = kinds.length > 0;
+    };
+
+    draw(JSON.parse(fig.dataset.kinds ?? "[]"));
+    document.addEventListener("meadow", (event) => draw((event as CustomEvent<string[]>).detail));
+  }
+</script>

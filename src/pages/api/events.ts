@@ -9,7 +9,7 @@ export const GET: APIRoute = () => {
   let onEnough: (e: PublicEnough) => void;
   let onReply: (e: PublicEnough) => void;
   let onRemoved: (e: { id: number }) => void;
-  let onResting: (e: { count: number }) => void;
+  let onResting: (e: { count: number; kinds: string[] }) => void;
   let heartbeat: ReturnType<typeof setInterval>;
 
   const stream = new ReadableStream<string>({

@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { logEvent } from "../lib/log";
-import { restingNow, startBreak } from "../lib/db";
-import { bus } from "../lib/events";
+import { startBreak } from "../lib/db";
+import { emitResting } from "../lib/events";
 import { isBreakKind } from "../lib/limits";
 import { signedInPerson } from "../lib/person";
 import { finishWork, parseAlarm, parseTz, pauseWork, snooze, startWork } from "../lib/work";
@@ -36,7 +36,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       startBreak(person.id, kind, null);
       pauseWork(person.id, kind);
       logEvent("break_started", { block: person.id, kind, from: "alarm" });
-      bus.emit("resting", { count: restingNow() });
+      emitResting();
     }
   } else if (action === "finish") {
     const outcome = finishWork(person.id);

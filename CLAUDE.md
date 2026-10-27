@@ -120,7 +120,9 @@ with `curl` on 2026-10-12.
   enoughs, hours, spans, feeling, notes, rechecks); the length limits; notes
   sanitising; time spans and crayons; owner-only delete that leaves every
   feed live; comments live, and hidden at `REPORTS_TO_HIDE`; the resting
-  count live and a break never showing how long; without an account,
+  count live and a break never showing how long; the meadow (each resting
+  person's little one, from the "resting" event's list of kinds: never who,
+  never how long); without an account,
   reading works but every write is refused; and Looking back (26 tests on
   2026-10-21). Mine is two pages: `/mine/` is Looking back (a day, week or
   month added up for the owner, `src/lib/summary.ts`, never compared with

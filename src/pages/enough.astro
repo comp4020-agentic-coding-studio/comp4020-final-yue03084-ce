@@ -2,8 +2,8 @@
 import { logEvent } from "../lib/log";
 import TimeBar from "../components/TimeBar.astro";
 import Page from "../layouts/Page.astro";
-import { declareEnough, publicEnough, restingNow, startBreak } from "../lib/db";
-import { bus } from "../lib/events";
+import { declareEnough, publicEnough, startBreak } from "../lib/db";
+import { bus, emitResting } from "../lib/events";
 import { BREAK_KINDS, DESCRIPTION_MAX, FEELINGS, isBreakKind, NOTE_COLOURS } from "../lib/limits";
 import { signedInPerson } from "../lib/person";
 import { spansText } from "../lib/spans";
@@ -48,7 +48,7 @@ if (Astro.request.method === "POST" && person) {
     if (isBreakKind(next)) {
       startBreak(person.id, next, outcome.value.id);
       logEvent("break_started", { block: person.id, kind: next, after: outcome.value.id });
-      bus.emit("resting", { count: restingNow() });
+      emitResting();
     }
     // only a shared one goes on the bus, and only its public shape
     const shown = outcome.value.shared ? publicEnough(outcome.value.id) : undefined;

@@ -133,12 +133,25 @@ export const WEATHER_SKIES = {
   snow: { y: "#dfe6ea", Y: "#eef1f0", u: "#f3efdc" },
 } as const satisfies Record<string, Partial<Record<Ink, string>>>;
 
+// Hair colours for the little ones on the meadow, so a few resting together
+// can be told apart without saying who anyone is: each is the hair, its
+// outline and its highlight (inks h, o and H). Picked by place in the line,
+// never by person.
+export const HAIRS = [
+  { h: "#9a5b3a", o: "#5a3526", H: "#c4875a" },
+  { h: "#4a3a33", o: "#2a201c", H: "#6e5a4e" },
+  { h: "#c79a55", o: "#8a6230", H: "#e6c27f" },
+  { h: "#a8473a", o: "#6a2a22", H: "#cf7462" },
+  { h: "#6d6a62", o: "#45423c", H: "#97938a" },
+] as const;
+
 // Which sky a local hour gets.
 export const skyFor = (hour: number): Sky => (hour >= 7 && hour < 17 ? "day" : hour >= 17 && hour < 19 ? "dusk" : "night");
 
 // The CSS that colours every square: a variable per ink for each sky, and a
-// class per ink that reads it. Scoped to the figure.
-export function paletteCss(scope: string): string {
+// class per ink that reads it. Scoped to the figure. The weather tints are
+// left out where there's no weather (the meadow).
+export function paletteCss(scope: string, { weather = true } = {}): string {
   const vars = (inks: Partial<Record<Ink, string>>) =>
     Object.entries(inks)
       .map(([k, v]) => `--px-${code(k)}:${v};`)
@@ -147,9 +160,9 @@ export function paletteCss(scope: string): string {
   for (const [sky, inks] of Object.entries(SKIES)) {
     if (Object.keys(inks).length) lines.push(`${scope}[data-sky="${sky}"]{${vars(inks)}}`);
   }
-  for (const [weather, inks] of Object.entries(WEATHER_SKIES)) {
+  for (const [kind, inks] of weather ? Object.entries(WEATHER_SKIES) : []) {
     const v = vars(inks);
-    lines.push(`${scope}[data-weather="${weather}"][data-sky="day"]{${v}}`);
+    lines.push(`${scope}[data-weather="${kind}"][data-sky="day"]{${v}}`);
   }
   for (const k of Object.keys(PALETTE)) lines.push(`${scope} .px-${code(k)}{fill:var(--px-${code(k)})}`);
   return lines.join("\n");
