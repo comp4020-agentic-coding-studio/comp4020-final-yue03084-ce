@@ -113,7 +113,7 @@ const resting = view?.state === "resting";
 {
   view && !resting && view.alarmAt && (
     <div class="alarm" data-alarm-at={view.alarmAt} hidden>
-      <div class="alarm-card" role="alertdialog" aria-labelledby="alarm-h" aria-describedby="alarm-p">
+      <div class="alarm-card" role="alertdialog" aria-modal="true" aria-labelledby="alarm-h" aria-describedby="alarm-p">
         <h2 id="alarm-h">That's enough for now</h2>
         <p id="alarm-p">The little one is getting sleepy. You've put in plenty.</p>
         <form method="post" action="/work/" class="alarm-rest">
@@ -179,6 +179,11 @@ const resting = view?.state === "resting";
       }
       if (document.visibilityState === "visible" && alarm.hidden) {
         alarm.hidden = false;
+        // while it's up, the page behind it can't be tabbed to or read out:
+        // everything beside the overlay and its ancestors goes inert
+        for (let el: HTMLElement | null = alarm; el && el !== document.body; el = el.parentElement) {
+          for (const sib of el.parentElement?.children ?? []) if (sib !== el && sib instanceof HTMLElement) sib.inert = true;
+        }
         alarm.querySelector<HTMLButtonElement>(".alarm-rest button")?.focus();
       }
     };
