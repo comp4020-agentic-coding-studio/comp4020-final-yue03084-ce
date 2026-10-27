@@ -1,0 +1,61 @@
+---
+import { dueLater } from "../lib/db";
+import { localDate } from "../lib/summary";
+
+// What comes back on Mine: notes put in the drawer yesterday (or before) and
+// worries written a week ago, each until its owner puts it away. Rendered
+// only for the signed-in owner, from their own rows.
+interface Props {
+  personId: number;
+}
+const { personId } = Astro.props;
+const { drawer, worries } = dueLater(personId, localDate(Date.now()));
+const back = Astro.url.pathname;
+---
+
+{
+  drawer.length > 0 && (
+    <section class="drawer" aria-labelledby="drawer-heading">
+      <h2 id="drawer-heading">In your drawer from yesterday</h2>
+      <ul>
+        {drawer.map((n) => (
+          <li>
+            <p class="drawer-note">{n.text}</p>
+            <p class="drawer-about">
+              about <a href={`/mine/all/#enough-${n.enoughId}`}>{n.description}</a>
+            </p>
+            <form method="post" action="/put-away/">
+              <input type="hidden" name="kind" value="drawer" />
+              <input type="hidden" name="id" value={n.id} />
+              <input type="hidden" name="back" value={back} />
+              <button type="submit">Put it away</button>
+            </form>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+{
+  worries.length > 0 && (
+    <section class="drawer" aria-labelledby="worry-heading">
+      <h2 id="worry-heading">From a week ago</h2>
+      <ul>
+        {worries.map((n) => (
+          <li>
+            <p class="drawer-note">A week ago you worried: “{n.text}” It was enough.</p>
+            <p class="drawer-about">
+              about <a href={`/mine/all/#enough-${n.enoughId}`}>{n.description}</a>
+            </p>
+            <form method="post" action="/put-away/">
+              <input type="hidden" name="kind" value="worry" />
+              <input type="hidden" name="id" value={n.id} />
+              <input type="hidden" name="back" value={back} />
+              <button type="submit">Put it away</button>
+            </form>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}

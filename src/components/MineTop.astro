@@ -1,9 +1,11 @@
 ---
 import { displayName, type Person } from "../lib/db";
 import { workView } from "../lib/work";
+import LaterNotes from "./LaterNotes.astro";
 
 // The top of both Mine pages: who's signed in (or how to sign in), a nudge
-// back to the little one if they're working, and the two pages of Mine.
+// back to the little one if they're working, anything that's come back
+// for them today (LaterNotes), and the two pages of Mine.
 interface Props {
   person: Person | undefined;
   // whether this browser has records from before accounts (a cookie only)
@@ -48,6 +50,7 @@ const pages = [
     </p>
   )
 }
+{person?.username && <LaterNotes personId={person.id} />}
 <nav class="subnav" aria-label="Mine">
   {pages.map((p) => <a href={p.href} aria-current={here === p.href ? "page" : undefined}>{p.label}</a>)}
 </nav>

@@ -46,7 +46,9 @@ because they don't depend on that stack.
   features turn a record into another source of anxiety. Decided 2026-10-11.)*
 - **Numbers live in one place.** The comment length limit (30 characters),
   how many reports hide a comment (3), and how long an unended break counts
-  as going (120 minutes) are each one constant in `src/lib/limits.ts`, read
+  as going (120 minutes), and the drawer note and worry lengths and the
+  worry's week (`DRAWER_MAX`, `WORRY_MAX`, `WORRY_AFTER_DAYS`) are each one
+  constant in `src/lib/limits.ts`, read
   by the page, the server and any message about them. *(A limit enforced in
   two places will drift; see "One fact, one piece of code".)*
 
@@ -121,8 +123,14 @@ with `curl` on 2026-10-12.
   sanitising; time spans and crayons; owner-only delete that leaves every
   feed live; comments live, and hidden at `REPORTS_TO_HIDE`; the resting
   count live and a break never showing how long; without an account,
-  reading works but every write is refused; and Looking back (26 tests on
-  2026-10-21). Mine is two pages: `/mine/` is Looking back (a day, week or
+  reading works but every write is refused; Looking back; and things kept
+  for later (the tomorrow drawer and a worry for a week on): never on the
+  feed, the stream or another person's Mine, not shown before their day,
+  `DRAWER_MAX`/`WORRY_MAX` refused, put away by the owner only (30 tests on
+  2026-10-27). Which day they come back is pure arithmetic in
+  `src/lib/later.ts`, tested directly; showing and putting away is tested on
+  `db.ts` itself with its own throwaway `DATA_DIR`, because the spec can't
+  move the app's clock. Mine is two pages: `/mine/` is Looking back (a day, week or
   month added up for the owner, `src/lib/summary.ts`, never compared with
   another period) and `/mine/all/` is Each one, the full cards; specs that
   check private fields or act on a card read `/mine/all/`. Writers in specs register first
