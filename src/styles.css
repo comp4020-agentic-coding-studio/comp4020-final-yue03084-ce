@@ -9,9 +9,39 @@
   --accent-soft: #f1e4da;
   --accent-fg: #ffffff;
   --warn: #9a3412;
+  /* a pressed button, one step darker than the accent */
+  --accent-hover: #7a4835;
+  /* paper lifted a little off the page: cards, Looking back, the account boxes */
+  --paper-shadow: 0 1px 0 var(--line), 0 6px 14px -10px rgb(90 70 50 / 0.25);
   --font-head: "Lora", Georgia, serif;
   --font-body: "Raleway", system-ui, sans-serif;
   --font-hand: "Caveat", cursive;
+}
+
+/* Dark, following the system: the same notebook by lamplight, a warm dark
+   paper rather than black. Body and muted text stay above 4.5:1 on --bg,
+   --card and --accent-soft. The note colours' dark shades are written by
+   src/layouts/Page.astro from NOTE_COLOURS. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #221e1a;
+    --fg: #ece3d6;
+    --muted: #b5aa99;
+    --card: #2c2722;
+    --line: #3d362f;
+    --line-strong: #5a5047;
+    --accent: #e0a183;
+    --accent-soft: #3a2d26;
+    --accent-fg: #1f1a16;
+    --warn: #f0a27e;
+    --accent-hover: #eab398;
+    --paper-shadow: 0 1px 0 var(--line), 0 8px 16px -10px rgb(0 0 0 / 0.7);
+  }
+
+  body {
+    /* the grain in a pale ink, so it still shows on dark paper */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.9 0 0 0 0 0.85 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
 }
 
 * {
@@ -101,7 +131,8 @@ button[type="submit"] {
 
 .button:hover,
 button[type="submit"]:hover {
-  background: #7a4835;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
   transform: rotate(-0.5deg);
 }
 
@@ -117,7 +148,7 @@ button[type="submit"]:hover {
   border: 1px solid var(--line);
   border-radius: 0.7rem 0.5rem 0.8rem 0.55rem;
   background: var(--card);
-  box-shadow: 0 1px 0 var(--line), 0 6px 14px -10px rgb(90 70 50 / 0.25);
+  box-shadow: var(--paper-shadow);
 }
 
 /* a little uneven, like stacked blocks */
@@ -207,12 +238,33 @@ textarea {
   color: var(--fg);
   background: var(--card);
   border: 1px solid var(--line-strong);
-  border-radius: 0.4rem;
+  /* a touch uneven, like the buttons */
+  border-radius: 0.45rem 0.35rem 0.5rem 0.4rem;
 }
 
+input:not([type="checkbox"], [type="radio"]):focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: var(--accent);
+}
+
+select {
+  font: inherit;
+  color: var(--fg);
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.45rem 0.35rem 0.5rem 0.4rem;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+/* boxes on a form are the same dashed paper as the break box */
 fieldset {
-  border: 1px solid var(--line);
-  border-radius: 0.5rem;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 0.8rem 0.5rem 0.9rem 0.6rem;
   display: grid;
   gap: 0.75rem;
 }
@@ -367,6 +419,12 @@ footer a[aria-current="page"] {
   color: var(--accent);
 }
 
+/* the page you're on, underlined the same wavy way as the nav */
+footer a[aria-current="page"] {
+  text-decoration: underline wavy var(--line-strong);
+  text-underline-offset: 0.35em;
+}
+
 /* the read-only time bar on Mine, in the crayon it was drawn with */
 .minibar {
   display: block;
@@ -455,7 +513,7 @@ button.danger {
 
 button.danger:hover {
   background: var(--warn);
-  color: #fff;
+  color: var(--bg);
 }
 
 /* one-line comments under a shared enough */
@@ -652,7 +710,7 @@ fieldset.next small {
 }
 
 .urge-choices .let-go:hover {
-  background: #7a4835;
+  background: var(--accent-hover);
 }
 
 .urge-tally {
@@ -704,7 +762,12 @@ footer {
   border: 1px solid var(--line);
   border-radius: 0.8rem 0.5rem 0.9rem 0.6rem;
   background: var(--card);
+  box-shadow: var(--paper-shadow);
 }
+
+/* two sheets side by side, each a little uneven, like the feed's cards */
+.account-forms .account-box:nth-child(1) { transform: rotate(-0.3deg); }
+.account-forms .account-box:nth-child(2) { transform: rotate(0.35deg); }
 
 .account-box h2 {
   margin: 0 0 0.25rem;
@@ -830,7 +893,7 @@ button.quiet:hover {
   border: 1px solid var(--line);
   border-radius: 0.7rem 0.5rem 0.8rem 0.55rem;
   background: var(--card);
-  box-shadow: 0 1px 0 var(--line), 0 6px 14px -10px rgb(90 70 50 / 0.25);
+  box-shadow: var(--paper-shadow);
 }
 
 .period-step {
@@ -928,4 +991,62 @@ button.quiet:hover {
 
 .daystrip-hours span:last-child {
   transform: translateX(-100%);
+}
+
+/* One notebook: the small headings on a box are written in by hand, like
+   Looking back's. */
+.breakbox h2,
+.work h2,
+.account-box h2 {
+  font-family: var(--font-hand);
+  font-size: 1.55rem;
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--accent);
+}
+
+/* the README is one more sheet in the notebook */
+.readme-sheet {
+  margin-top: 0.75rem;
+  padding: 1.25rem 1.4rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem 0.5rem 0.8rem 0.55rem;
+  background: var(--card);
+  box-shadow: var(--paper-shadow);
+  transform: rotate(-0.2deg);
+  overflow-wrap: anywhere;
+}
+
+.readme-sheet h1 {
+  margin-top: 0.25rem;
+}
+
+.readme-sheet h2 {
+  margin: 1.75rem 0 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px dashed var(--line-strong);
+}
+
+.readme-sheet ul {
+  padding-left: 1.3rem;
+}
+
+.readme-sheet code {
+  padding: 0 0.25rem;
+  border-radius: 0.25rem;
+  background: var(--accent-soft);
+  font-size: 0.9em;
+}
+
+/* In the dark the pictures keep their own palette; only the paper they're
+   taped onto changes, to a sheet a little lighter than the cards, with a
+   shadow that still shows. The tape stays wine red. */
+@media (prefers-color-scheme: dark) {
+  :root .little-one .page,
+  :root .meadow .meadow-page {
+    background: #3a342d;
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.45),
+      0 6px 14px rgb(0 0 0 / 0.35);
+  }
 }
