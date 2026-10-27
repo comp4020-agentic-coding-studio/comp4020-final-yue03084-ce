@@ -19,7 +19,7 @@ export const localDate = (iso: string | number) =>
 // into the next or previous day.
 const asDate = (day: string) => new Date(`${day}T12:00:00Z`);
 const asDay = (d: Date) => d.toISOString().slice(0, 10);
-const addDays = (day: string, n: number) => {
+export const addDays = (day: string, n: number) => {
   const d = asDate(day);
   d.setUTCDate(d.getUTCDate() + n);
   return asDay(d);

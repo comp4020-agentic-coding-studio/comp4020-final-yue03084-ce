@@ -2,7 +2,7 @@
 import MineTop from "../../components/MineTop.astro";
 import Page from "../../layouts/Page.astro";
 import { mine } from "../../lib/db";
-import { PRESET_REPLIES, type PresetKey, URGE_CHOICES } from "../../lib/limits";
+import { DRAWER_MAX, PRESET_REPLIES, type PresetKey, URGE_CHOICES } from "../../lib/limits";
 import { isHtml } from "../../lib/notes";
 import { describeSpan, parseSpans, roughly } from "../../lib/spans";
 import { currentPerson } from "../../lib/person";
@@ -124,6 +124,17 @@ const when = (iso: string) =>
                 <button type="submit" name="choice" value="checked" class="check-anyway">
                   {URGE_CHOICES.checked}
                 </button>
+              </form>
+              {/* or a third way: write the worry down and look at it tomorrow,
+                  in the drawer at the top of Mine. Counts as wanting to check. */}
+              <form method="post" action="/urge/" class="urge-drawer">
+                <input type="hidden" name="enough" value={e.id} />
+                <input type="hidden" name="choice" value="tomorrow" />
+                <label>
+                  What would you check? <small>(up to {DRAWER_MAX} characters, for tomorrow)</small>
+                  <input name="note" required maxlength={DRAWER_MAX} placeholder="The second table's numbers" />
+                </label>
+                <button type="submit">{URGE_CHOICES.tomorrow}</button>
               </form>
             </div>
           </details>

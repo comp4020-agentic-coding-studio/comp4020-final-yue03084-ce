@@ -1,5 +1,9 @@
 import { describe, expect, inject, it } from "vitest";
-import { DESCRIPTION_MAX, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE } from "../src/lib/limits.ts";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { dayAfter, isDue, weekLater } from "../src/lib/later.ts";
+import { DESCRIPTION_MAX, DRAWER_MAX, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE, WORRY_AFTER_DAYS, WORRY_MAX } from "../src/lib/limits.ts";
 import { periodLabel, periodRange, summarise } from "../src/lib/summary.ts";
 
 // The product rules that can be checked, against the running app: a shared
@@ -32,8 +36,8 @@ function browser() {
       send("/comment/", { method: "POST", body: new URLSearchParams({ enough, text }) }),
     report: (comment: string) => send("/report/", { method: "POST", body: new URLSearchParams({ comment }) }),
     rest: (fields: Record<string, string>) => send("/break/", { method: "POST", body: new URLSearchParams(fields) }),
-    urge: (enough: string, choice: string) =>
-      send("/urge/", { method: "POST", body: new URLSearchParams({ enough, choice }) }),
+    urge: (enough: string, choice: string, note = "") =>
+      send("/urge/", { method: "POST", body: new URLSearchParams({ enough, choice, note }) }),
   };
 }
 
@@ -463,6 +467,135 @@ describe("looking back", () => {
   });
 });
 
+// Things kept for later are the owner's alone: a note in the drawer for
+// tomorrow, and one worry for a week on. Neither shows before its day, and
+// neither ever reaches the feed, the stream or anyone else's Mine.
+describe("kept for later", () => {
+  const idOf = async (b: Awaited<ReturnType<typeof signedIn>>, text: string) =>
+    new RegExp(`data-enough="(\\d+)"[\\s\\S]*?${text}`).exec(await b.get("/mine/all/"))?.[1] ?? "";
+
+  it("a note for tomorrow counts as wanting to check, and shows nowhere today", async () => {
+    const tag = marker();
+    const note = `the second table ${tag}`;
+    const author = await signedIn();
+    await author.declare({ description: `drawer ${tag}`, shared: "on" });
+    const id = await idOf(author, `drawer ${tag}`);
+    const received = await readStream(() => author.urge(id, "tomorrow", note), note, 1_500);
+    expect(received).not.toContain(note);
+    const own = await author.get("/mine/all/");
+    expect(own).toContain("Wanted to check it again 1 time; let it go 0.");
+    // not due until tomorrow (Sydney): on neither of the owner's pages yet
+    expect(own).not.toContain(note);
+    expect(own).not.toContain("In your drawer");
+    expect(await author.get("/mine/")).not.toContain(note);
+    const other = await signedIn();
+    for (const page of ["/", "/mine/", "/mine/all/"]) expect(await other.get(page)).not.toContain(note);
+    expect(await browser().get("/")).not.toContain(note);
+  });
+
+  it(`refuses an empty note, one over ${DRAWER_MAX} characters, or one on someone else's enough`, async () => {
+    const tag = marker();
+    const author = await signedIn();
+    await author.declare({ description: `long drawer ${tag}` });
+    const id = await idOf(author, `long drawer ${tag}`);
+    for (const note of ["   ", `${tag}${"x".repeat(DRAWER_MAX)}`]) {
+      const res = await author.urge(id, "tomorrow", note);
+      expect(res.status).toBe(303);
+    }
+    await (await signedIn()).urge(id, "tomorrow", `not yours ${tag}`);
+    expect(await author.get("/mine/all/")).not.toContain("Wanted to check it again");
+  });
+
+  it("a worry is kept for its owner, and never on the feed, the stream or anyone else's Mine", async () => {
+    const tag = marker();
+    // words no timestamp or id could contain
+    const worry = `the ending felt rushed qz${tag}`;
+    const author = await signedIn();
+    const received = await readStream(
+      () => author.declare({ description: `worried ${tag}`, shared: "on", worry }),
+      `worried ${tag}`,
+      3_000,
+    );
+    expect(received).toContain(`worried ${tag}`);
+    expect(received).not.toContain(worry);
+    expect(received).not.toMatch(/"worry"/);
+    expect(await browser().get("/")).not.toContain(worry);
+    // not shown before its week, even to its owner
+    for (const page of ["/mine/", "/mine/all/"]) {
+      expect(await author.get(page)).not.toContain(worry);
+      expect(await (await signedIn()).get(page)).not.toContain(worry);
+    }
+  });
+
+  it(`refuses a worry over ${WORRY_MAX} characters, keeping what was typed`, async () => {
+    const tag = marker();
+    const worry = `${tag}${"w".repeat(WORRY_MAX)}`;
+    const res = await (await signedIn()).declare({ description: `too worried ${tag}`, shared: "on", worry });
+    expect(res.status).toBe(400);
+    const html = await res.text();
+    expect(html).toContain(`Keep the worry to ${WORRY_MAX} characters or fewer.`);
+    expect(html).toContain(worry);
+    expect(await browser().get("/")).not.toContain(`too worried ${tag}`);
+  });
+
+  it(`come back on the right Sydney day: the next for the drawer, ${WORRY_AFTER_DAYS} on for a worry (later.ts)`, () => {
+    // 13:30 UTC on the 27th is already 00:30 on the 28th in Sydney
+    expect(dayAfter("2026-10-27T13:30:00.000Z")).toBe("2026-10-29");
+    expect(dayAfter("2026-10-27T12:30:00.000Z")).toBe("2026-10-28");
+    expect(dayAfter("2026-12-31T01:00:00.000Z")).toBe("2027-01-01");
+    expect(weekLater("2026-10-27T01:00:00.000Z")).toBe("2026-11-03");
+    expect(weekLater("2026-02-25T01:00:00.000Z")).toBe("2026-03-04");
+    // across the day Sydney's clocks go forward (4 October 2026), still seven days
+    expect(weekLater("2026-10-01T03:00:00.000Z")).toBe("2026-10-08");
+    expect(isDue("2026-10-28", "2026-10-27")).toBe(false);
+    expect(isDue("2026-10-28", "2026-10-28")).toBe(true);
+    expect(isDue("2026-10-28", "2026-11-02")).toBe(true);
+  });
+
+  // The app's clock can't be moved from the spec, so what shows on which day,
+  // and who can put it away, is checked on db.ts itself, with its own
+  // throwaway database in this test process.
+  it("show from their day until put away, and only their owner can put them away (db.ts)", async () => {
+    process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "spec-later-"));
+    const db = await import("../src/lib/db.ts");
+    const { localDate } = await import("../src/lib/summary.ts");
+    const owner = db.createPerson(`owner-${marker()}`);
+    const other = db.createPerson(`other-${marker()}`);
+    const base = { shared: false, hours: "", spans: "", crayon: "", feeling: "", notes: "" };
+    const made = db.declareEnough(owner.id, { ...base, description: "a thing", worry: "the colours" });
+    if (!made.ok) throw new Error(made.reason);
+    const enough = made.value;
+    expect(db.putInDrawer(owner.id, enough.id, "check the margins").ok).toBe(true);
+    expect(db.putInDrawer(other.id, enough.id, "not mine").ok).toBe(false);
+
+    const today = localDate(Date.now());
+    expect(db.dueLater(owner.id, today)).toEqual({ drawer: [], worries: [] });
+    const tomorrow = dayAfter(Date.now());
+    const due = db.dueLater(owner.id, tomorrow);
+    expect(due.drawer.map((n) => n.text)).toEqual(["check the margins"]);
+    expect(due.drawer[0].description).toBe("a thing");
+    expect(due.worries).toEqual([]);
+    const week = weekLater(enough.createdAt);
+    expect(db.dueLater(owner.id, week).worries.map((n) => n.text)).toEqual(["the colours"]);
+    expect(db.dueLater(other.id, week)).toEqual({ drawer: [], worries: [] });
+
+    // someone else can't put either away; the owner can, once
+    const worryId = db.dueLater(owner.id, week).worries[0].id;
+    expect(db.putAway(other.id, "drawer", due.drawer[0].id).ok).toBe(false);
+    expect(db.putAway(other.id, "worry", worryId).ok).toBe(false);
+    expect(db.dueLater(owner.id, week).drawer).toHaveLength(1);
+    expect(db.putAway(owner.id, "drawer", due.drawer[0].id).ok).toBe(true);
+    expect(db.putAway(owner.id, "drawer", due.drawer[0].id).ok).toBe(false);
+    expect(db.putAway(owner.id, "worry", worryId).ok).toBe(true);
+    expect(db.dueLater(owner.id, week)).toEqual({ drawer: [], worries: [] });
+
+    // a tomorrow note counts as wanting to check, not as letting go
+    expect(db.mine(owner.id)[0].urges).toEqual({ letGo: 0, checked: 1 });
+    // deleting the enough takes what was kept for it too
+    expect(db.deleteEnough(owner.id, enough.id).ok).toBe(true);
+  });
+});
+
 // Reading needs nothing; every write needs an account, checked on the server.
 describe("without an account", () => {
   it("anyone can read the feed", async () => {
@@ -486,6 +619,8 @@ describe("without an account", () => {
       ["/delete/", { enough: id }],
       ["/break/", { kind: "walk" }],
       ["/urge/", { enough: id, choice: "let_go" }],
+      ["/urge/", { enough: id, choice: "tomorrow", note: `anon note ${tag}` }],
+      ["/put-away/", { kind: "drawer", id: "1" }],
     ] as const) {
       const res = await reader.send(path, {
         method: "POST",

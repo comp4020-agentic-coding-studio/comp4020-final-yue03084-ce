@@ -929,3 +929,85 @@ button.quiet:hover {
 .daystrip-hours span:last-child {
   transform: translateX(-100%);
 }
+
+/* the drawer on Mine: notes kept for tomorrow, and worries from a week ago */
+.drawer {
+  margin: 0 0 1.25rem;
+  padding: 0.8rem 1.1rem 0.9rem;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 0.8rem 0.5rem 0.9rem 0.6rem;
+  background: var(--card);
+}
+
+.drawer h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-hand);
+  font-size: 1.5rem;
+}
+
+.drawer ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.drawer li + li {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--line);
+}
+
+.drawer p {
+  margin: 0;
+}
+
+.drawer-about {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.drawer form {
+  margin-top: 0.4rem;
+}
+
+.drawer button,
+.urge-drawer button {
+  min-height: 2.5rem;
+  padding: 0.3rem 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 1.2rem;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 200ms ease-out, border-color 200ms ease-out;
+}
+
+.drawer button:hover,
+.urge-drawer button:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* the third way out of "check it again": a line for tomorrow */
+.urge-drawer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--line);
+}
+
+.urge-drawer label {
+  flex: 1 1 14rem;
+  font-size: 0.9rem;
+}
+
+.urge-drawer input {
+  display: block;
+  width: 100%;
+  margin-top: 0.2rem;
+}

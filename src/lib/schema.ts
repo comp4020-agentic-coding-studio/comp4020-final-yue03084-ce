@@ -181,3 +181,39 @@ export const scenes = sqliteTable("scenes", {
     .notNull()
     .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
 });
+
+// A note someone put in the drawer instead of checking an enough again, for
+// tomorrow: shown only on its owner's Mine, from openFrom (the next Sydney
+// day, "2026-10-28") until they put it away (dismissedAt). Never on the feed,
+// the stream or in a log.
+export const drawerNotes = sqliteTable("drawer_notes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  personId: integer("person_id")
+    .notNull()
+    .references(() => people.id),
+  enoughId: integer("enough_id")
+    .notNull()
+    .references(() => enoughs.id),
+  text: text("text").notNull(),
+  openFrom: text("open_from").notNull(),
+  dismissedAt: text("dismissed_at"),
+  createdAt: createdAt(),
+});
+
+// One worry written when calling something enough, for its owner a week on:
+// shown on their Mine from openFrom (WORRY_AFTER_DAYS Sydney days after)
+// until put away. Kept apart from enoughs so no query of the feed can reach it.
+export const worries = sqliteTable("worries", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  personId: integer("person_id")
+    .notNull()
+    .references(() => people.id),
+  enoughId: integer("enough_id")
+    .notNull()
+    .unique()
+    .references(() => enoughs.id),
+  text: text("text").notNull(),
+  openFrom: text("open_from").notNull(),
+  dismissedAt: text("dismissed_at"),
+  createdAt: createdAt(),
+});

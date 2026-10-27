@@ -7,6 +7,7 @@ import {
   BREAK_MAX_MINUTES,
   type BreakKind,
   DESCRIPTION_MAX,
+  DRAWER_MAX,
   FEELINGS,
   isNoteColour,
   NOTES_MAX,
@@ -14,10 +15,25 @@ import {
   REPLY_MAX,
   REPORTS_TO_HIDE,
   type UrgeChoice,
+  WORRY_MAX,
 } from "./limits";
+import { dayAfter, isDue, weekLater } from "./later";
 import { cleanNotes } from "./notes";
 import { hoursIn, parseSpans, spansText } from "./spans";
-import { breaks, comments, type Enough, enoughs, type Person, people, replies, reports, sessions, urges } from "./schema";
+import {
+  breaks,
+  comments,
+  drawerNotes,
+  type Enough,
+  enoughs,
+  type Person,
+  people,
+  replies,
+  reports,
+  sessions,
+  urges,
+  worries,
+} from "./schema";
 
 // One SQLite file is the app's whole persistent state. In production
 // DATA_DIR is the machine's volume (/data), which is how state survives a
@@ -212,6 +228,8 @@ export interface EnoughInput {
   crayon: string;
   feeling: string;
   notes: string;
+  // one worry for a week from now, kept apart from the enough (worries table)
+  worry: string;
 }
 
 export type Outcome<T> = { ok: true; value: T } | { ok: false; reason: string };
@@ -234,11 +252,17 @@ export function declareEnough(personId: number, input: EnoughInput): Outcome<Eno
   const feeling = (FEELINGS as readonly string[]).includes(input.feeling) ? input.feeling : null;
   if (input.notes.length > NOTES_MAX) return { ok: false, reason: "Those notes are too long to keep." };
   const notes = cleanNotes(input.notes) || null;
-  const value = db
-    .insert(enoughs)
-    .values({ personId, description, shared: input.shared, hours, spans: spans.length > 0 ? spansText(spans) : null, crayon, feeling, notes })
-    .returning()
-    .get();
+  const worry = input.worry.trim().replace(/\s+/g, " ");
+  if ([...worry].length > WORRY_MAX) return { ok: false, reason: `Keep the worry to ${WORRY_MAX} characters or fewer.` };
+  const value = db.transaction((tx) => {
+    const row = tx
+      .insert(enoughs)
+      .values({ personId, description, shared: input.shared, hours, spans: spans.length > 0 ? spansText(spans) : null, crayon, feeling, notes })
+      .returning()
+      .get();
+    if (worry) tx.insert(worries).values({ personId, enoughId: row.id, text: worry, openFrom: weekLater(row.createdAt) }).run();
+    return row;
+  });
   return { ok: true, value };
 }
 
@@ -268,6 +292,8 @@ export function deleteEnough(personId: number, enoughId: number): Outcome<{ wasS
     }
     tx.delete(comments).where(eq(comments.enoughId, enoughId)).run();
     tx.delete(urges).where(eq(urges.enoughId, enoughId)).run();
+    tx.delete(drawerNotes).where(eq(drawerNotes.enoughId, enoughId)).run();
+    tx.delete(worries).where(eq(worries.enoughId, enoughId)).run();
     tx.update(breaks).set({ enoughId: null }).where(eq(breaks.enoughId, enoughId)).run();
     tx.delete(replies).where(eq(replies.enoughId, enoughId)).run();
     tx.delete(enoughs).where(eq(enoughs.id, enoughId)).run();
@@ -337,8 +363,9 @@ function urgeCounts(ids: number[]): Map<number, { letGo: number; checked: number
     .all();
   for (const row of rows) {
     const entry = out.get(row.enoughId) ?? { letGo: 0, checked: 0 };
-    if (row.choice === "let_go") entry.letGo = row.n;
-    else entry.checked = row.n;
+    // "checked" and "tomorrow" both count as not letting it go
+    if (row.choice === "let_go") entry.letGo += row.n;
+    else entry.checked += row.n;
     out.set(row.enoughId, entry);
   }
   return out;
@@ -361,4 +388,67 @@ export function recordUrge(personId: number, enoughId: number, choice: UrgeChoic
   if (!own) return { ok: false, reason: "That isn't one of yours." };
   db.insert(urges).values({ enoughId, personId, choice }).run();
   return { ok: true, value: null };
+}
+
+// "Write it down for tomorrow": counts as wanting to check (an urge with
+// choice "tomorrow") and keeps the note in the drawer until the next Sydney
+// day. Own enoughs only; an empty or over-long note records nothing.
+export function putInDrawer(personId: number, enoughId: number, input: string): Outcome<null> {
+  const text = input.trim().replace(/\s+/g, " ");
+  if (text === "") return { ok: false, reason: "Write a few words first." };
+  if ([...text].length > DRAWER_MAX) return { ok: false, reason: `Keep it to ${DRAWER_MAX} characters or fewer.` };
+  const own = db.select().from(enoughs).where(and(eq(enoughs.id, enoughId), eq(enoughs.personId, personId))).get();
+  if (!own) return { ok: false, reason: "That isn't one of yours." };
+  db.transaction((tx) => {
+    const urge = tx.insert(urges).values({ enoughId, personId, choice: "tomorrow" }).returning().get();
+    tx.insert(drawerNotes).values({ personId, enoughId, text, openFrom: dayAfter(urge.createdAt) }).run();
+  });
+  return { ok: true, value: null };
+}
+
+// What's come back for this person today: drawer notes from their openFrom
+// day, and worries a week on, each until put away. Only ever rendered on
+// their own Mine.
+export interface LaterNote {
+  id: number;
+  enoughId: number;
+  description: string;
+  text: string;
+}
+export function dueLater(personId: number, today: string): { drawer: LaterNote[]; worries: LaterNote[] } {
+  const due = <R extends LaterNote & { openFrom: string }>(rows: R[]): LaterNote[] =>
+    rows.filter((r) => isDue(r.openFrom, today)).map(({ id, enoughId, description, text }) => ({ id, enoughId, description, text }));
+  const drawer = db
+    .select({ id: drawerNotes.id, enoughId: drawerNotes.enoughId, description: enoughs.description, text: drawerNotes.text, openFrom: drawerNotes.openFrom })
+    .from(drawerNotes)
+    .innerJoin(enoughs, eq(enoughs.id, drawerNotes.enoughId))
+    .where(and(eq(drawerNotes.personId, personId), isNull(drawerNotes.dismissedAt)))
+    .orderBy(drawerNotes.id)
+    .all();
+  const worried = db
+    .select({ id: worries.id, enoughId: worries.enoughId, description: enoughs.description, text: worries.text, openFrom: worries.openFrom })
+    .from(worries)
+    .innerJoin(enoughs, eq(enoughs.id, worries.enoughId))
+    .where(and(eq(worries.personId, personId), isNull(worries.dismissedAt)))
+    .orderBy(worries.id)
+    .all();
+  return { drawer: due(drawer), worries: due(worried) };
+}
+
+// "Put it away": the owner's own note only, by id and person together.
+export function putAway(personId: number, kind: "drawer" | "worry", id: number): Outcome<null> {
+  const now = sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`;
+  const done =
+    kind === "drawer"
+      ? db
+          .update(drawerNotes)
+          .set({ dismissedAt: now })
+          .where(and(eq(drawerNotes.id, id), eq(drawerNotes.personId, personId), isNull(drawerNotes.dismissedAt)))
+          .run()
+      : db
+          .update(worries)
+          .set({ dismissedAt: now })
+          .where(and(eq(worries.id, id), eq(worries.personId, personId), isNull(worries.dismissedAt)))
+          .run();
+  return done.changes > 0 ? { ok: true, value: null } : { ok: false, reason: "That isn't one of yours." };
 }

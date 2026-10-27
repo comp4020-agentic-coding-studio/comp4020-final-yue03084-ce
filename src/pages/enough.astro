@@ -4,7 +4,7 @@ import TimeBar from "../components/TimeBar.astro";
 import Page from "../layouts/Page.astro";
 import { declareEnough, publicEnough, startBreak } from "../lib/db";
 import { bus, emitResting } from "../lib/events";
-import { BREAK_KINDS, DESCRIPTION_MAX, FEELINGS, isBreakKind, NOTE_COLOURS } from "../lib/limits";
+import { BREAK_KINDS, DESCRIPTION_MAX, FEELINGS, isBreakKind, NOTE_COLOURS, WORRY_AFTER_DAYS, WORRY_MAX } from "../lib/limits";
 import { signedInPerson } from "../lib/person";
 import { spansText } from "../lib/spans";
 import { finishedSpans } from "../lib/work";
@@ -12,7 +12,7 @@ import { finishedSpans } from "../lib/work";
 // Call something enough. The description is the only part that can be
 // public, and only if shared is ticked; the rest is the person's own.
 let refused: string | null = null;
-let values = { description: "", shared: true, hours: "", spans: "", crayon: "", feeling: "", notes: "" };
+let values = { description: "", shared: true, hours: "", spans: "", crayon: "", feeling: "", notes: "", worry: "" };
 
 // writing needs an account (signedInPerson): without one, this page asks you
 // to sign in first, and a post is refused
@@ -39,6 +39,7 @@ if (Astro.request.method === "POST" && person) {
     crayon: field("crayon"),
     feeling: field("feeling"),
     notes: field("notes"),
+    worry: field("worry"),
   };
   const outcome = declareEnough(person.id, values);
   if (outcome.ok) {
@@ -118,6 +119,10 @@ if (Astro.request.method === "POST" && person) {
         <!-- without scripts this plain box still works; with them the editor writes into it -->
         <textarea id="notes" name="notes" rows="4">{values.notes}</textarea>
       </div>
+      <label>
+        One worry about it, for a week from now <small>(optional, up to {WORRY_MAX} characters; it comes back on Mine in {WORRY_AFTER_DAYS} days)</small>
+        <input name="worry" maxlength={WORRY_MAX} value={values.worry} placeholder="That the ending was rushed" />
+      </label>
     </fieldset>
 
     <fieldset class="choices next">

@@ -74,9 +74,23 @@ export const MEADOW_MAX = 7;
 
 // What someone can choose when they want to go back and check something
 // they already called enough.
-export const URGE_CHOICES = { let_go: "Okay, I'll leave it", checked: "I'll check it anyway" } as const;
+// "tomorrow" keeps a short note in the drawer instead (DRAWER_MAX), which
+// shows on Mine from the next Sydney day; it counts as wanting to check, not
+// as letting go.
+export const URGE_CHOICES = {
+  let_go: "Okay, I'll leave it",
+  checked: "I'll check it anyway",
+  tomorrow: "Write it down for tomorrow",
+} as const;
 export type UrgeChoice = keyof typeof URGE_CHOICES;
 export const isUrgeChoice = (key: string): key is UrgeChoice => Object.hasOwn(URGE_CHOICES, key);
+// How long a note put in the drawer for tomorrow can be.
+export const DRAWER_MAX = 140;
+
+// One worry about a thing, written when calling it enough, kept for its owner
+// and shown back to them WORRY_AFTER_DAYS Sydney days later.
+export const WORRY_MAX = 140;
+export const WORRY_AFTER_DAYS = 7;
 
 // Accounts (optional). Usernames are 3–30 letters, digits, _ or -.
 export const USERNAME_MIN = 3;
