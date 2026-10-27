@@ -1,22 +1,26 @@
 ---
 import { dueLater } from "../lib/db";
+import { drawerHeading } from "../lib/later";
 import { localDate } from "../lib/summary";
 
-// What comes back on Mine: notes put in the drawer yesterday (or before) and
+// What comes back on Mine: notes put in the drawer yesterday (or before; the heading says which) and
 // worries written a week ago, each until its owner puts it away. Rendered
 // only for the signed-in owner, from their own rows.
 interface Props {
   personId: number;
 }
 const { personId } = Astro.props;
-const { drawer, worries } = dueLater(personId, localDate(Date.now()));
+const today = localDate(Date.now());
+const { drawer, worries } = dueLater(personId, today);
+// "from yesterday" only when it was yesterday (later.ts)
+const heading = drawerHeading(drawer.map((n) => n.openFrom), today);
 const back = Astro.url.pathname;
 ---
 
 {
   drawer.length > 0 && (
     <section class="drawer" aria-labelledby="drawer-heading">
-      <h2 id="drawer-heading">In your drawer from yesterday</h2>
+      <h2 id="drawer-heading">{heading}</h2>
       <ul>
         {drawer.map((n) => (
           <li>

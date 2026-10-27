@@ -421,10 +421,12 @@ export interface LaterNote {
   enoughId: number;
   description: string;
   text: string;
+  // the day it came back (a drawer note: the day after it was written)
+  openFrom: string;
 }
 export function dueLater(personId: number, today: string): { drawer: LaterNote[]; worries: LaterNote[] } {
-  const due = <R extends LaterNote & { openFrom: string }>(rows: R[]): LaterNote[] =>
-    rows.filter((r) => isDue(r.openFrom, today)).map(({ id, enoughId, description, text }) => ({ id, enoughId, description, text }));
+  const due = (rows: LaterNote[]): LaterNote[] =>
+    rows.filter((r) => isDue(r.openFrom, today)).map(({ id, enoughId, description, text, openFrom }) => ({ id, enoughId, description, text, openFrom }));
   const drawer = db
     .select({ id: drawerNotes.id, enoughId: drawerNotes.enoughId, description: enoughs.description, text: drawerNotes.text, openFrom: drawerNotes.openFrom })
     .from(drawerNotes)

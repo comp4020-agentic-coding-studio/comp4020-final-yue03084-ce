@@ -2,7 +2,7 @@ import { describe, expect, inject, it } from "vitest";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { dayAfter, isDue, weekLater } from "../src/lib/later.ts";
+import { dayAfter, drawerHeading, isDue, weekLater } from "../src/lib/later.ts";
 import { DESCRIPTION_MAX, DRAWER_MAX, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE, WORRY_AFTER_DAYS, WORRY_MAX } from "../src/lib/limits.ts";
 import { periodLabel, periodRange, summarise } from "../src/lib/summary.ts";
 
@@ -562,6 +562,14 @@ describe("kept for later", () => {
     expect(isDue("2026-10-28", "2026-10-27")).toBe(false);
     expect(isDue("2026-10-28", "2026-10-28")).toBe(true);
     expect(isDue("2026-10-28", "2026-11-02")).toBe(true);
+  });
+
+  it("the drawer says it's from yesterday only when it was (later.ts)", () => {
+    // openFrom is the day after the note was written; today is Tuesday 3 November
+    expect(drawerHeading(["2026-11-03"], "2026-11-03")).toBe("In your drawer from yesterday");
+    expect(drawerHeading(["2026-10-30"], "2026-11-03")).toBe("In your drawer from Thursday");
+    expect(drawerHeading(["2026-10-28"], "2026-11-03")).toBe("In your drawer");
+    expect(drawerHeading(["2026-11-03", "2026-10-30"], "2026-11-03")).toBe("In your drawer");
   });
 
   // The app's clock can't be moved from the spec, so what shows on which day,
