@@ -92,7 +92,10 @@ nav {
 }
 
 nav a {
-  padding-block: 0.4rem;
+  /* a tap target at least 44px tall */
+  display: inline-block;
+  min-height: 2.75rem;
+  padding-block: 0.45rem;
   text-decoration: none;
   color: var(--muted);
 }
@@ -185,7 +188,7 @@ small,
 }
 
 .replies button {
-  min-height: 2.25rem;
+  min-height: 2.75rem;
   padding: 0.25rem 0.8rem;
   border: 1px solid var(--line);
   border-radius: 1rem;
@@ -227,6 +230,12 @@ small,
 .stack label.inline {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
+}
+
+/* a radio or checkbox row is tapped by its whole label, at least 44px tall */
+label.inline:has(> input[type="radio"], > input[type="checkbox"]) {
+  min-height: 2.75rem;
   align-items: center;
 }
 
@@ -325,8 +334,8 @@ dd {
 }
 
 .toolbar button {
-  min-width: 2.25rem;
-  min-height: 2.25rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   padding: 0 0.5rem;
   border: 1px solid transparent;
   border-radius: 0.3rem;
@@ -357,6 +366,15 @@ dd {
   border-radius: 50%;
   border: 2px solid var(--card);
   box-shadow: 0 0 0 1px var(--line);
+  /* the dot stays small; the space around it takes the tap (44px) */
+  margin: 0.5rem;
+  position: relative;
+}
+
+.toolbar .swatch::after {
+  content: "";
+  position: absolute;
+  inset: -0.5rem;
 }
 
 .toolbar .swatch.c-sage { background: var(--c-sage); }
@@ -410,6 +428,7 @@ footer {
 
 footer a {
   display: inline-block;
+  min-height: 2.75rem;
   padding-block: 0.5rem;
   color: var(--muted);
 }
@@ -476,7 +495,8 @@ footer a[aria-current="page"] {
 
 .delete summary {
   display: inline-block;
-  padding-block: 0.4rem;
+  min-height: 2.75rem;
+  padding-block: 0.55rem;
   color: var(--muted);
   cursor: pointer;
   list-style: none;
@@ -500,7 +520,7 @@ footer a[aria-current="page"] {
 }
 
 button.danger {
-  min-height: 2.25rem;
+  min-height: 2.75rem;
   padding: 0.3rem 0.9rem;
   border: 1px solid var(--warn);
   border-radius: 0.5rem 0.4rem 0.55rem 0.45rem;
@@ -547,7 +567,7 @@ button.danger:hover {
 }
 
 .report button {
-  min-height: 2rem;
+  min-height: 2.75rem;
   padding: 0 0.4rem;
   border: none;
   background: none;
@@ -555,12 +575,10 @@ button.danger:hover {
   font: inherit;
   font-size: 0.75rem;
   cursor: pointer;
-  opacity: 0.7;
 }
 
 .report button:hover {
   color: var(--warn);
-  opacity: 1;
 }
 
 .comment-list li.reported .report button {
@@ -576,11 +594,11 @@ button.danger:hover {
 .comment-box input {
   flex: 1;
   min-width: 0;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
 }
 
 .comment-box button {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: 0 0.9rem;
   border: 1px solid var(--line-strong);
   border-radius: 0.5rem 0.4rem 0.55rem 0.45rem;
@@ -626,7 +644,7 @@ button.danger:hover {
 .break-back button,
 .urge-open,
 .urge-choices button {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: 0.3rem 0.9rem;
   border: 1px solid var(--line-strong);
   border-radius: 1.2rem;
@@ -735,8 +753,8 @@ fieldset.next small {
 
 .urge-dialog .close {
   float: right;
-  min-width: 2.5rem;
-  min-height: 2.5rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   margin: -0.5rem -0.6rem 0 0;
   border: none;
   background: none;
@@ -786,7 +804,7 @@ footer {
 }
 
 button.quiet {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: 0.3rem 1rem;
   border: 1px solid var(--line-strong);
   border-radius: 1.2rem;
@@ -863,7 +881,9 @@ button.quiet:hover {
 
 .subnav a,
 .periods a {
-  padding-block: 0.3rem;
+  display: inline-block;
+  min-height: 2.75rem;
+  padding-block: 0.45rem;
   text-decoration: none;
   color: var(--muted);
 }
@@ -912,6 +932,9 @@ button.quiet:hover {
 }
 
 .period-step a {
+  display: inline-block;
+  min-height: 2.75rem;
+  padding-block: 0.6rem;
   white-space: nowrap;
 }
 
@@ -1035,7 +1058,7 @@ button.quiet:hover {
 
 .drawer button,
 .urge-drawer button {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: 0.3rem 0.9rem;
   border: 1px solid var(--line-strong);
   border-radius: 1.2rem;

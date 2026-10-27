@@ -215,7 +215,7 @@ const label = (m: number) => (m === DAY_MINUTES ? "24:00" : `${String(m / 60).pa
   }
 
   select {
-    min-height: 2.5rem;
+    min-height: 2.75rem;
     padding: 0.25rem 0.5rem;
     font: inherit;
     color: var(--fg);
@@ -226,7 +226,8 @@ const label = (m: number) => (m === DAY_MINUTES ? "24:00" : `${String(m / 60).pa
 
   .strip {
     display: flex;
-    height: 3rem;
+    /* each half-hour a cell at least 44px tall to tap */
+    height: 3.75rem;
     padding: 0.35rem;
     background: var(--card);
     border: 1.5px solid var(--line-strong);
@@ -310,6 +311,9 @@ const label = (m: number) => (m === DAY_MINUTES ? "24:00" : `${String(m / 60).pa
 
   .crayon {
     display: inline-flex !important;
+    align-items: center;
+    /* the stick stays small; the label around it takes the tap (44px) */
+    min-height: 2.75rem;
     position: relative;
     cursor: pointer;
   }
