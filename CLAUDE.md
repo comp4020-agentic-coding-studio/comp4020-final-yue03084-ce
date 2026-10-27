@@ -105,7 +105,16 @@ with `curl` on 2026-10-12.
   npm, 2026-10-13); `agent-browser open <url>` then `agent-browser screenshot
   <file>`. For dark mode, open a page first and then `agent-browser set media
   dark`. *(On 2026-10-27 `--color-scheme dark` on an already-running browser
-  was silently ignored, and the "dark" screenshots came out light.)*
+  was silently ignored, and the "dark" screenshots came out light.)* Measure
+  contrast on a page loaded fresh in the scheme, not just after `set media`:
+  the buttons' 200ms colour transition is still running, and the numbers are
+  wrong. *(On 2026-10-27 the audit flagged home's buttons at 1.2:1 that way;
+  reloaded, every one passed.)*
+- **Tap targets are at least 44px tall** (`min-height: 2.75rem`) for buttons,
+  nav and tab links and whole radio rows; a small mark (a colour swatch, a
+  crayon) keeps its size and gets a bigger hit area around it. Links inside a
+  sentence are exempt. *(The 2026-10-27 audit found 20 kinds of control at
+  28–41px on a phone.)*
 - **Colours are tokens.** A colour on the page reads a `:root` variable in
   `src/styles.css` (redefined under `prefers-color-scheme: dark`); the note
   colours come from `NOTE_COLOURS` via `src/layouts/Page.astro`. Only the pixel
