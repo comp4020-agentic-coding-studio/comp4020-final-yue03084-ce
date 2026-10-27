@@ -21,10 +21,17 @@ const counts = person && signedIn ? countsFor(person.id) : null;
 const outfit = person && counts ? outfitOf(person.id, counts) : null;
 const refused = Astro.url.searchParams.has("refused");
 
-// every drawing fits a 24×24 box, centred, so the cards line up
+// every drawing fits a 24×24 box, centred, so the cards line up; a small one
+// is drawn at twice the size (whole pixels only) so it can be seen
 const BOX = 24;
-const centred = (rows: readonly string[], w = rows[0].length, h = rows.length) =>
-  gridRects(rows, Math.floor((BOX - w) / 2), Math.floor((BOX - h) / 2));
+const centred = (rows: readonly string[]) => {
+  const w = rows[0].length;
+  const h = rows.length;
+  const k = Math.max(1, Math.min(2, Math.floor(Math.min(BOX / w, BOX / h))));
+  const x = Math.floor((BOX - w * k) / 2);
+  const y = Math.floor((BOX - h * k) / 2);
+  return `<g transform="translate(${x} ${y}) scale(${k})">${gridRects(rows)}</g>`;
+};
 const art = (item: CollectionItem): string => {
   // a wearable is shown on the little one's head and shoulders
   if (isWearable(item)) return `<g transform="translate(2 1)">${frameSvg("stand", [item])}</g>`;
@@ -32,8 +39,8 @@ const art = (item: CollectionItem): string => {
   if (item === "tabby") return centred(TABBY.sit);
   if (item === "kite") return centred(KITE);
   if (item === "sunflower") return centred(SUNFLOWER.up);
-  // the blanket on a strip of grass
-  return `${centred(PICNIC)}<rect class="px-g" x="0" y="${Math.floor(BOX / 2) + 1}" width="${BOX}" height="2"/>`;
+  // the blanket laid on a strip of grass
+  return `<rect class="px-g" x="0" y="${BOX / 2 + 1}" width="${BOX}" height="3"/>${gridRects(PICNIC, 1, BOX / 2)}`;
 };
 const css = `${paletteCss(".collection", { weather: false })}\n.collection [data-f="stand"]{display:inline}`;
 const slotLabel = (slot: string) => COLLECTION_KINDS[slot as keyof typeof COLLECTION_KINDS];
