@@ -92,7 +92,15 @@ with `curl` on 2026-10-12.
 - **Look at the page in a real browser**, not just at whether it built.
   *(from crit 7.)* `agent-browser` 0.39.0 is installed on this machine (via
   npm, 2026-10-13); `agent-browser open <url>` then `agent-browser screenshot
-  <file>`.
+  <file>`. For dark mode, open a page first and then `agent-browser set media
+  dark`. *(On 2026-10-27 `--color-scheme dark` on an already-running browser
+  was silently ignored, and the "dark" screenshots came out light.)*
+- **Colours are tokens.** A colour on the page reads a `:root` variable in
+  `src/styles.css` (redefined under `prefers-color-scheme: dark`); the note
+  colours come from `NOTE_COLOURS` via `src/layouts/Page.astro`. Only the pixel
+  pictures keep their own palette (`src/lib/pixel.ts`). *(On 2026-10-27 dark
+  mode found a hard-coded light overlay in WorkPanel and a white-on-warn
+  delete button.)*
 - **One fact, one piece of code.** A number the app enforces (a length limit,
   how many reports hide a reply) lives in one place, and both the page and any
   message about it read it. Two sources for one fact is a page that will
