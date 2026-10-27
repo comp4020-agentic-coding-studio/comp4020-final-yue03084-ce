@@ -194,9 +194,9 @@ const resting = view?.state === "resting";
     border-radius: 0.8rem 0.5rem 0.9rem 0.6rem;
   }
 
+  /* the hand-written heading itself is in styles.css, with the break box's */
   .work h2 {
     margin: 0 0 0.4rem;
-    font-size: 1.2rem;
   }
 
   .work-start .choices label {
@@ -274,7 +274,8 @@ const resting = view?.state === "resting";
     display: grid;
     place-items: center;
     padding: 1rem;
-    background: rgb(247 242 234 / 0.94);
+    /* the page's own paper, nearly opaque, in light and dark */
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
   }
 
   .alarm[hidden] {
