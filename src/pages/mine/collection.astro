@@ -79,7 +79,7 @@ const slotLabel = (slot: string) => COLLECTION_KINDS[slot as keyof typeof COLLEC
         </ul>
 
         <h2 class="choose-h">What your little one has with it</h2>
-        {refused && <p class="refused">That one hasn't come yet, or doesn't go there.</p>}
+        {refused && <p class="refused" role="alert">That one hasn't come yet, or doesn't go there.</p>}
         {
           OUTFIT_SLOTS.some((slot) => itemsFor(slot).some((item) => isUnlocked(item, counts))) ? (
             <form method="post" action="/outfit/" class="outfit-form">
