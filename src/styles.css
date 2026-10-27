@@ -1155,3 +1155,15 @@ button.quiet:hover {
       0 6px 14px rgb(0 0 0 / 0.35);
   }
 }
+
+/* Reduced motion: the pictures hold still (each one's script checks the same
+   setting), and nothing else on the page eases or tilts either. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
