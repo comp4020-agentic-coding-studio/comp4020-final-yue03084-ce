@@ -1,8 +1,8 @@
 ---
-import { restingKinds } from "../lib/db";
 import { MEADOW_MAX } from "../lib/limits";
+import { meadowNow } from "../lib/outfit";
 import { gridRects, HAIRS, paletteCss } from "../lib/pixel";
-import { KEEPER, WALK } from "../lib/sprites";
+import { frameSvg, KITE, LANTERN, PICNIC, TABBY, WALK, WEARABLES, type Wearable } from "../lib/sprites";
 
 // The meadow: everyone on a break right now, as little ones on the grass of
 // one shared picture on the feed. Each is doing what they went to do: tea,
@@ -13,8 +13,11 @@ import { KEEPER, WALK } from "../lib/sprites";
 // Hair colours only tell the little ones apart, by place in the line. Up to
 // MEADOW_MAX are drawn; the rest are "just out of the picture".
 // Decoration: hidden from screen readers, as the count beside it says it in
-// words. With reduced motion everyone holds still.
-const kinds = restingKinds();
+// words. With reduced motion everyone holds still. Each wears what its person
+// chose from their Collection (a hat, a scarf; a blanket under it, a kite
+// above, a tabby or a lantern beside it): item keys only, never whose, and
+// never how anything came (meadowNow in outfit.ts).
+const ones = meadowNow();
 const W = 160;
 const H = 44;
 const GROUND = 38;
@@ -33,15 +36,32 @@ const ground = (() => {
 })();
 // the frames a resting little one can show; the rest stay in the drawing but hidden
 const POSES = ["tea1", "tea2", "sip", "nap1", "nap2", "stretch1", "stretch2", "stand", "blink", "sit", ...WALK];
-const frames = POSES.map((name) => `<g data-f="${name}">${gridRects(KEEPER.frames[name])}</g>`).join("");
+// every frame carries every wearable, hidden; a little one shows only its own
+const wearables = Object.keys(WEARABLES) as Wearable[];
+const frames = POSES.map((name) => frameSvg(name, wearables)).join("");
+// what goes on the grass around it, drawn from its spot (x 0) and left there
+// while it strolls: the blanket under it, the kite high above, the tabby and
+// the lantern beside it
+const around = [
+  `<g data-has="picnic">${gridRects(PICNIC, -1, GROUND - 1)}</g>`,
+  `<g data-has="kite">${gridRects(KITE, 12, 1)}</g>`,
+  ...Object.entries(TABBY).map(
+    ([pose, rows]) => `<g data-has="tabby" data-cat="${pose}">${gridRects(rows, 17, GROUND - rows.length + 1)}</g>`,
+  ),
+  `<g data-has="lantern">${gridRects(LANTERN, -4, GROUND - LANTERN.length + 1)}</g>`,
+].join("");
+const SHOWN = ["strawhat", "flowercrown", "scarf", "picnic", "kite", "tabby", "lantern"];
+const wearCss = SHOWN.map(
+  (k) => `.meadow [data-wears~="${k}"] [data-w="${k}"],.meadow [data-wears~="${k}"] [data-has="${k}"]{display:inline}`,
+).join("\n");
 const frameCss = POSES.map((n) => `.meadow .one[data-frame="${n}"] [data-f="${n}"]{display:inline}`).join("\n");
 const hairCss = HAIRS.map(
   (c, i) => `.meadow .one[data-hair="${i}"]{--px-h:${c.h};--px-o:${c.o};--px-h2:${c.H}}`,
 ).join("\n");
-const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCss}`;
+const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCss}\n.meadow [data-w],.meadow [data-has]{display:none}\n${wearCss}`;
 ---
 
-<figure class="meadow" aria-hidden="true" data-sky="day" data-max={MEADOW_MAX} data-kinds={JSON.stringify(kinds)}>
+<figure class="meadow" aria-hidden="true" data-sky="day" data-max={MEADOW_MAX} data-ones={JSON.stringify(ones)}>
   <style set:html={css}></style>
   <div class="meadow-page">
     <svg viewBox={`0 0 ${W} ${H}`} width={W * 3} height={H * 3} shape-rendering="crispEdges" role="presentation" focusable="false">
@@ -51,13 +71,14 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
       <g set:html={ground} />
       <!-- the drawing every little one is copied from -->
       <template id="meadow-one" set:html={frames} />
+      <template id="meadow-around" set:html={around} />
       <!-- the script places the little ones; without it the picture is just the meadow -->
       <g class="ones"></g>
     </svg>
-    <p class="meadow-more" hidden={kinds.length <= MEADOW_MAX}>
-      and {Math.max(0, kinds.length - MEADOW_MAX)} more just out of the picture
+    <p class="meadow-more" hidden={ones.length <= MEADOW_MAX}>
+      and {Math.max(0, ones.length - MEADOW_MAX)} more just out of the picture
     </p>
-    <p class="meadow-empty" hidden={kinds.length > 0}>The meadow's empty. Anyone can sit down on it.</p>
+    <p class="meadow-empty" hidden={ones.length > 0}>The meadow's empty. Anyone can sit down on it.</p>
   </div>
 </figure>
 
@@ -117,6 +138,38 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
     display: none;
   }
 
+  /* a tabby's tail flicks every few seconds */
+  .meadow :global([data-cat="flick"]) {
+    visibility: hidden;
+    animation: meadow-flick 5s steps(1) infinite;
+  }
+
+  .meadow :global([data-cat="sit"]) {
+    animation: meadow-unflick 5s steps(1) infinite;
+  }
+
+  @keyframes meadow-flick {
+    0% { visibility: hidden; }
+    90% { visibility: visible; }
+    96% { visibility: hidden; }
+  }
+
+  @keyframes meadow-unflick {
+    0% { visibility: visible; }
+    90% { visibility: hidden; }
+    96% { visibility: visible; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .meadow :global([data-cat]) {
+      animation: none;
+    }
+
+    .meadow :global([data-cat="sit"]) {
+      visibility: visible;
+    }
+  }
+
   .meadow-more,
   .meadow-empty {
     margin: 0.3rem 0.2rem 0;
@@ -132,8 +185,13 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
   import { WALK } from "../lib/sprites";
 
   // Where each little one sits, what it does, and the live updates: a new
-  // list of kinds arrives with every "resting" event (the feed's script hands
-  // it over as a "meadow" event on the document), and the picture is redrawn.
+  // list of little ones ({kind, wears}) arrives with every "resting" event
+  // (the feed's script hands it over as a "meadow" event on the document),
+  // and the picture is redrawn.
+  interface One {
+    kind: string;
+    wears: string[];
+  }
   const W = 160;
   const GROUND = 38;
   const WIDTH = 20;
@@ -141,6 +199,7 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
   for (const fig of document.querySelectorAll<HTMLElement>(".meadow")) {
     const ones = fig.querySelector<SVGGElement>(".ones");
     const template = fig.querySelector<HTMLTemplateElement>("#meadow-one");
+    const aroundTemplate = fig.querySelector<HTMLTemplateElement>("#meadow-around");
     const more = fig.querySelector<HTMLElement>(".meadow-more");
     const empty = fig.querySelector<HTMLElement>(".meadow-empty");
     if (!ones || !template) continue;
@@ -212,11 +271,15 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
       })();
     };
 
-    const draw = (kinds: string[]) => {
+    const draw = (list: One[]) => {
       generation += 1;
-      const shown = kinds.slice(0, max);
+      const shown = list.slice(0, max);
       ones.replaceChildren();
-      shown.forEach((kind, i) => {
+      shown.forEach(({ kind, wears }, i) => {
+        // one spot per little one: what it wears and has with it, the things
+        // on the grass around it, then the little one itself
+        const spot = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        spot.dataset.wears = (Array.isArray(wears) ? wears : []).filter((w) => /^[a-z]+$/.test(w)).join(" ");
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.setAttribute("class", "one");
         g.dataset.kind = kind;
@@ -225,17 +288,21 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
         g.innerHTML = template.innerHTML;
         const x = spotFor(i, shown.length);
         at(g, x, i % 2 ? -1 : 1);
-        ones.append(g);
+        const around = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        around.innerHTML = aroundTemplate?.innerHTML ?? "";
+        around.setAttribute("transform", `translate(${x} 0)`);
+        spot.append(around, g);
+        ones.append(spot);
         live(g, kind, x, generation);
       });
       if (more) {
-        more.hidden = kinds.length <= max;
-        more.textContent = `and ${Math.max(0, kinds.length - max)} more just out of the picture`;
+        more.hidden = list.length <= max;
+        more.textContent = `and ${Math.max(0, list.length - max)} more just out of the picture`;
       }
-      if (empty) empty.hidden = kinds.length > 0;
+      if (empty) empty.hidden = list.length > 0;
     };
 
-    draw(JSON.parse(fig.dataset.kinds ?? "[]"));
-    document.addEventListener("meadow", (event) => draw((event as CustomEvent<string[]>).detail));
+    draw(JSON.parse(fig.dataset.ones ?? "[]"));
+    document.addEventListener("meadow", (event) => draw((event as CustomEvent<One[]>).detail));
   }
 </script>

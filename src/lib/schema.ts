@@ -111,6 +111,9 @@ export const breaks = sqliteTable("breaks", {
   kind: text("kind").notNull(),
   startedAt: createdAt(),
   endedAt: text("ended_at"),
+  // taken from the Enough alarm's "Okay, go and rest" (the Collection counts
+  // these); false for every break before this was recorded
+  fromAlarm: integer("from_alarm", { mode: "boolean" }).notNull().default(false),
 });
 
 // Each time someone wanted to go back and check an enough, and what they did:
@@ -216,4 +219,24 @@ export const worries = sqliteTable("worries", {
   openFrom: text("open_from").notNull(),
   dismissedAt: text("dismissed_at"),
   createdAt: createdAt(),
+});
+
+// What a person has chosen from their Collection to show with their little
+// one: one item key (COLLECTION in limits.ts) or null per slot. Written only
+// through /outfit/ by its owner, and only with things they've unlocked. Worn
+// on their own Working on it and, while they're on a break, on the meadow,
+// where it's drawn with no hint of whose it is or how it came.
+export const outfits = sqliteTable("outfits", {
+  personId: integer("person_id")
+    .primaryKey()
+    .references(() => people.id),
+  head: text("head"),
+  neck: text("neck"),
+  held: text("held"),
+  companion: text("companion"),
+  ground: text("ground"),
+  sky: text("sky"),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
 });

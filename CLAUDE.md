@@ -44,6 +44,15 @@ because they don't depend on that stack.
   going or compares people. Counts for a person's own look back (how many
   times they checked a project) are allowed, shown only to them. *(These
   features turn a record into another source of anxiety. Decided 2026-10-11.)*
+- **The Collection unlocks only from stopping.** Its things (`COLLECTION` in
+  `src/lib/limits.ts`, arithmetic in `src/lib/collection.ts`) come from
+  breaks taken, letting a recheck go, resting when the alarm rang
+  (`breaks.from_alarm`, recorded from 2026-10-27 on) and days used, added up
+  and never in a row or reset. Never from work hours, tower height or
+  bricks. How far along someone is stays on their own `/mine/collection/`;
+  what they choose to wear is public on the meadow, as item keys, never who
+  and never how it came. *(The same reason as no streaks: a reward for
+  working is a reason to keep working. Decided 2026-10-27.)*
 - **Numbers live in one place.** The comment length limit (30 characters),
   how many reports hide a comment (3), and how long an unended break counts
   as going (120 minutes), and the drawer note and worry lengths and the
@@ -131,17 +140,19 @@ with `curl` on 2026-10-12.
   sanitising; time spans and crayons; owner-only delete that leaves every
   feed live; comments live, and hidden at `REPORTS_TO_HIDE`; the resting
   count live and a break never showing how long; the meadow (each resting
-  person's little one, from the "resting" event's list of kinds: never who,
-  never how long); without an account, reading works but every write is
-  refused; Looking back; and things kept for later (the tomorrow drawer and
-  a worry for a week on): never on the feed, the stream or another person's
-  Mine, not shown before their day, `DRAWER_MAX`/`WORRY_MAX` refused, put
-  away by the owner only (31 tests on 2026-10-27). Which day they come back
-  is pure arithmetic in `src/lib/later.ts`, tested directly; showing and
-  putting away is tested on `db.ts` itself with its own throwaway
-  `DATA_DIR`, because the spec can't move the app's clock. Mine is two pages: `/mine/` is Looking back (a day, week or
+  person's little one, from the "resting" event's `ones`, each only
+  `{kind, wears}`: never who, never how long); without an account, reading
+  works but every write is refused; Looking back; and things kept for later
+  (the tomorrow drawer and a worry for a week on): never on the feed, the
+  stream or another person's Mine, not shown before their day,
+  `DRAWER_MAX`/`WORRY_MAX` refused, put away by the owner only (31 tests on
+  2026-10-27). Which day they come back is pure arithmetic in
+  `src/lib/later.ts`, tested directly; showing and putting away is tested on
+  `db.ts` itself with its own throwaway `DATA_DIR`, because the spec can't
+  move the app's clock. Mine is three pages: `/mine/` is Looking back (a day, week or
   month added up for the owner, `src/lib/summary.ts`, never compared with
-  another period) and `/mine/all/` is Each one, the full cards; specs that
+  another period), `/mine/all/` is Each one, the full cards, and
+  `/mine/collection/` is the Collection; specs that
   check private fields or act on a card read `/mine/all/`. Writers in specs register first
   (`signedIn()`); `browser()` alone is a reader. `spec/account.test.ts` (8
   tests, 2026-10-20) checks accounts: registering lets you write and what you
@@ -164,6 +175,19 @@ with `curl` on 2026-10-12.
   alarms, the tiredness curve with the lamp's glow, recovery, the tower's
   bricks and pace, `towerPlan`/`bricksLaid`) is tested
   directly, because the spec can't move the app's clock.
+  `spec/collection.test.ts` (12 tests, 2026-10-27) checks the Collection:
+  nothing at first, three breaks bring the straw hat; a locked or wrong-slot
+  choice is refused, and a chosen hat shows on its owner's Working on it
+  only; resting from the alarm counts toward the flower crown and an
+  ordinary break doesn't; letting go (not checking anyway) counts toward the
+  scarf; the meadow and stream carry what's worn but no identity and no
+  progress; the sunflower can't go in the picture until it's come; signed
+  out, no progress and no choosing. `unlocked`, `progressText`,
+  `checkOutfit`, `wearing` and `sceneThingAllowed` are tested directly.
+- Wearables (hat, crown, scarf) are drawn once in `WEARABLES` and placed per
+  frame by `anchorsOf()`, which finds the hair's top row ("oooooooo") and the
+  neck ("kSSk", or above the collar when napping) in the frame itself. A new
+  frame needs those rows, or its wearables won't show.
 - The little one is pixel art drawn as character grids (`src/lib/sprites.ts`)
   in one palette (`src/lib/pixel.ts`). An upper-case ink becomes a class with
   a "2" suffix and a digit ink one with a "b" prefix, so "B" can't be an ink:

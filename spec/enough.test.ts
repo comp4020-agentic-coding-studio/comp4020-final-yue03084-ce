@@ -348,15 +348,21 @@ describe("breaks", () => {
     const someone = await signedIn();
     const started = await readStream(() => someone.rest({ kind: "nap" }), "event: resting", 3_000);
     const data = JSON.parse(/event: resting\ndata: (.*)/.exec(started)?.[1] ?? "{}");
-    expect(data.kinds).toContain("nap");
-    expect(data.kinds).toHaveLength(data.count);
-    // only the count and the kinds: no block number, person, time or id
-    expect(Object.keys(data).sort()).toEqual(["count", "kinds"]);
-    expect(data.kinds.every((k: unknown) => typeof k === "string" && /^[a-z]+$/.test(k))).toBe(true);
+    const kinds = data.ones.map((o: { kind: string }) => o.kind);
+    expect(kinds).toContain("nap");
+    expect(data.ones).toHaveLength(data.count);
+    // only the count and the little ones, each only what it's doing and what
+    // it wears (item keys): no block number, person, time or id
+    expect(Object.keys(data).sort()).toEqual(["count", "ones"]);
+    for (const one of data.ones) {
+      expect(Object.keys(one).sort()).toEqual(["kind", "wears"]);
+      expect(typeof one.kind === "string" && /^[a-z]+$/.test(one.kind)).toBe(true);
+      expect(one.wears.every((k: unknown) => typeof k === "string" && /^[a-z]+$/.test(k))).toBe(true);
+    }
     // and the page draws the meadow from the same list, for anyone
     const feed = await browser().get("/");
     expect(feed).toContain('class="meadow"');
-    expect(/data-kinds="([^"]*)"/.exec(feed)?.[1]).toContain("nap");
+    expect(/data-ones="([^"]*)"/.exec(feed)?.[1]).toContain("nap");
     await someone.rest({ end: "1" });
   });
 

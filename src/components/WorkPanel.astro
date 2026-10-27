@@ -1,5 +1,6 @@
 ---
 import { ALARM_INTERVALS, ALARM_MAX_MINUTES, BREAK_KINDS, SNOOZE_MINUTES } from "../lib/limits";
+import type { Outfit } from "../lib/collection";
 import type { Scene } from "../lib/scene";
 import type { WorkView } from "../lib/work";
 import LittleOne from "./LittleOne.astro";
@@ -13,8 +14,9 @@ import LittleOne from "./LittleOne.astro";
 interface Props {
   view: WorkView | null;
   scene?: Scene;
+  outfit?: Outfit;
 }
-const { view, scene } = Astro.props;
+const { view, scene, outfit } = Astro.props;
 const resting = view?.state === "resting";
 ---
 
@@ -66,7 +68,7 @@ const resting = view?.state === "resting";
       </form>
     ) : (
       <div class="work-on">
-        <LittleOne view={view} scene={scene} />
+        <LittleOne view={view} scene={scene} outfit={outfit} />
         <p class="work-status" aria-live="polite">
           {resting
             ? `You're on a break (${view.restLabel?.toLowerCase() ?? "resting"}). The little one is resting too.`

@@ -240,9 +240,9 @@ const when = (iso: string) =>
     source.addEventListener("reply", (event) => updateCounts(JSON.parse(event.data)));
     // how many people are on a break: a number, never who
     source.addEventListener("resting", (event) => {
-      const { count, kinds } = JSON.parse(event.data) as { count: number; kinds: string[] };
-      // the meadow redraws itself from the kinds
-      document.dispatchEvent(new CustomEvent("meadow", { detail: kinds }));
+      const { count, ones } = JSON.parse(event.data) as { count: number; ones: unknown[] };
+      // the meadow redraws itself from the little ones
+      document.dispatchEvent(new CustomEvent("meadow", { detail: ones }));
       const p = document.getElementById("resting");
       if (!p) return;
       p.textContent =

@@ -63,6 +63,14 @@ export const PALETTE = {
   "2": "#d9a3a0",
   "3": "#a3b6c4",
   "4": "#d4ad82",
+  // the Collection: straw (the hat) and its shade; sunflower petals and their
+  // shade. The other things reuse inks already here: the scarf and the picnic
+  // blanket are the umbrella's wine, the lantern the lamp's brass and light,
+  // the tabby the lamp shade's orange, the kite the blocks' colours.
+  K: "#ecd08e",
+  L: "#c9a35e",
+  U: "#f4c64e",
+  V: "#d39a2c",
 } as const;
 export type Ink = keyof typeof PALETTE;
 
@@ -122,6 +130,10 @@ export const SKIES = {
     "2": "#9a7774",
     "3": "#76848f",
     "4": "#977c5e",
+    K: "#a8946a",
+    L: "#86724a",
+    U: "#b39448",
+    V: "#8e7030",
   },
 } as const satisfies Record<string, Partial<Record<Ink, string>>>;
 export type Sky = keyof typeof SKIES;

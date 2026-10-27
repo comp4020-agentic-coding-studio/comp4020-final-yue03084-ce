@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import type { PublicEnough } from "../../lib/db";
 import { bus } from "../../lib/events";
+import type { MeadowOne } from "../../lib/outfit";
 
 // Server-sent events: a long-lived streaming response the page reads with
 // `new EventSource("/api/events")`. One-way (server → browser) and plain HTTP,
@@ -9,7 +10,7 @@ export const GET: APIRoute = () => {
   let onEnough: (e: PublicEnough) => void;
   let onReply: (e: PublicEnough) => void;
   let onRemoved: (e: { id: number }) => void;
-  let onResting: (e: { count: number; kinds: string[] }) => void;
+  let onResting: (e: { count: number; ones: MeadowOne[] }) => void;
   let heartbeat: ReturnType<typeof setInterval>;
 
   const stream = new ReadableStream<string>({
