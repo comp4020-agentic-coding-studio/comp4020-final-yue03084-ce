@@ -167,6 +167,12 @@ describe("limits", () => {
     const res = await (await signedIn()).declare({ description: `long ${tag}`, notes: `<p>${"x".repeat(NOTES_MAX)}</p>` });
     expect(res.status).toBe(400);
   });
+
+  // a POST that isn't a form (a script, a stray JSON body) is refused, not a 500
+  it("refuses a body that isn't a form without falling over", async () => {
+    const res = await (await signedIn()).send("/enough/", { method: "POST", body: "{}", headers: { "content-type": "application/json" } });
+    expect(res.status).toBe(400);
+  });
 });
 
 // The notes editor sends HTML. The server keeps the formatting the editor can

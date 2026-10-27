@@ -29,7 +29,8 @@ if (Astro.request.method === "GET" && person && Number.isInteger(fromSession) &&
 }
 
 if (Astro.request.method === "POST" && person) {
-  const form = await Astro.request.formData();
+  // a POST with no form body (not one the page sends) is refused like an empty form, not a 500
+  const form = await Astro.request.formData().catch(() => new FormData());
   const field = (name: string) => String(form.get(name) ?? "");
   values = {
     description: field("description"),
