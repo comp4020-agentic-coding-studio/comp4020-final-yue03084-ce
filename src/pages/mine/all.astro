@@ -132,7 +132,7 @@ const when = (iso: string) =>
                 <input type="hidden" name="choice" value="tomorrow" />
                 <label>
                   What would you check? <small>(up to {DRAWER_MAX} characters, for tomorrow)</small>
-                  <input name="note" required maxlength={DRAWER_MAX} placeholder="The second table's numbers" />
+                  <input name="note" required maxlength={DRAWER_MAX} placeholder="e.g. the references, one more time" />
                 </label>
                 <button type="submit">{URGE_CHOICES.tomorrow}</button>
               </form>
