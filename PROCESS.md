@@ -44,6 +44,19 @@ deployed by CI on every push ([310c75a...949f48a](https://github.com/comp4020-ag
 For the bigger login system, a sub-agent built it on a separate branch, and I
 checked it myself before it was merged ([faf32c2](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/faf32c2)).
 
+The course gives every project the same shape: one small machine with 256 MB
+of memory, and one disk at `/data`, the only thing that survives a restart or
+a redeploy. There's no separate database server. I knew this when I chose, and
+it's why the stack fits: SQLite is a single file on that disk, and the live
+updates are broadcast from the server's own memory. It's simple and fast, and
+the cost is that it can only ever run on one machine, so it can't grow by
+adding more. For this project that's the right trade. In use, deploying has
+been quick; only right after a deploy does the site sometimes feel slow to
+open. Changing the database's structure has gone smoothly, including two new
+tables added in one round ([5a94a16](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5a94a16), [53eeed5](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/53eeed5)). I can't say my
+sense of it runs deep, though, because I haven't used other stacks in depth to
+compare.
+
 ## From prototype to a fuller site
 
 At first this felt like a prototype. As I kept building, it grew more
@@ -58,6 +71,39 @@ I also wanted a reminder you can see, not just an alarm: people mean to rest
 after a while, then get absorbed and forget. So a little one builds a tower
 while you work and slows down as you get tired ([240c133](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/240c133)).
 
+## The little one in pixels
+
+When I first thought of a companion, I wanted it in the pixel style of
+Stardew Valley, a game I love. Pixel art also leaves more room to play later:
+it can wear things. I gave the agent a four-step spec and checked each step
+from screenshots ([9504f28](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/9504f28)). The little one now works in a small
+taped-in picture, its sky following the clock, and each time you start, its
+tower begins again, sized to your alarm ([75a4d8b](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/75a4d8b)). On the feed,
+everyone on a break sits together on a pixel meadow, live, never saying who
+([05e7aec](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/05e7aec)).
+
+The room to play became the Collection: hats, a scarf, a tabby cat
+([5ed8c66](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5ed8c66)). It looks like a reward, and I don't build rewards. But the
+core idea is helping people learn to rest more wisely, so underneath there's
+no clash: things come only from stopping (breaks, letting a recheck go,
+resting when the alarm rings, days spent here, never in a row), and never from
+work.
+
+## Handing the last round to sub-agents
+
+For the last round I wanted to try a different workflow, one where I didn't
+have to follow every step. I settled all the details first, then the agent
+split the work among sub-agents running in parallel, and merged and checked
+what came back ([5a94a16](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5a94a16), [ac4dc97](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/ac4dc97), [53eeed5](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/53eeed5)). It was more
+efficient, and while the agents worked I could do other things. But some
+details were decided by the agents themselves, such as an example in a text
+box, "The second table's numbers", that I didn't understand and later changed
+([58e214b](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/58e214b)). Those need my review and testing afterwards. Without
+watching each step, details slip more easily, and every time I come back my
+brain has to reload the context. Settling the details before starting still
+has a lot of room to improve. I think it's a trade-off, and the point is
+finding the balance.
+
 ## Directing and correcting the agent
 
 I rewrote `CLAUDE.md` for the new direction: I dropped the *Friends* rules,
@@ -66,19 +112,20 @@ picked which crit 7 rules to carry over, and added product rules, such as
 ones that can be checked: nothing private reaches anyone else.
 
 I corrected the agent several times. It read my dislike of anxious
-record-keeping as being against records altogether; I explained I only reject
-records that magnify anxiety. It suggested scoring your attention, and I
-changed that to how you felt about your effort. When I wanted the list of what
-you did to be public, it pointed out the clash with my own rule, and I kept it
-private. For the look, the design skill first proposed a purple landing page; I
-asked for something quiet and imperfect, and chose the looping scene of figures
-who build a crooked tower, then rest ([10e3f24](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/10e3f24)).
+record-keeping as being against records altogether, and it suggested scoring
+your attention; I changed that to how you felt about your effort. It also
+corrected me: when I wanted the list of what you did to be public, it pointed
+out the clash with my own rule, and I kept it private.
 
-When I checked it myself, the little one was only sliding sideways and never
-moved a block. The agent couldn't catch this from screenshots, and it was fixed
-so that each trip lays a block on the tower ([134e2ea](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/134e2ea)). Some
-corrections went into the harness so they wouldn't happen again. CI went red
-once because a test's hours value "7.5" matched inside a timestamp. Nothing had
-leaked, but the rule for writing such tests is now in `CLAUDE.md`
-([5ada816](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5ada816)). A form sent with no body crashed the server with a 500, and
-now there's a test for it ([7d755f0](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/7d755f0)).
+Some problems only a person could see. The pixel little one's stretch had arms
+like poles past its head; the agent saw nothing wrong, and I found it strange
+at a glance ([afde72b](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/afde72b)). Trying it once, I found its tower filled up
+within minutes on my second session, and that tending the tower looked like
+doing squats ([0920474](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/0920474)). It was a little funny, and it showed me I can't
+rely on the agent for this. I think from a screenshot the agent infers what
+the little one is doing from the things around it and its pose, so it assumes
+it's carrying blocks. In crit 10, the little one was only sliding sideways for
+the same reason ([134e2ea](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/134e2ea)). Some corrections went into the harness so
+they wouldn't happen again: CI went red once because a test's hours "7.5"
+matched inside a timestamp, and that rule is now in `CLAUDE.md`
+([5ada816](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5ada816)).
