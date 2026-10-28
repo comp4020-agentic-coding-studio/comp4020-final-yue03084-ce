@@ -221,7 +221,7 @@ const label = (m: number) => (m === DAY_MINUTES ? "24:00" : `${String(m / 60).pa
     color: var(--fg);
     background: var(--card);
     border: 1px solid var(--line-strong);
-    border-radius: 0.4rem;
+    border-radius: var(--radius);
   }
 
   .strip {
@@ -230,9 +230,8 @@ const label = (m: number) => (m === DAY_MINUTES ? "24:00" : `${String(m / 60).pa
     height: 3.75rem;
     padding: 0.35rem;
     background: var(--card);
-    border: 1.5px solid var(--line-strong);
-    /* hand-drawn, not ruled */
-    border-radius: 0.6rem 0.35rem 0.7rem 0.4rem / 0.5rem 0.7rem 0.4rem 0.6rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
     touch-action: none;
     user-select: none;
   }
@@ -287,8 +286,8 @@ const label = (m: number) => (m === DAY_MINUTES ? "24:00" : `${String(m / 60).pa
 
   .total {
     margin: 0;
-    font-family: var(--font-hand);
-    font-size: 1.3rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
     color: var(--fg);
   }
 

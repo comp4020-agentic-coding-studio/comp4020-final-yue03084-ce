@@ -83,18 +83,18 @@ const at = (x: number, dir: 1 | -1) => `translate(${dir === 1 ? x : x + WIDTH} $
     <g class="one" data-who="left" data-hair="0" data-frame="tea1" transform={at(spots.left.tea, 1)} set:html={frames} />
     <g class="one" data-who="right" data-hair="1" data-frame="tea2" transform={at(spots.right.tea, -1)} set:html={frames} />
   </svg>
-  <figcaption class="note">Live with imperfection.</figcaption>
 </figure>
 
 <style>
   .scene {
-    margin: 0 0 1.5rem;
+    margin: 0 0 var(--s3);
   }
 
-  /* whole multiples of the pixel: 3× on a phone, 5× with room */
+  /* whole multiples of the pixel: 2× on a phone, 3× with room, about half
+     the height it was, so it heads the page without filling it */
   svg {
     display: block;
-    width: 348px;
+    width: 232px;
     max-width: 100%;
     height: auto;
     margin: 0 auto;
@@ -103,7 +103,7 @@ const at = (x: number, dir: 1 | -1) => `translate(${dir === 1 ? x : x + WIDTH} $
 
   @media (min-width: 46rem) {
     svg {
-      width: 580px;
+      width: 348px;
     }
   }
 
@@ -113,15 +113,6 @@ const at = (x: number, dir: 1 | -1) => `translate(${dir === 1 ? x : x + WIDTH} $
 
   .blk.gone {
     opacity: 0;
-  }
-
-  .note {
-    margin-top: 0.25rem;
-    text-align: center;
-    font-family: var(--font-hand);
-    font-size: 1.35rem;
-    color: var(--muted);
-    transform: rotate(-1.5deg);
   }
 </style>
 

@@ -20,9 +20,12 @@ const when = (iso: string) =>
 
 <Page>
   <BlocksScene />
-  <h1>Put down for now</h1>
-  <p>People who decided something was enough, and put it down.</p>
-  <p><a class="button" href="/enough/">Call it enough</a></p>
+  <!-- the nav already says which page this is, so the h1 is for screen readers -->
+  <h1 class="visually-hidden">Put down for now</h1>
+  <div class="lede">
+    <p class="description">People who decided something was enough, and put it down.</p>
+    <a class="button" href="/enough/">Call it enough</a>
+  </div>
   {!canJoin && (
     <p class="join-hint">
       You can read without an account. <a href="/account/">Sign in or create one</a> to call something enough, reply
@@ -50,7 +53,10 @@ const when = (iso: string) =>
           <p class="rest" data-rest={e.id}>
             {e.rest && (e.rest.back ? `Then took a break, and is ${BREAK_KINDS[e.rest.kind].back}.` : `Then ${BREAK_KINDS[e.rest.kind].going}.`)}
           </p>
-          <Replies enoughId={e.id} counts={e.replies} canReply={canJoin} />
+          <div class="actions">
+            <Replies enoughId={e.id} counts={e.replies} canReply={canJoin} />
+            {canJoin && <button type="button" class="reply-toggle" data-reply={e.id} hidden>Reply</button>}
+          </div>
           <Comments enoughId={e.id} comments={e.comments} canComment={canJoin} />
         </li>
       ))
@@ -118,6 +124,7 @@ const when = (iso: string) =>
       form.method = "post";
       form.action = "/comment/";
       form.className = "comment-box";
+      form.hidden = true;
       const id = document.createElement("input");
       id.type = "hidden";
       id.name = "enough";
@@ -182,13 +189,27 @@ const when = (iso: string) =>
         const count = document.createElement("span");
         count.className = "count";
         count.dataset.count = key;
-        count.textContent = String(e.replies[key as keyof typeof e.replies] ?? 0);
-        button.append(`${label} `, count);
+        count.textContent = countText(e.replies[key as keyof typeof e.replies]);
+        button.append(label, count);
         form.append(button);
       }
-      li.append(meta, line, rest, form, comments(e));
+      const actions = document.createElement("div");
+      actions.className = "actions";
+      actions.append(form);
+      if (canJoin) {
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "reply-toggle";
+        toggle.dataset.reply = String(e.id);
+        toggle.textContent = "Reply";
+        actions.append(toggle);
+      }
+      li.append(meta, line, rest, actions, comments(e));
       return li;
     }
+
+    // a count of 0 shows nothing
+    const countText = (n: number | undefined) => (n ? String(n) : "");
 
     function updateCounts(e: PublicEnough) {
       const form = feed.querySelector<HTMLFormElement>(`form[data-replies="${e.id}"]`);
@@ -202,9 +223,24 @@ const when = (iso: string) =>
         box.querySelector(".comment-list")?.replaceWith(fresh.querySelector(".comment-list")!);
       }
       for (const span of form.querySelectorAll<HTMLElement>("[data-count]")) {
-        span.textContent = String(e.replies[span.dataset.count as keyof typeof e.replies] ?? 0);
+        span.textContent = countText(e.replies[span.dataset.count as keyof typeof e.replies]);
       }
     }
+
+    // With script, each comment box folds away behind its card's "Reply",
+    // which opens it in place and puts the cursor in it. Without script the
+    // boxes stay open and "Reply" stays hidden.
+    for (const box of feed.querySelectorAll<HTMLFormElement>("form.comment-box[data-fold]")) box.hidden = true;
+    for (const toggle of feed.querySelectorAll<HTMLButtonElement>(".reply-toggle")) toggle.hidden = false;
+    feed.addEventListener("click", (event) => {
+      const toggle = (event.target as Element).closest<HTMLButtonElement>(".reply-toggle");
+      if (!toggle) return;
+      const box = feed.querySelector<HTMLFormElement>(`[data-comments="${toggle.dataset.reply}"] form.comment-box`);
+      if (!box) return;
+      box.hidden = !box.hidden;
+      toggle.setAttribute("aria-expanded", String(!box.hidden));
+      if (!box.hidden) box.querySelector<HTMLInputElement>("input[name=text]")?.focus();
+    });
 
     // replies go up with fetch, so the page doesn't reload; the new counts
     // come back on the stream like everyone else's
@@ -217,6 +253,8 @@ const when = (iso: string) =>
         const res = await fetch(form.action, { method: "POST", body: new URLSearchParams(new FormData(form) as never), headers: { accept: "application/json" } });
         if (form.matches("form.comment-box") && res.ok) {
           form.reset();
+          form.hidden = true;
+          feed.querySelector(`.reply-toggle[data-reply="${form.closest<HTMLElement>("[data-comments]")?.dataset.comments}"]`)?.setAttribute("aria-expanded", "false");
           updateCounts(await res.json());
         }
         if (form.matches("form.report") && res.ok) form.closest("li")?.classList.add("reported");

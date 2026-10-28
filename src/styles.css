@@ -12,10 +12,20 @@
   /* a pressed button, one step darker than the accent */
   --accent-hover: #7a4835;
   /* paper lifted a little off the page: cards, Looking back, the account boxes */
-  --paper-shadow: 0 1px 0 var(--line), 0 6px 14px -10px rgb(90 70 50 / 0.25);
+  /* the one shadow a card may have, instead of a border, never both */
+  --paper-shadow: 0 1px 2px rgb(58 53 47 / 0.08);
+  /* serif for what people wrote (record titles, the page's description);
+     sans for everything you press or read past */
   --font-head: "Lora", Georgia, serif;
-  --font-body: "Raleway", system-ui, sans-serif;
-  --font-hand: "Caveat", cursive;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* one corner for cards, buttons and inputs */
+  --radius: 8px;
+  /* one spacing scale */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 16px;
+  --s4: 24px;
+  --s5: 32px;
 }
 
 /* Dark, following the system: the same notebook by lamplight, a warm dark
@@ -35,12 +45,7 @@
     --accent-fg: #1f1a16;
     --warn: #f0a27e;
     --accent-hover: #eab398;
-    --paper-shadow: 0 1px 0 var(--line), 0 8px 16px -10px rgb(0 0 0 / 0.7);
-  }
-
-  body {
-    /* the grain in a pale ink, so it still shows on dark paper */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.9 0 0 0 0 0.85 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    --paper-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
   }
 }
 
@@ -52,12 +57,10 @@ body {
   margin: 0;
   padding: 1rem;
   font-family: var(--font-body);
-  font-size: 1.0625rem;
-  line-height: 1.65;
+  font-size: 1rem;
+  line-height: 1.6;
   color: var(--fg);
-  background-color: var(--bg);
-  /* a faint paper grain */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background: var(--bg);
 }
 
 h1,
@@ -78,6 +81,38 @@ h1 {
   outline-offset: 2px;
 }
 
+/* read by screen readers, not shown: the home page's h1, which the nav
+   already says */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* the home page's opening: what this is, in the serif, and the one button */
+.lede {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2) var(--s3);
+  margin: 0 0 var(--s2);
+}
+
+.lede .description {
+  margin: 0;
+  flex: 1 1 18rem;
+  font-family: var(--font-head);
+  font-size: 1.125rem;
+  line-height: 1.45;
+}
+
 nav,
 main {
   max-width: 40rem;
@@ -87,8 +122,9 @@ main {
 nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 1.25rem;
-  padding-block: 0.5rem 1.5rem;
+  gap: 0 var(--s4);
+  padding-block: 0 var(--s3);
+  font-size: 0.9375rem;
 }
 
 nav a {
@@ -108,55 +144,53 @@ a {
   color: var(--accent);
 }
 
+/* the page you're on: bold, with a plain 2px rule under it */
 nav a[aria-current="page"] {
   color: var(--fg);
   font-weight: 600;
-  text-decoration: underline wavy var(--line-strong);
-  text-underline-offset: 0.35em;
+  box-shadow: inset 0 -2px 0 var(--fg);
 }
 
 .button,
 button[type="submit"] {
   display: inline-block;
   min-height: 2.75rem;
-  padding: 0.6rem 1.25rem;
+  padding: 10px var(--s3);
   border: 1px solid var(--accent);
-  /* not quite even, like everything else here */
-  border-radius: 0.6rem 0.45rem 0.65rem 0.5rem;
+  border-radius: var(--radius);
   background: var(--accent);
   color: var(--accent-fg);
   font: inherit;
+  font-size: 0.9375rem;
   font-weight: 600;
+  line-height: 1.5;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 200ms ease-out, transform 200ms ease-out;
+  transition: background-color 150ms ease-out;
 }
 
 .button:hover,
 button[type="submit"]:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
-  transform: rotate(-0.5deg);
 }
 
 .feed {
   list-style: none;
+  margin: var(--s3) 0 0;
   padding: 0;
   display: grid;
-  gap: 0.75rem;
+  gap: var(--s2);
 }
 
+/* a card: a 1px border, no shadow. Less padding below, where the action
+   row's 44px tap area already leaves room */
 .card {
-  padding: 0.9rem 1.1rem;
+  padding: 12px var(--s3) var(--s1);
   border: 1px solid var(--line);
-  border-radius: 0.7rem 0.5rem 0.8rem 0.55rem;
+  border-radius: var(--radius);
   background: var(--card);
-  box-shadow: var(--paper-shadow);
 }
-
-/* a little uneven, like stacked blocks */
-.feed .card:nth-child(3n + 1) { transform: rotate(-0.35deg); }
-.feed .card:nth-child(3n + 2) { transform: rotate(0.3deg); }
 
 .card q {
   font-family: var(--font-head);
@@ -164,7 +198,7 @@ button[type="submit"]:hover {
 }
 
 .card p {
-  margin: 0.25rem 0;
+  margin: 0;
   overflow-wrap: anywhere;
 }
 
@@ -177,44 +211,58 @@ button[type="submit"]:hover {
 small,
 .replies-got {
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+}
+
+/* under a record: the preset replies and "Reply", one row of small text
+   buttons, each with a 44px tall tap area */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--s3);
+  margin-top: var(--s1);
 }
 
 .replies {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
+  display: contents;
 }
 
-.replies button {
+.replies button,
+.reply-toggle {
   min-height: 2.75rem;
-  padding: 0.25rem 0.8rem;
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: transparent;
-  color: var(--fg);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
   font: inherit;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   cursor: pointer;
-  transition: background-color 200ms ease-out, border-color 200ms ease-out;
 }
 
-.replies button:hover {
-  background: var(--accent-soft);
-  border-color: var(--line-strong);
+.replies button:hover,
+.reply-toggle:hover {
+  color: var(--accent);
 }
 
 .count {
-  color: var(--muted);
+  margin-left: var(--s1);
+  color: var(--fg);
+  font-weight: 600;
+}
+
+/* a count of 0 says nothing */
+.count:empty,
+.count[data-zero] {
+  display: none;
 }
 
 .tag {
   font-size: 0.75rem;
   color: var(--muted);
   border: 1px solid var(--line);
-  border-radius: 1rem;
-  padding: 0 0.5rem;
+  border-radius: var(--radius);
+  padding: 0 var(--s2);
 }
 
 .stack {
@@ -242,19 +290,19 @@ label.inline:has(> input[type="radio"], > input[type="checkbox"]) {
 input:not([type="checkbox"], [type="radio"]),
 textarea {
   width: 100%;
-  padding: 0.4rem 0.6rem;
+  padding: var(--s2) 12px;
   font: inherit;
   color: var(--fg);
   background: var(--card);
   border: 1px solid var(--line-strong);
-  /* a touch uneven, like the buttons */
-  border-radius: 0.45rem 0.35rem 0.5rem 0.4rem;
+  border-radius: var(--radius);
 }
 
+/* focus on a field: the ring alone, not a second coloured edge inside it */
 input:not([type="checkbox"], [type="radio"]):focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  border-color: var(--accent);
+  outline-offset: 0;
 }
 
 select {
@@ -262,7 +310,7 @@ select {
   color: var(--fg);
   background: var(--card);
   border: 1px solid var(--line-strong);
-  border-radius: 0.45rem 0.35rem 0.5rem 0.4rem;
+  border-radius: var(--radius);
 }
 
 input[type="checkbox"],
@@ -270,10 +318,10 @@ input[type="radio"] {
   accent-color: var(--accent);
 }
 
-/* boxes on a form are the same dashed paper as the break box */
+/* a group on a form: one plain 1px edge */
 fieldset {
-  border: 1.5px dashed var(--line-strong);
-  border-radius: 0.8rem 0.5rem 0.9rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
   display: grid;
   gap: 0.75rem;
 }
@@ -325,7 +373,7 @@ dd {
   padding: 0.25rem;
   border: 1px solid var(--line);
   border-bottom: none;
-  border-radius: 0.3rem 0.3rem 0 0;
+  border-radius: var(--radius) var(--radius) 0 0;
   background: var(--bg);
 }
 
@@ -338,7 +386,7 @@ dd {
   min-height: 2.75rem;
   padding: 0 0.5rem;
   border: 1px solid transparent;
-  border-radius: 0.3rem;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg);
   font: inherit;
@@ -392,7 +440,7 @@ dd {
   padding: 0.4rem 0.6rem;
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 0 0 0.3rem 0.3rem;
+  border-radius: 0 0 var(--radius) var(--radius);
   outline: none;
 }
 
@@ -420,9 +468,9 @@ dd {
 
 footer {
   max-width: 40rem;
-  margin: 3rem auto 1rem;
-  padding-top: 1rem;
-  border-top: 1px dashed var(--line-strong);
+  margin: var(--s5) auto var(--s3);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--line);
   font-size: 0.875rem;
 }
 
@@ -438,10 +486,8 @@ footer a[aria-current="page"] {
   color: var(--accent);
 }
 
-/* the page you're on, underlined the same wavy way as the nav */
 footer a[aria-current="page"] {
-  text-decoration: underline wavy var(--line-strong);
-  text-underline-offset: 0.35em;
+  font-weight: 600;
 }
 
 /* the read-only time bar on Mine, in the crayon it was drawn with */
@@ -456,7 +502,7 @@ footer a[aria-current="page"] {
   position: relative;
   height: 1rem;
   border: 1px solid var(--line-strong);
-  border-radius: 0.4rem 0.25rem 0.45rem 0.3rem;
+  border-radius: var(--radius);
   background: var(--card);
 }
 
@@ -481,9 +527,9 @@ footer a[aria-current="page"] {
 
 /* on the feed the thing put down is the card's headline; who and when sit above it */
 .card .what {
-  margin: 0.15rem 0 0.35rem;
+  margin: 2px 0 0;
   font-family: var(--font-head);
-  font-size: 1.15rem;
+  font-size: 1.125rem;
   line-height: 1.4;
 }
 
@@ -521,9 +567,9 @@ footer a[aria-current="page"] {
 
 button.danger {
   min-height: 2.75rem;
-  padding: 0.3rem 0.9rem;
+  padding: 6px var(--s3);
   border: 1px solid var(--warn);
-  border-radius: 0.5rem 0.4rem 0.55rem 0.45rem;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--warn);
   font: inherit;
@@ -539,10 +585,14 @@ button.danger:hover {
 /* one-line comments under a shared enough */
 .comment-list {
   list-style: none;
-  margin: 0.6rem 0 0;
+  margin: var(--s2) 0 0;
   padding: 0;
   display: grid;
-  gap: 0.3rem;
+  gap: var(--s1);
+}
+
+.comment-list:empty {
+  display: none;
 }
 
 .comment-list li {
@@ -587,8 +637,18 @@ button.danger:hover {
 
 .comment-box {
   display: flex;
-  gap: 0.4rem;
-  margin-top: 0.6rem;
+  gap: var(--s2);
+  margin-top: var(--s2);
+}
+
+/* the open box and the comment list keep a little room from the card's edge */
+.comments:has(.comment-list:not(:empty), .comment-box:not([hidden])) {
+  padding-bottom: 12px;
+}
+
+/* folded away until "Reply" opens it (the feed's script); without script it stays open */
+.comment-box[hidden] {
+  display: none;
 }
 
 .comment-box input {
@@ -599,9 +659,9 @@ button.danger:hover {
 
 .comment-box button {
   min-height: 2.75rem;
-  padding: 0 0.9rem;
+  padding: 0 var(--s3);
   border: 1px solid var(--line-strong);
-  border-radius: 0.5rem 0.4rem 0.55rem 0.45rem;
+  border-radius: var(--radius);
   background: var(--accent-soft);
   color: var(--fg);
   font: inherit;
@@ -615,21 +675,24 @@ button.danger:hover {
 
 /* take a break */
 .breakbox {
-  margin: 1.25rem 0 1.5rem;
-  padding: 0.9rem 1.1rem 1rem;
-  border: 1.5px dashed var(--line-strong);
-  border-radius: 0.8rem 0.5rem 0.9rem 0.6rem;
+  margin: var(--s3) 0;
+  padding: var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
 }
 
 .breakbox h2 {
-  margin: 0 0 0.25rem;
-  font-size: 1.15rem;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .resting {
-  margin: 0 0 0.6rem;
+  margin: var(--s1) 0 var(--s2);
   color: var(--muted);
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
 }
 
 .break-go,
@@ -637,7 +700,7 @@ button.danger:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem 0.6rem;
+  gap: var(--s2);
 }
 
 .break-go button,
@@ -645,15 +708,15 @@ button.danger:hover {
 .urge-open,
 .urge-choices button {
   min-height: 2.75rem;
-  padding: 0.3rem 0.9rem;
+  padding: 6px 12px;
   border: 1px solid var(--line-strong);
-  border-radius: 1.2rem;
+  border-radius: var(--radius);
   background: var(--card);
   color: var(--fg);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   cursor: pointer;
-  transition: background-color 200ms ease-out, border-color 200ms ease-out;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
 }
 
 .break-go button:hover,
@@ -665,10 +728,9 @@ button.danger:hover {
 }
 
 .card .rest {
-  margin: 0 0 0.35rem;
-  color: var(--c-sage);
-  font-family: var(--font-hand);
-  font-size: 1.2rem;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
 }
 
 .card .rest:empty {
@@ -706,11 +768,10 @@ fieldset.next small {
 }
 
 .urge-body .wall {
-  margin: 1rem 0 0.75rem;
-  font-family: var(--font-hand);
-  font-size: 1.6rem;
+  margin: var(--s3) 0 12px;
+  font-family: var(--font-head);
+  font-size: 1.25rem;
   text-align: center;
-  transform: rotate(-1.5deg);
 }
 
 .urge-choices {
@@ -741,10 +802,9 @@ fieldset.next small {
   width: min(32rem, calc(100vw - 2rem));
   padding: 1.25rem 1.4rem 1.4rem;
   border: 1px solid var(--line-strong);
-  border-radius: 0.9rem 0.6rem 1rem 0.7rem;
+  border-radius: var(--radius);
   background: var(--card);
   color: var(--fg);
-  box-shadow: 0 18px 40px -20px rgb(60 45 30 / 0.45);
 }
 
 .urge-dialog::backdrop {
@@ -776,16 +836,11 @@ footer {
 }
 
 .account-box {
-  padding: 1rem 1.2rem 1.2rem;
+  padding: var(--s3);
   border: 1px solid var(--line);
-  border-radius: 0.8rem 0.5rem 0.9rem 0.6rem;
+  border-radius: var(--radius);
   background: var(--card);
-  box-shadow: var(--paper-shadow);
 }
-
-/* two sheets side by side, each a little uneven, like the feed's cards */
-.account-forms .account-box:nth-child(1) { transform: rotate(-0.3deg); }
-.account-forms .account-box:nth-child(2) { transform: rotate(0.35deg); }
 
 .account-box h2 {
   margin: 0 0 0.25rem;
@@ -805,9 +860,9 @@ footer {
 
 button.quiet {
   min-height: 2.75rem;
-  padding: 0.3rem 1rem;
+  padding: 6px var(--s3);
   border: 1px solid var(--line-strong);
-  border-radius: 1.2rem;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg);
   font: inherit;
@@ -826,21 +881,22 @@ button.quiet:hover {
 }
 
 .join-hint {
+  margin: 0 0 var(--s2);
   color: var(--muted);
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
+}
+
+.breakbox .join-hint {
+  margin: 0;
 }
 
 /* without an account the replies are counts to read, not buttons to press */
 .replies button:disabled {
   cursor: default;
-  color: var(--muted);
-  background: transparent;
-  border-style: dashed;
 }
 
 .replies button:disabled:hover {
-  background: transparent;
-  border-color: var(--line);
+  color: var(--muted);
 }
 
 /* Mine without an account: two clear ways in */
@@ -863,9 +919,9 @@ button.quiet:hover {
 .working-now {
   margin: 0 0 1.25rem;
   padding: 0.6rem 0.9rem;
-  border-left: 3px solid var(--c-sage);
+  border: 1px solid var(--line);
   background: var(--card);
-  border-radius: 0 0.4rem 0.4rem 0;
+  border-radius: var(--radius);
 }
 
 /* Mine's two pages, and the periods on Looking back: tabs as underlined words, like the site's nav */
@@ -873,10 +929,10 @@ button.quiet:hover {
 .periods {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 1.25rem;
-  margin: 0 0 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px dashed var(--line-strong);
+  gap: 0 var(--s4);
+  margin: 0 0 var(--s3);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.9375rem;
 }
 
 .subnav a,
@@ -897,8 +953,7 @@ button.quiet:hover {
 .periods a[aria-current="page"] {
   color: var(--fg);
   font-weight: 600;
-  text-decoration: underline wavy var(--line-strong);
-  text-underline-offset: 0.35em;
+  box-shadow: inset 0 -2px 0 var(--fg);
 }
 
 .periods {
@@ -909,11 +964,10 @@ button.quiet:hover {
 
 /* Looking back: one sheet of paper for the whole period */
 .lookback {
-  padding: 1rem 1.25rem 0.75rem;
+  padding: var(--s3);
   border: 1px solid var(--line);
-  border-radius: 0.7rem 0.5rem 0.8rem 0.55rem;
+  border-radius: var(--radius);
   background: var(--card);
-  box-shadow: var(--paper-shadow);
 }
 
 .period-step {
@@ -943,11 +997,9 @@ button.quiet:hover {
 }
 
 .lookback h3 {
-  margin: 1.25rem 0 0.35rem;
-  font-family: var(--font-hand);
-  font-size: 1.4rem;
-  font-weight: 500;
-  color: var(--accent);
+  margin: var(--s4) 0 var(--s1);
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .lookback-list,
@@ -959,7 +1011,7 @@ button.quiet:hover {
 
 .lookback-list li {
   padding: 0.3rem 0;
-  border-bottom: 1px dotted var(--line);
+  border-bottom: 1px solid var(--line);
   overflow-wrap: anywhere;
 }
 
@@ -986,7 +1038,7 @@ button.quiet:hover {
   grid-template-columns: repeat(48, 1fr);
   height: 1.5rem;
   border: 1px solid var(--line-strong);
-  border-radius: 0.4rem 0.25rem 0.45rem 0.3rem;
+  border-radius: var(--radius);
   overflow: hidden;
   background: var(--bg);
 }
@@ -1018,17 +1070,18 @@ button.quiet:hover {
 
 /* the drawer on Mine: notes kept for tomorrow, and worries from a week ago */
 .drawer {
-  margin: 0 0 1.25rem;
-  padding: 0.8rem 1.1rem 0.9rem;
-  border: 1.5px dashed var(--line-strong);
-  border-radius: 0.8rem 0.5rem 0.9rem 0.6rem;
+  margin: 0 0 var(--s3);
+  padding: var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
   background: var(--card);
 }
 
 .drawer h2 {
-  margin: 0 0 0.35rem;
-  font-family: var(--font-hand);
-  font-size: 1.5rem;
+  margin: 0 0 var(--s1);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .drawer ul {
@@ -1038,9 +1091,9 @@ button.quiet:hover {
 }
 
 .drawer li + li {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px dashed var(--line);
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
 .drawer p {
@@ -1059,15 +1112,15 @@ button.quiet:hover {
 .drawer button,
 .urge-drawer button {
   min-height: 2.75rem;
-  padding: 0.3rem 0.9rem;
+  padding: 6px 12px;
   border: 1px solid var(--line-strong);
-  border-radius: 1.2rem;
+  border-radius: var(--radius);
   background: var(--card);
   color: var(--fg);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   cursor: pointer;
-  transition: background-color 200ms ease-out, border-color 200ms ease-out;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
 }
 
 .drawer button:hover,
@@ -1082,9 +1135,9 @@ button.quiet:hover {
   flex-wrap: wrap;
   align-items: end;
   gap: 0.5rem;
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px dashed var(--line);
+  margin-top: var(--s3);
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
 .urge-drawer label {
@@ -1098,27 +1151,24 @@ button.quiet:hover {
   margin-top: 0.2rem;
 }
 
-/* One notebook: the small headings on a box are written in by hand, like
-   Looking back's. */
+/* the small heading on a box is a plain label, in the UI's sans */
 .breakbox h2,
 .work h2,
 .account-box h2 {
-  font-family: var(--font-hand);
-  font-size: 1.55rem;
-  font-weight: 500;
-  line-height: 1.15;
-  color: var(--accent);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--fg);
 }
 
 /* the README is one more sheet in the notebook */
 .readme-sheet {
-  margin-top: 0.75rem;
-  padding: 1.25rem 1.4rem 1rem;
+  margin-top: 12px;
+  padding: var(--s4);
   border: 1px solid var(--line);
-  border-radius: 0.7rem 0.5rem 0.8rem 0.55rem;
+  border-radius: var(--radius);
   background: var(--card);
-  box-shadow: var(--paper-shadow);
-  transform: rotate(-0.2deg);
   overflow-wrap: anywhere;
 }
 
@@ -1128,8 +1178,8 @@ button.quiet:hover {
 
 .readme-sheet h2 {
   margin: 1.75rem 0 0.5rem;
-  padding-bottom: 0.25rem;
-  border-bottom: 1px dashed var(--line-strong);
+  padding-bottom: var(--s1);
+  border-bottom: 1px solid var(--line);
 }
 
 .readme-sheet ul {
@@ -1143,18 +1193,6 @@ button.quiet:hover {
   font-size: 0.9em;
 }
 
-/* In the dark the pictures keep their own palette; only the paper they're
-   taped onto changes, to a sheet a little lighter than the cards, with a
-   shadow that still shows. The tape stays wine red. */
-@media (prefers-color-scheme: dark) {
-  :root .little-one .page,
-  :root .meadow .meadow-page {
-    background: #3a342d;
-    box-shadow:
-      0 1px 2px rgb(0 0 0 / 0.45),
-      0 6px 14px rgb(0 0 0 / 0.35);
-  }
-}
 
 /* Reduced motion: the pictures hold still (each one's script checks the same
    setting), and nothing else on the page eases or tilts either. */

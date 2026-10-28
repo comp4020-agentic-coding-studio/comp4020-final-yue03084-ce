@@ -4,7 +4,9 @@ import { COMMENT_PROMPT, REPLY_MAX } from "../lib/limits";
 
 // The one-line comments under a shared enough, each with a report button, and
 // a box to add one. Plain forms, so they work without script; the feed's
-// script sends them with fetch and redraws this from the stream.
+// script sends them with fetch and redraws this from the stream. With script,
+// the box is folded away behind the card's "Reply" (data-fold), and opens in
+// place.
 interface Props {
   enoughId: number;
   comments: PublicComment[];
@@ -31,7 +33,7 @@ const { enoughId, comments, canComment } = Astro.props;
   </ul>
   {
     canComment && (
-      <form method="post" action="/comment/" class="comment-box">
+      <form method="post" action="/comment/" class="comment-box" data-fold>
         <input type="hidden" name="enough" value={enoughId} />
         <input
           name="text"

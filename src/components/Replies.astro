@@ -1,8 +1,9 @@
 ---
 import { PRESET_REPLIES, type PresetKey } from "../lib/limits";
 
-// The preset reply buttons with their counts. A plain form, so it works
-// without script; the feed's script sends it with fetch instead.
+// The preset reply buttons with their counts, as small text buttons; a count
+// of 0 is left out. A plain form, so it works without script; the feed's
+// script sends it with fetch instead.
 interface Props {
   enoughId: number;
   counts: Partial<Record<PresetKey, number>>;
@@ -17,7 +18,7 @@ const presets = Object.entries(PRESET_REPLIES) as [PresetKey, string][];
   {
     presets.map(([key, label]) => (
       <button type="submit" name="preset" value={key} disabled={!canReply} data-preset={key}>
-        {label} <span class="count" data-count={key}>{counts[key] ?? 0}</span>
+        {label}<span class="count" data-count={key}>{counts[key] || ""}</span>
       </button>
     ))
   }

@@ -16,7 +16,8 @@ import { frameSvg, KITE, LANTERN, PICNIC, TABBY, WALK, WEARABLES, type Wearable 
 // words. With reduced motion everyone holds still. Each wears what its person
 // chose from their Collection (a hat, a scarf; a blanket under it, a kite
 // above, a tabby or a lantern beside it): item keys only, never whose, and
-// never how anything came (meadowNow in outfit.ts).
+// never how anything came (meadowNow in outfit.ts). While nobody's resting the
+// picture is hidden, and the count above it is the whole empty state.
 const ones = meadowNow();
 const W = 160;
 const H = 44;
@@ -61,7 +62,7 @@ const hairCss = HAIRS.map(
 const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCss}\n.meadow [data-w],.meadow [data-has]{display:none}\n${wearCss}`;
 ---
 
-<figure class="meadow" aria-hidden="true" data-sky="day" data-max={MEADOW_MAX} data-ones={JSON.stringify(ones)}>
+<figure class="meadow" aria-hidden="true" hidden={ones.length === 0} data-sky="day" data-max={MEADOW_MAX} data-ones={JSON.stringify(ones)}>
   <style set:html={css}></style>
   <div class="meadow-page">
     <svg viewBox={`0 0 ${W} ${H}`} width={W * 3} height={H * 3} shape-rendering="crispEdges" role="presentation" focusable="false">
@@ -91,31 +92,15 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
     position: relative;
     display: inline-block;
     max-width: 100%;
-    padding: 0.4rem;
+    padding: var(--s1);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
     background: var(--card);
-    box-shadow:
-      0 1px 2px rgb(58 53 47 / 0.12),
-      0 4px 10px rgb(58 53 47 / 0.08);
-    transform: rotate(0.4deg);
   }
 
-  /* one strip of wine-red polka-dot tape across the top, like the little one's picture */
-  .meadow-page::before {
-    content: "";
-    position: absolute;
-    top: -0.5rem;
-    left: 50%;
-    width: 4.2rem;
-    height: 1.2rem;
-    transform: translateX(-50%) rotate(-2deg);
-    background-color: rgb(122 38 52 / 0.88);
-    background-image:
-      radial-gradient(circle, rgb(250 236 228 / 0.9) 0 1.8px, transparent 2.3px),
-      radial-gradient(circle, rgb(250 236 228 / 0.9) 0 1.8px, transparent 2.3px);
-    background-size: 12px 12px;
-    background-position:
-      0 0,
-      6px 6px;
+  .meadow[hidden] {
+    display: none;
   }
 
   svg {
@@ -172,10 +157,14 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
 
   .meadow-more,
   .meadow-empty {
-    margin: 0.3rem 0.2rem 0;
-    font-family: var(--font-hand);
-    font-size: 1.15rem;
+    margin: var(--s1) var(--s1) 0;
+    font-size: 0.8125rem;
     color: var(--muted);
+  }
+
+  /* the count above says it already */
+  .meadow-empty {
+    display: none;
   }
 
 </style>
@@ -300,6 +289,7 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
         more.textContent = `and ${Math.max(0, list.length - max)} more just out of the picture`;
       }
       if (empty) empty.hidden = list.length > 0;
+      fig.hidden = list.length === 0;
     };
 
     draw(JSON.parse(fig.dataset.ones ?? "[]"));

@@ -316,48 +316,16 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${ringCss}{display:none}
     margin: 1rem 0 0.5rem;
   }
 
-  /* a small picture taped into the notebook: a white border, a slight tilt,
-     tape across two corners */
+  /* the picture in a plain frame: a 1px edge, square to the page */
   .page {
     position: relative;
     display: inline-block;
     max-width: 100%;
-    padding: 0.5rem;
+    padding: var(--s1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
     background: var(--card);
-    box-shadow:
-      0 1px 2px rgb(58 53 47 / 0.12),
-      0 4px 10px rgb(58 53 47 / 0.08);
-    transform: rotate(-0.6deg);
-  }
-
-  .page::before,
-  .page::after {
-    content: "";
-    position: absolute;
-    width: 3.8rem;
-    height: 1.3rem;
-    /* wine-red washi tape with pale polka dots */
-    background-color: rgb(122 38 52 / 0.88);
-    background-image:
-      radial-gradient(circle, rgb(250 236 228 / 0.9) 0 1.8px, transparent 2.3px),
-      radial-gradient(circle, rgb(250 236 228 / 0.9) 0 1.8px, transparent 2.3px);
-    background-size: 12px 12px;
-    background-position:
-      0 0,
-      6px 6px;
-    box-shadow: 0 1px 1px rgb(58 53 47 / 0.08);
-  }
-
-  .page::before {
-    top: -0.45rem;
-    left: -0.9rem;
-    transform: rotate(-32deg);
-  }
-
-  .page::after {
-    top: -0.45rem;
-    right: -0.9rem;
-    transform: rotate(30deg);
+    overflow: hidden;
   }
 
   svg {

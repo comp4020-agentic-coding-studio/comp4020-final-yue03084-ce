@@ -4,7 +4,7 @@ import { NOTE_COLOURS } from "../src/lib/limits";
 
 // The look, as far as the server's HTML can show it: every page says it has
 // a light and a dark scheme, the note colours' dark shades come from
-// NOTE_COLOURS, and the home page keeps its scene and its caption.
+// NOTE_COLOURS, and the home page keeps its scene, now without a caption.
 const baseUrl = inject("baseUrl");
 const page = async (path: string, cookie = "") =>
   new JSDOM(await (await fetch(new URL(path, baseUrl), { headers: cookie ? { cookie } : {} })).text()).window.document;
@@ -42,11 +42,15 @@ describe("the look", () => {
     for (const [key, c] of Object.entries(NOTE_COLOURS)) expect(css).toContain(`--c-${key}: ${c.dark};`);
   });
 
-  it("keeps the home scene and its caption, hidden from screen readers", async () => {
-    const scene = (await page("/")).querySelector(".scene");
+  // The two little ones head the page; the hand-written caption went in the
+  // plain restyle (2026-10-29), and the h1 is there for screen readers only.
+  it("keeps the home scene, hidden from screen readers, and a hidden h1", async () => {
+    const doc = await page("/");
+    const scene = doc.querySelector(".scene");
     expect(scene?.getAttribute("aria-hidden")).toBe("true");
-    expect(scene?.querySelector("figcaption")?.textContent).toBe("Live with imperfection.");
+    expect(scene?.querySelector("figcaption")).toBeNull();
     expect(scene?.querySelectorAll(".one")).toHaveLength(2);
+    expect(doc.querySelector("h1")?.classList.contains("visually-hidden")).toBe(true);
   });
 
   // A screen reader moves by headings: one h1 names the page, and no level is skipped.
