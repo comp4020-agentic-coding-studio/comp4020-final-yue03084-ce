@@ -12,7 +12,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const enoughId = Number(form.get("enough"));
   // writing needs an account (signedInPerson)
   const person = signedInPerson(cookies);
-  if (!person || !Number.isInteger(enoughId)) return redirect("/mine/all/", 303);
+  if (!person) return redirect("/account/", 303);
+  if (!Number.isInteger(enoughId)) return redirect("/mine/all/", 303);
   const outcome = deleteEnough(person.id, enoughId);
   if (outcome.ok) logEvent("enough_deleted", { block: person.id, enough: enoughId, shared: outcome.value.wasShared });
   else logEvent("delete_refused", { block: person.id, enough: enoughId });

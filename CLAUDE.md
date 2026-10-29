@@ -54,8 +54,11 @@ commit (see "A feature lands with its test").
   written", "gives each shared enough its own name, even two by the same
   person"; `account.test.ts` "never shows the username or password to anyone
   else, on the feed or the stream"; `ui.test.ts` "public names (names.ts)".
-  **Not tested:** that every write route calls `signedInPerson` (the spec
-  tries the routes that exist; a new route needs adding to it).
+  The first finds every page under `src/pages` that takes a POST, so a new
+  write route is tried the day it's added, and checks it's refused with a
+  redirect to `/account/` (or a 401). *(On 2026-10-29 that found `/delete/`,
+  `/put-away/` and `/urge/` refusing silently back to Mine instead; nothing
+  was written, but they now go to sign in like the rest.)*
 - **Logs say who did what, never what they wrote.** Every request gets one
   line, and every meaningful action an event line (`src/lib/log.ts`,
   `src/middleware.ts`), tagged with the request id. Who is a block number
@@ -99,8 +102,9 @@ commit (see "A feature lands with its test").
   **Guarded by:** each limit's spec reads the constant, not a number:
   `enough.test.ts` "refuses a description over `DESCRIPTION_MAX`…", "…a
   comment over `REPLY_MAX`…", "hide once `REPORTS_TO_HIDE`…", "…over
-  `DRAWER_MAX`…", "…a worry over `WORRY_MAX`…". **Not tested:** that the
-  page's own wording reads the constant too.
+  `DRAWER_MAX`…", "…a worry over `WORRY_MAX`…"; and "says each limit and
+  stops typing at it, from the same constant the server uses" checks each
+  field's `maxlength` and its "(up to N characters)" against the constant.
 - **The look is plain; the pixel art is the only signature.** White page,
   warm-grey cards (`--card`) with a 1px `--line` edge and no shadow; the
   feed's records are rules between, not boxes. The primary button is

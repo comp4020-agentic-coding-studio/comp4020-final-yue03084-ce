@@ -11,9 +11,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const back = form.get("back") === "/mine/all/" ? "/mine/all/" : "/mine/";
   // writing needs an account (signedInPerson)
   const person = signedInPerson(cookies);
+  if (!person) return redirect("/account/", 303);
   const id = Number(form.get("id"));
   const kind = form.get("kind") === "worry" ? "worry" : "drawer";
-  if (person && Number.isInteger(id)) {
+  if (Number.isInteger(id)) {
     const outcome = putAway(person.id, kind, id);
     logEvent(outcome.ok ? "put_away" : "put_away_refused", { block: person.id, kind, id });
   }

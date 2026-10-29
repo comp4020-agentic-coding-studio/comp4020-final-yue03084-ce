@@ -1,9 +1,9 @@
 import { describe, expect, inject, it } from "vitest";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { dayAfter, drawerHeading, isDue, weekLater } from "../src/lib/later.ts";
-import { BREAK_KINDS, DESCRIPTION_MAX, DRAWER_MAX, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE, WORRY_AFTER_DAYS, WORRY_MAX } from "../src/lib/limits.ts";
+import { BREAK_KINDS, DESCRIPTION_MAX, DRAWER_MAX, PASSWORD_MIN, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE, WORRY_AFTER_DAYS, WORRY_MAX } from "../src/lib/limits.ts";
 import { periodLabel, periodRange, summarise } from "../src/lib/summary.ts";
 
 // The product rules that can be checked, against the running app: a shared
@@ -87,6 +87,25 @@ async function signedIn() {
 }
 
 const marker = () => `t${Math.random().toString(36).slice(2, 10)}`;
+
+// Every page under src/pages that takes a POST, as the path it's served at
+// ("src/pages/put-away.ts" is "/put-away/"; "mine/all.astro" is "/mine/all/").
+function writeRoutes(): string[] {
+  const root = join(process.cwd(), "src/pages");
+  const out: string[] = [];
+  const walk = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      const file = join(dir, name);
+      if (statSync(file).isDirectory()) walk(file);
+      else if (/\.(ts|astro)$/.test(name) && /export const POST\b|request\.method === "POST"/.test(readFileSync(file, "utf8"))) {
+        const route = relative(root, file).replace(/\.(ts|astro)$/, "").replace(/(^|\/)index$/, "");
+        out.push(`/${route}${route ? "/" : ""}`);
+      }
+    }
+  };
+  walk(root);
+  return out.sort();
+}
 
 describe("a shared enough", () => {
   it("reaches another open page within about a second, with no reload", async () => {
@@ -175,6 +194,41 @@ describe("what stays private", () => {
 });
 
 describe("limits", () => {
+  // what the page says and lets you type is the same number the server
+  // enforces: each field's maxlength and its "(up to N characters)" read the
+  // constant (CLAUDE.md: "Numbers live in one place")
+  it("says each limit and stops typing at it, from the same constant the server uses", async () => {
+    const tag = marker();
+    const author = await signedIn();
+    await author.declare({ description: `limits ${tag}`, shared: "on" });
+    const field = (html: string, name: string) => new RegExp(`<input[^>]*name="${name}"[^>]*>`).exec(html)?.[0] ?? "";
+    const attr = (input: string, a: string) => new RegExp(`${a}="(\\d+)"`).exec(input)?.[1];
+    // the visible text, so a number written into the markup is seen as a reader sees it
+    const text = (html: string) => html.replace(/<(script|style)[\s\S]*?<\/\1>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+
+    const enough = await author.get("/enough/");
+    expect(attr(field(enough, "description"), "maxlength")).toBe(String(DESCRIPTION_MAX));
+    expect(text(enough)).toContain(`up to ${DESCRIPTION_MAX} characters`);
+    expect(attr(field(enough, "worry"), "maxlength")).toBe(String(WORRY_MAX));
+    expect(text(enough)).toContain(`up to ${WORRY_MAX} characters`);
+    expect(text(enough)).toContain(`in ${WORRY_AFTER_DAYS} days`);
+
+    const all = await author.get("/mine/all/");
+    expect(attr(field(all, "note"), "maxlength")).toBe(String(DRAWER_MAX));
+    expect(text(all)).toContain(`up to ${DRAWER_MAX} characters`);
+
+    const feed = await author.get("/");
+    const comment = field(feed, "text");
+    expect(attr(comment, "maxlength")).toBe(String(REPLY_MAX));
+    expect(comment).toContain(`up to ${REPLY_MAX} characters`);
+
+    const account = await browser().get("/account/");
+    // the register form's password (the sign-in one has no minimum)
+    const newPassword = /<input[^>]*name="password"[^>]*new-password[^>]*>/.exec(account)?.[0] ?? "";
+    expect(attr(newPassword, "minlength")).toBe(String(PASSWORD_MIN));
+    expect(text(account)).toContain(`at least ${PASSWORD_MIN} characters`);
+  });
+
   it(`refuses a description over ${DESCRIPTION_MAX} characters`, async () => {
     const tag = marker();
     const res = await (await signedIn()).declare({ description: `${tag}${"x".repeat(DESCRIPTION_MAX)}`, shared: "on" });
@@ -677,25 +731,37 @@ describe("without an account", () => {
     await author.declare({ description: `target ${tag}`, shared: "on" });
     const id = new RegExp(`data-enough="(\\d+)"[\\s\\S]*?target ${tag}`).exec(await author.get("/mine/all/"))?.[1] ?? "";
 
+    // Every page that takes a POST, found in src/pages rather than listed by
+    // hand, so a new write route is tried the day it's added. Signing in and
+    // registering are the only writes that don't need an account.
+    const routes = writeRoutes().filter((r) => r !== "/account/");
+    expect(routes.length).toBeGreaterThanOrEqual(11);
+    // fields each route would accept from someone signed in
+    const fields: Record<string, Record<string, string>> = {
+      "/enough/": { description: `anon ${tag}`, shared: "on" },
+      "/comment/": { enough: id, text: `anon comment ${tag}` },
+      "/reply/": { enough: id, preset: "seen" },
+      "/delete/": { enough: id },
+      "/report/": { comment: "1" },
+      "/break/": { kind: "walk" },
+      "/urge/": { enough: id, choice: "tomorrow", note: `anon note ${tag}` },
+      "/put-away/": { kind: "drawer", id: "1" },
+      "/work/": { action: "start", alarm: "none" },
+      "/scene/": { thing: "lamp", weather: "rain" },
+      "/outfit/": { head: "strawhat" },
+    };
     const reader = browser();
-    const anon = await reader.declare({ description: `anon ${tag}`, shared: "on" });
-    expect(anon.status).toBe(303);
-    expect(anon.headers.get("location")).toContain("/account/");
-    for (const [path, fields] of [
-      ["/comment/", { enough: id, text: `anon comment ${tag}` }],
-      ["/reply/", { enough: id, preset: "seen" }],
-      ["/delete/", { enough: id }],
-      ["/break/", { kind: "walk" }],
-      ["/urge/", { enough: id, choice: "let_go" }],
-      ["/urge/", { enough: id, choice: "tomorrow", note: `anon note ${tag}` }],
-      ["/put-away/", { kind: "drawer", id: "1" }],
-    ] as const) {
-      const res = await reader.send(path, {
-        method: "POST",
-        body: new URLSearchParams(fields as Record<string, string>),
-        headers: { accept: "application/json" },
-      });
-      expect(res.status, path).not.toBe(200);
+    for (const path of routes) {
+      for (const accept of ["application/json", "text/html"]) {
+        const res = await reader.send(path, {
+          method: "POST",
+          body: new URLSearchParams(fields[path] ?? {}),
+          headers: { accept },
+        });
+        // refused: never a success, and a redirect only ever to sign in
+        expect(res.status, `${path} (${accept})`).toBeGreaterThanOrEqual(300);
+        if (res.status >= 300 && res.status < 400) expect(res.headers.get("location"), path).toContain("/account/");
+      }
     }
     const feed = await browser().get("/");
     expect(feed).not.toContain(`anon ${tag}`);

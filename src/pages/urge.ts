@@ -12,9 +12,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const form = await request.formData().catch(() => new FormData());
   // writing needs an account (signedInPerson)
   const person = signedInPerson(cookies);
+  if (!person) return redirect("/account/", 303);
   const enoughId = Number(form.get("enough"));
   const choice = String(form.get("choice") ?? "");
-  if (person && Number.isInteger(enoughId) && isUrgeChoice(choice)) {
+  if (Number.isInteger(enoughId) && isUrgeChoice(choice)) {
     const outcome =
       choice === "tomorrow"
         ? putInDrawer(person.id, enoughId, String(form.get("note") ?? ""))
