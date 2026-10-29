@@ -3,8 +3,8 @@ import { inRequest, logEvent, logRequest } from "../src/lib/log.ts";
 
 // The log's shape: one line per event, tagged with its request, who as a
 // block number. What it must never hold (anything someone wrote, a username,
-// a password) is checked against the running app in spec/enough.test.ts's
-// neighbour, spec/account.test.ts; here, the format the crit narrates from.
+// a password) is checked against a running app in spec/lasting.test.ts;
+// here, the format the crit narrates from.
 function capture(run: () => void): string[] {
   const lines: string[] = [];
   const original = console.log;

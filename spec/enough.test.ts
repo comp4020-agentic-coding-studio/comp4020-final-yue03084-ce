@@ -638,6 +638,33 @@ describe("kept for later", () => {
 });
 
 // Reading needs nothing; every write needs an account, checked on the server.
+// No streaks, rankings or public totals (CLAUDE.md): with plenty on the
+// feed, the page someone reads still adds nothing up and compares no one.
+// The only numbers it shows are how many are resting now, each card's own
+// reply counts, and times.
+describe("no totals on the feed", () => {
+  it("shows no running total, streak or ranking, however much there is", async () => {
+    const tag = marker();
+    const author = await signedIn();
+    for (let i = 0; i < 3; i++) await author.declare({ description: `count ${i} ${tag}`, shared: "on" });
+    const resting = await signedIn();
+    await resting.rest({ kind: "tea" });
+    // what a reader sees: the page's text, without its scripts and styles
+    const html = await browser().get("/");
+    const text = html
+      .replace(/<(script|style)[\s\S]*?<\/\1>/g, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ");
+    expect(text).toContain(`count 2 ${tag}`);
+    expect(text).not.toMatch(/\bstreaks?\b|in a row|leaderboard|\branks?(ed|ing)?\b|\btop \d|\bmost (rest|stop|enough)/i);
+    // a number next to the feed's own nouns would be a total: "12 enoughs",
+    // "5 people stopped", "3 this week"
+    expect(text).not.toMatch(/\b\d+\s+(enoughs?|things|stops|records|days?|times|this (week|month)|today)\b/i);
+    expect(text).not.toMatch(/\b\d+\s+(people|person)\s+(have\s+)?(stopped|called|finished|done)/i);
+    await resting.rest({ end: "1" });
+  });
+});
+
 describe("without an account", () => {
   it("anyone can read the feed", async () => {
     const res = await browser().send("/");
