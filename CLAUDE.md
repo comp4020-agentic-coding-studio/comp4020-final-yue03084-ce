@@ -196,6 +196,27 @@ reload"; `lasting.test.ts` "keeps what was written through a restart".
 - **When a check fails, read its output before changing anything**; the
   message names the file, the line or the contract. A red check is
   authoritative. **Never commit a red state.** *(from crit 7.)*
+- **Answer me in Chinese.** I write requests in Chinese and paste briefs in
+  English; code, commits and the files in this repo stay in English.
+- **Show me before it ships.** Screenshots at desktop (1440×900) and phone
+  (390×844) widths, light and dark where it matters, then ask before merging
+  or pushing, unless I've said to go ahead for that round. *(I look at every
+  round; three restyles on 2026-10-29 were each turned around from a
+  screenshot.)*
+- **When something I ask for clashes with a rule or decision here, or with
+  a spec, stop and ask before building it**, unless there's only one
+  reasonable way through (then do it, and say so). Put all the clashes from
+  one request into one question, each with what clashes, two or three ways
+  through and the one you'd pick, and wait for my answer. Explain them in
+  plain words, not just names: many are technical details I may simply have
+  got wrong, and I'm still catching up on how the code works. *(On
+  2026-10-29 four clashes in one brief, such as deleting the home h1 and
+  fitting the reactions on one line at phone width, were each settled by the
+  agent and only reported at the end of a long summary. The one it stopped
+  to ask about, what replaces "A block #N", went best.)*
+- **I come back after days away and forget what was settled.** Check the
+  code, git log and the course site rather than asking me what's done; keep
+  this file current rather than relying on me to remember.
 - **A feature lands with its test.** Anything that changes what someone
   sees or what the server allows gets a spec in the same commit, and the
   decision it touches gets its **Guarded by** line updated. Before calling a
