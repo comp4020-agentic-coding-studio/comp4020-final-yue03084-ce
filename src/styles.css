@@ -265,6 +265,7 @@ small,
 }
 
 .replies button:hover {
+  background: none;
   color: var(--fg);
 }
 
@@ -661,6 +662,7 @@ button.danger:hover {
 }
 
 .report button:hover {
+  background: none;
   color: var(--warn);
 }
 
@@ -703,6 +705,7 @@ button.danger:hover {
 }
 
 .comment-box button:hover {
+  background: var(--accent-soft);
   border-color: var(--accent);
 }
 
@@ -950,6 +953,7 @@ button.quiet {
 }
 
 button.quiet:hover {
+  background: var(--accent-soft);
   border-color: var(--accent);
 }
 
@@ -976,6 +980,7 @@ button.quiet:hover {
 }
 
 .replies button:disabled:hover {
+  background: none;
   color: var(--muted);
 }
 
