@@ -229,7 +229,8 @@ const label = (m: number) => (m === DAY_MINUTES ? "24:00" : `${String(m / 60).pa
     /* each half-hour a cell at least 44px tall to tap */
     height: 3.75rem;
     padding: 0.35rem;
-    background: var(--card);
+    /* white, like a field, so it shows on the grey card it sits in */
+    background: var(--bg);
     border: 1px solid var(--line-strong);
     border-radius: var(--radius);
     touch-action: none;
@@ -298,6 +299,7 @@ const label = (m: number) => (m === DAY_MINUTES ? "24:00" : `${String(m / 60).pa
     margin: 0;
     padding: 0;
     border: none;
+    background: none;
   }
 
   .crayons legend {
