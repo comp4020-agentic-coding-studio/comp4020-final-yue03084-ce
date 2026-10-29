@@ -58,12 +58,13 @@ export const DEFAULT_RANGE = { from: 9 * 60, to: 18 * 60 } as const;
 // What people go and do when they take a break. Preset only, so nothing on the
 // feed needs moderating; the key is stored, the words shown. "going" reads
 // after "went to …" on a card, "back" after someone returns.
+// `short` is the word in the feed's one-line "Take a break: walk · tea · …"
 export const BREAK_KINDS = {
-  walk: { label: "Go for a walk", going: "went for a walk", back: "back from a walk" },
-  tea: { label: "Make a cup of tea", going: "made a cup of tea", back: "back from tea" },
-  nap: { label: "Have a nap", going: "went for a nap", back: "back from a nap" },
-  move: { label: "Move a bit", going: "went to move a bit", back: "back from moving" },
-  watch: { label: "Watch something", going: "went to watch something", back: "back from watching something" },
+  walk: { label: "Go for a walk", short: "walk", going: "went for a walk", back: "back from a walk" },
+  tea: { label: "Make a cup of tea", short: "tea", going: "made a cup of tea", back: "back from tea" },
+  nap: { label: "Have a nap", short: "nap", going: "went for a nap", back: "back from a nap" },
+  move: { label: "Move a bit", short: "move", going: "went to move a bit", back: "back from moving" },
+  watch: { label: "Watch something", short: "watch something", going: "went to watch something", back: "back from watching something" },
 } as const;
 export type BreakKind = keyof typeof BREAK_KINDS;
 export const isBreakKind = (key: string): key is BreakKind => Object.hasOwn(BREAK_KINDS, key);

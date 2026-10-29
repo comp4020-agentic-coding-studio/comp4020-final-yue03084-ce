@@ -336,7 +336,8 @@ describe("breaks", () => {
   // the count as the page shows it (not the wording kept in its data attributes)
   const restingCount = (html: string) => {
     const shown = /id="resting"[^>]*>\s*([^<]*)/.exec(html)?.[1] ?? "";
-    if (shown.startsWith("Nobody")) return 0;
+    // nobody resting is an empty line
+    if (!shown.trim()) return 0;
     const n = /^(\d+)/.exec(shown);
     return n ? Number(n[1]) : Number.NaN;
   };

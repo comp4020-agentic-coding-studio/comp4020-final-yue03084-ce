@@ -26,7 +26,8 @@
      sans for everything you press or read past */
   --font-head: "Lora", Georgia, serif;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  /* one corner for cards, buttons and inputs */
+  /* the one corner, for the primary button and the fields only; everything
+     else is square */
   --radius: 8px;
   /* one spacing scale */
   --s1: 4px;
@@ -111,7 +112,7 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: var(--s2) var(--s3);
-  margin: 0 0 var(--s2);
+  margin: 0;
 }
 
 .lede .description {
@@ -186,19 +187,33 @@ button[type="submit"]:hover {
 
 .feed {
   list-style: none;
-  margin: var(--s3) 0 0;
+  margin: 0;
   padding: 0;
-  display: grid;
-  gap: var(--s2);
 }
 
-/* a card: a 1px border, no shadow. Less padding below, where the action
-   row's 44px tap area already leaves room */
+/* a card: a box with a 1px edge (Mine's Each one) */
 .card {
   padding: 12px var(--s3) var(--s1);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: var(--card);
+}
+
+/* on the feed a record is no box at all: a 1px rule between one and the
+   next, flush with the page's left edge. The action row's 44px tap area
+   takes the room below the reactions. */
+.feed .card {
+  padding: var(--s3) 0 var(--s1);
+  border: 0;
+  background: none;
+}
+
+.feed .card + .card {
+  border-top: 1px solid var(--line);
+}
+
+.feed .card:first-child {
+  padding-top: 0;
 }
 
 .card q {
@@ -278,7 +293,7 @@ small,
   font-size: 0.75rem;
   color: var(--muted);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 0;
   padding: 0 var(--s2);
 }
 
@@ -339,7 +354,7 @@ input[type="radio"] {
 /* a group on a form is a card like the others: warm grey, a 1px edge */
 fieldset {
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: var(--card);
   display: grid;
   gap: 0.75rem;
@@ -406,7 +421,7 @@ dd {
   min-height: 2.75rem;
   padding: 0 0.5rem;
   border: 1px solid transparent;
-  border-radius: var(--radius);
+  border-radius: 0;
   background: transparent;
   color: var(--fg);
   font: inherit;
@@ -489,8 +504,6 @@ dd {
 footer {
   max-width: 40rem;
   margin: var(--s5) auto var(--s3);
-  padding-top: var(--s3);
-  border-top: 1px solid var(--line);
   font-size: 0.875rem;
 }
 
@@ -522,7 +535,7 @@ footer a[aria-current="page"] {
   position: relative;
   height: 1rem;
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: var(--card);
 }
 
@@ -534,7 +547,7 @@ footer a[aria-current="page"] {
     repeating-linear-gradient(100deg, rgb(255 255 255 / 0.18) 0 2px, transparent 2px 5px),
     var(--crayon);
   opacity: 0.85;
-  border-radius: 2px 4px 2px 5px;
+  border-radius: 0;
   filter: url(#crayon);
 }
 
@@ -589,7 +602,7 @@ button.danger {
   min-height: 2.75rem;
   padding: 6px var(--s3);
   border: 1px solid var(--warn);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: transparent;
   color: var(--warn);
   font: inherit;
@@ -681,7 +694,7 @@ button.danger:hover {
   min-height: 2.75rem;
   padding: 0 var(--s3);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: var(--accent-soft);
   color: var(--fg);
   font: inherit;
@@ -693,44 +706,93 @@ button.danger:hover {
   border-color: var(--accent);
 }
 
-/* take a break */
+/* take a break: no box, one line of links under the description, 24px
+   above the list. The resting count and the meadow sit under it only while
+   someone is resting. */
 .breakbox {
-  margin: var(--s3) 0;
-  padding: var(--s3);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--card);
+  margin: 0 0 var(--s4);
 }
 
+/* the label and the choices run on like one sentence, wrapping word by word */
+.break-line {
+  margin-top: var(--s2);
+}
+
+.break-line > h2,
+.break-line > form,
+.break-line > p {
+  display: inline;
+}
+
+.break-line > h2::after {
+  content: " ";
+  white-space: pre;
+}
+
+/* "Take a break:" reads as the start of the line, in the body's colour */
 .breakbox h2 {
   margin: 0;
   font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--fg);
 }
 
 .resting {
-  margin: var(--s1) 0 var(--s2);
+  margin: 0;
   color: var(--muted);
   font-size: 0.875rem;
 }
 
-.break-go,
-.break-back {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s2);
+.resting:empty {
+  display: none;
 }
 
+.break-back span {
+  margin-right: var(--s2);
+}
+
+/* the choices are links in a row, " · " between them; still the same
+   submit buttons, each 44px tall to tap */
 .break-go button,
-.break-back button,
+.break-back button {
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.break-go button:hover,
+.break-back button:hover {
+  background: none;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.break-go button {
+  vertical-align: middle;
+}
+
+/* the dot follows a choice, so when the line wraps it stays at the end of
+   the line above, never the start of the next */
+.break-go button:not(:last-child)::after {
+  content: "·";
+  margin: 0 var(--s2);
+  color: var(--muted);
+  display: inline-block;
+}
+
 .urge-open,
 .urge-choices button {
   min-height: 2.75rem;
   padding: 6px 12px;
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: var(--card);
   color: var(--fg);
   font: inherit;
@@ -739,8 +801,6 @@ button.danger:hover {
   transition: background-color 150ms ease-out, border-color 150ms ease-out;
 }
 
-.break-go button:hover,
-.break-back button:hover,
 .urge-open:hover,
 .urge-choices button:hover {
   background: var(--accent-soft);
@@ -822,7 +882,7 @@ fieldset.next small {
   width: min(32rem, calc(100vw - 2rem));
   padding: 1.25rem 1.4rem 1.4rem;
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: var(--card);
   color: var(--fg);
 }
@@ -858,7 +918,7 @@ footer {
 .account-box {
   padding: var(--s3);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: var(--card);
 }
 
@@ -882,7 +942,7 @@ button.quiet {
   min-height: 2.75rem;
   padding: 6px var(--s3);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: transparent;
   color: var(--fg);
   font: inherit;
@@ -942,7 +1002,7 @@ button.quiet:hover {
   padding: 0.6rem 0.9rem;
   border: 1px solid var(--line);
   background: var(--card);
-  border-radius: var(--radius);
+  border-radius: 0;
 }
 
 /* Mine's two pages, and the periods on Looking back: tabs as underlined words, like the site's nav */
@@ -987,7 +1047,7 @@ button.quiet:hover {
 .lookback {
   padding: var(--s3);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: var(--card);
 }
 
@@ -1059,7 +1119,7 @@ button.quiet:hover {
   grid-template-columns: repeat(48, 1fr);
   height: 1.5rem;
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
+  border-radius: 0;
   overflow: hidden;
   background: var(--bg);
 }
@@ -1094,7 +1154,7 @@ button.quiet:hover {
   margin: 0 0 var(--s3);
   padding: var(--s3);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: var(--card);
 }
 
@@ -1135,7 +1195,7 @@ button.quiet:hover {
   min-height: 2.75rem;
   padding: 6px 12px;
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: var(--card);
   color: var(--fg);
   font: inherit;
@@ -1173,7 +1233,6 @@ button.quiet:hover {
 }
 
 /* the small heading on a box is a plain label, in the UI's sans */
-.breakbox h2,
 .work h2,
 .account-box h2 {
   font-family: var(--font-body);
@@ -1188,7 +1247,7 @@ button.quiet:hover {
   margin-top: 12px;
   padding: var(--s4);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: var(--card);
   overflow-wrap: anywhere;
 }
@@ -1209,7 +1268,7 @@ button.quiet:hover {
 
 .readme-sheet code {
   padding: 0 0.25rem;
-  border-radius: 0.25rem;
+  border-radius: 0;
   background: var(--accent-soft);
   font-size: 0.9em;
 }
