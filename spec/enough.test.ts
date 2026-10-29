@@ -3,7 +3,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { dayAfter, drawerHeading, isDue, weekLater } from "../src/lib/later.ts";
-import { DESCRIPTION_MAX, DRAWER_MAX, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE, WORRY_AFTER_DAYS, WORRY_MAX } from "../src/lib/limits.ts";
+import { BREAK_KINDS, DESCRIPTION_MAX, DRAWER_MAX, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE, WORRY_AFTER_DAYS, WORRY_MAX } from "../src/lib/limits.ts";
 import { periodLabel, periodRange, summarise } from "../src/lib/summary.ts";
 
 // The product rules that can be checked, against the running app: a shared
@@ -383,11 +383,11 @@ describe("breaks", () => {
     );
     expect(received).toContain(`then walk ${tag}`);
     let feed = await browser().get("/");
-    expect(feed).toContain("Then went for a walk.");
+    expect(feed).toContain(BREAK_KINDS.walk.going);
     expect(feed).not.toContain("3 hours");
     await author.rest({ end: "1" });
     feed = await browser().get("/");
-    expect(feed).toContain("back from a walk");
+    expect(feed).toContain(BREAK_KINDS.walk.back);
   });
 });
 

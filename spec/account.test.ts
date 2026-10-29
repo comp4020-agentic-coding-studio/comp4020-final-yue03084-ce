@@ -70,7 +70,10 @@ describe("accounts", () => {
     expect(res.status).toBe(303);
     await me.declare({ description: `after account ${tag}`, notes: `<p>private ${tag}</p>` });
     const mine = await me.get("/mine/all/");
-    expect(mine).toMatch(/you show as A block #\d+/);
+    // a colour and a thing, never a number from the database
+    const shown = /you show as\s+([^.<]+)\./.exec(mine)?.[1]?.trim() ?? "";
+    expect(shown).toMatch(/^[A-Z][a-z]+ [a-z][a-z ]*[a-z](?: [IVX]+)?$/);
+    expect(shown).not.toMatch(/#|\d/);
     expect(mine).toContain(`after account ${tag}`);
     expect(mine).toContain(`private ${tag}`);
   });

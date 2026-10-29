@@ -7,7 +7,7 @@ const createdAt = () =>
     .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`);
 
 // Anyone who has written something. No account needed: the token lives in a
-// cookie, and the public name is derived from the id (displayName in db.ts).
+// cookie, and the public name is derived from the id (displayName in names.ts).
 // An account is optional: username and password_hash are added to this same
 // row, so registering never makes a new person. The username is only ever
 // shown to its owner. It's stored lower-cased, so uniqueness ignores case.

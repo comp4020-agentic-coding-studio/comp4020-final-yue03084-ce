@@ -1,6 +1,8 @@
 import { JSDOM } from "jsdom";
 import { describe, expect, inject, it } from "vitest";
 import { NOTE_COLOURS } from "../src/lib/limits";
+import { displayName } from "../src/lib/names";
+import { relativeWhen } from "../src/lib/when";
 
 // The look, as far as the server's HTML can show it: every page says it has
 // a light and a dark scheme, the note colours' dark shades come from
@@ -100,5 +102,37 @@ describe("the look", () => {
     const doc = await page("/");
     for (const fig of doc.querySelectorAll(".scene, .meadow")) expect(fig.getAttribute("aria-hidden")).toBe("true");
     expect(doc.getElementById("resting")?.getAttribute("aria-live")).toBe("polite");
+  });
+});
+
+// When something was put down, said the way people say it. Sydney days, as
+// every date on the site is; `now` is passed in, so the clock needn't move.
+describe("relative times (when.ts)", () => {
+  // Wednesday 29 October 2026, 2pm in Sydney (AEDT, UTC+11)
+  const now = Date.parse("2026-10-29T03:00:00Z");
+  const at = (iso: string) => relativeWhen(iso, now);
+  it("minutes within the hour, hours the same day", () => {
+    expect(at("2026-10-29T02:59:40Z")).toBe("Just now");
+    expect(at("2026-10-29T02:48:00Z")).toBe("12 min ago");
+    expect(at("2026-10-29T01:30:00Z")).toBe("1 hour ago");
+    expect(at("2026-10-28T14:00:00Z")).toBe("13 hours ago"); // 1am Sydney, today
+  });
+  it("Yesterday by the Sydney day, then the weekday, then the date without a year", () => {
+    expect(at("2026-10-28T12:59:00Z")).toBe("Yesterday"); // 11:59pm Sydney on the 28th
+    expect(at("2026-10-26T03:00:00Z")).toBe("Mon");
+    expect(at("2026-10-23T03:00:00Z")).toBe("Fri");
+    expect(at("2026-10-21T03:00:00Z")).toBe("21 Oct");
+  });
+});
+
+// The name on the feed tells writers apart without a number from the database.
+describe("public names (names.ts)", () => {
+  it("is a colour and a thing, the same for the same person, different for others", () => {
+    expect(displayName(1)).toBe("Sage pebble");
+    expect(displayName(1)).toBe(displayName(1));
+    const first = Array.from({ length: 256 }, (_, i) => displayName(i + 1));
+    expect(new Set(first).size).toBe(256);
+    for (const n of first) expect(n).not.toMatch(/#|\d/);
+    expect(displayName(257)).toBe("Sage pebble II");
   });
 });

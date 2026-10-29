@@ -3,6 +3,7 @@ import MineTop from "../../components/MineTop.astro";
 import Page from "../../layouts/Page.astro";
 import { mine } from "../../lib/db";
 import { DRAWER_MAX, PRESET_REPLIES, type PresetKey, URGE_CHOICES } from "../../lib/limits";
+import { fullWhen, relativeWhen } from "../../lib/when";
 import { isHtml } from "../../lib/notes";
 import { describeSpan, parseSpans, roughly } from "../../lib/spans";
 import { currentPerson } from "../../lib/person";
@@ -21,14 +22,14 @@ const miniBar = (text: string) => {
   const pct = (m: number) => ((m - from) / (to - from)) * 100;
   return { from: from / 60, to: to / 60, parts: spans.map((x) => ({ left: pct(x.from), width: pct(x.to) - pct(x.from) })) };
 };
-const when = (iso: string) =>
-  new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Sydney", dateStyle: "medium", timeStyle: "short" });
+// the full date where it's a sentence ("You called this enough on …")
+const when = fullWhen;
 ---
 
 <Page title="Mine">
   <h1>What you put down</h1>
   <MineTop person={person} hasRows={rows.length > 0} />
-  {person?.username && rows.length === 0 && <p>Nothing yet. <a href="/enough/">Call something enough.</a></p>}
+  {person?.username && rows.length === 0 && <p>Nothing yet. <a href="/enough/">Call something enough</a></p>}
   <ol class="feed mine">
     {
       rows.map((e) => (
@@ -37,7 +38,7 @@ const when = (iso: string) =>
             <q>{e.description}</q> <span class="tag">{e.shared ? "shared" : "just you"}</span>
           </p>
           <p class="when">
-            <time datetime={e.createdAt}>{when(e.createdAt)}</time>
+            <time datetime={e.createdAt} title={fullWhen(e.createdAt)}>{relativeWhen(e.createdAt)}</time>
           </p>
           <dl>
             {e.hours !== null && (
@@ -87,7 +88,7 @@ const when = (iso: string) =>
             <p class="replies-got">
               {(Object.entries(PRESET_REPLIES) as [PresetKey, string][])
                 .filter(([key]) => e.replies[key])
-                .map(([key, label]) => `${label} ×${e.replies[key]}`)
+                .map(([key, label]) => `${label} ${e.replies[key]}`)
                 .join(" · ") || "No replies yet."}
             </p>
           )}

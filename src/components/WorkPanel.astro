@@ -119,7 +119,7 @@ const resting = view?.state === "resting";
         <form method="post" action="/work/" class="alarm-rest">
           <input type="hidden" name="action" value="rest" />
           <fieldset class="choices">
-            <legend>Okay, go and rest:</legend>
+            <legend>Okay, go and rest</legend>
             {Object.entries(BREAK_KINDS).map(([key, k], i) => (
               <label class="inline">
                 <input type="radio" name="kind" value={key} checked={i === 0} />

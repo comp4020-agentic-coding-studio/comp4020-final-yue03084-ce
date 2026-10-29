@@ -115,9 +115,13 @@ h1 {
   margin: 0;
 }
 
+/* balanced lines, in all the width the button leaves (max-width keeps the
+   box from shrinking to the balanced text) */
 .lede .description {
   margin: 0;
-  flex: 1 1 18rem;
+  flex: 1 1 0;
+  min-width: 16rem;
+  text-wrap: balance;
   font-family: var(--font-head);
   font-size: 1.125rem;
   line-height: 1.45;
@@ -240,12 +244,14 @@ small,
 
 /* under a record: the preset replies and "Reply", one row of small text
    buttons, each with a 44px tall tap area */
+/* the 44px tap rows overhang the text by 12px top and bottom; pull them up
+   so the gap that shows above the reactions is about 8px */
 .actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0 var(--s3);
-  margin-top: var(--s1);
+  margin-top: -4px;
 }
 
 .replies {
@@ -278,10 +284,9 @@ small,
   color: var(--accent-hover);
 }
 
+/* the count reads as part of the label: "Well done 1" */
 .count {
-  margin-left: var(--s1);
-  color: var(--fg);
-  font-weight: 600;
+  margin-left: 0.25em;
 }
 
 /* a count of 0 says nothing */
@@ -561,7 +566,7 @@ footer a[aria-current="page"] {
 
 /* on the feed the thing put down is the card's headline; who and when sit above it */
 .card .what {
-  margin: 2px 0 0;
+  margin: 6px 0 0;
   font-family: var(--font-head);
   font-size: 1.125rem;
   line-height: 1.4;
@@ -718,7 +723,7 @@ button.danger:hover {
 
 /* the label and the choices run on like one sentence, wrapping word by word */
 .break-line {
-  margin-top: var(--s2);
+  margin-top: var(--s1);
 }
 
 .break-line > h2,
@@ -742,6 +747,17 @@ button.danger:hover {
   color: var(--fg);
 }
 
+/* one line box for the label and the links, so they share a baseline; each
+   line as tall as the links' 44px tap rows, so a wrapped line sits evenly */
+.break-line {
+  font-size: 0.9375rem;
+  line-height: 2.75rem;
+}
+
+.break-line > h2 {
+  line-height: inherit;
+}
+
 .resting {
   margin: 0;
   color: var(--muted);
@@ -757,16 +773,16 @@ button.danger:hover {
 }
 
 /* the choices are links in a row, " · " between them; still the same
-   submit buttons, each 44px tall to tap */
+   submit buttons, each as tall as the line (44px) to tap */
 .break-go button,
 .break-back button {
-  min-height: 2.75rem;
   padding: 0;
   border: 0;
   background: none;
   color: var(--accent);
   font: inherit;
-  font-size: 0.9375rem;
+  line-height: inherit;
+  vertical-align: baseline;
   cursor: pointer;
 }
 
@@ -775,10 +791,6 @@ button.danger:hover {
   background: none;
   text-decoration: underline;
   text-underline-offset: 0.2em;
-}
-
-.break-go button {
-  vertical-align: middle;
 }
 
 /* the dot follows a choice, so when the line wraps it stays at the end of
@@ -811,7 +823,7 @@ button.danger:hover {
 }
 
 .card .rest {
-  margin: 2px 0 0;
+  margin: 6px 0 0;
   color: var(--muted);
   font-size: 0.8125rem;
 }

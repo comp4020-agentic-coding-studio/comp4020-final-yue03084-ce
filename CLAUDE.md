@@ -29,12 +29,16 @@ because they don't depend on that stack.
   the resting count and comments. Calling something enough, replying,
   commenting, reporting, a break, a recheck and deleting all need an account,
   checked on the server by one function (`signedInPerson`) in every write
-  route. The username is never public: on the feed everyone is still "A block
-  #N". *(Records kept only in a cookie are lost with the browser, and a done
-  list has to last; markers also come back the next day. Decided 2026-10-20.)*
+  route. The username is never public: on the feed everyone is a colour and
+  a thing ("Sage pebble"), fixed per account id by `displayName` in
+  `src/lib/names.ts`. *(Records kept only in a cookie are lost with the
+  browser, and a done list has to last; markers also come back the next day.
+  Decided 2026-10-20. The name was "A block #N" until 2026-10-29, when it
+  read as a database id; it still tells writers apart.)*
 - **Logs say who did what, never what they wrote.** Every request gets one
   line, and every meaningful action an event line (`src/lib/log.ts`,
-  `src/middleware.ts`), tagged with the request id. Who is a block number.
+  `src/middleware.ts`), tagged with the request id. Who is a block number (the account id behind
+  the feed's name).
   Never a username, password, cookie or token, and never a description,
   notes, hours, feeling or comment text. *(Crit 10 is narrated from the logs
   alone, and the logs outlive it. A log line is read by whoever reads the

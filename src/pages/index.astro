@@ -7,6 +7,7 @@ import Page from "../layouts/Page.astro";
 import { sharedFeed } from "../lib/db";
 import { signedInPerson } from "../lib/person";
 import { BREAK_KINDS, COMMENT_PROMPT, PRESET_REPLIES, REPLY_MAX } from "../lib/limits";
+import { fullWhen, relativeWhen } from "../lib/when";
 
 // The public feed: moments when someone stopped. Only shared enoughs, and only
 // their one-line description (CLAUDE.md: "Show stopping, never finishing").
@@ -14,8 +15,6 @@ import { BREAK_KINDS, COMMENT_PROMPT, PRESET_REPLIES, REPLY_MAX } from "../lib/l
 const feed = sharedFeed();
 // reading needs nothing; replying, commenting and reporting need an account
 const canJoin = Boolean(signedInPerson(Astro.cookies));
-const when = (iso: string) =>
-  new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Sydney", dateStyle: "medium", timeStyle: "short" });
 ---
 
 <Page>
@@ -47,11 +46,11 @@ const when = (iso: string) =>
       feed.map((e) => (
         <li class="card" data-enough={e.id}>
           <p class="when">
-            <span class="who">{e.name}</span> · <time datetime={e.createdAt}>{when(e.createdAt)}</time>
+            <span class="who">{e.name}</span> · <time datetime={e.createdAt} title={fullWhen(e.createdAt)}>{relativeWhen(e.createdAt)}</time>
           </p>
           <p class="what">{e.description}</p>
           <p class="rest" data-rest={e.id}>
-            {e.rest && (e.rest.back ? `Then took a break, and is ${BREAK_KINDS[e.rest.kind].back}.` : `Then ${BREAK_KINDS[e.rest.kind].going}.`)}
+            {e.rest && BREAK_KINDS[e.rest.kind][e.rest.back ? "back" : "going"]}
           </p>
           <div class="actions">
             <Replies enoughId={e.id} counts={e.replies} canReply={canJoin} />
@@ -66,6 +65,7 @@ const when = (iso: string) =>
 
   <script>
     import type { PublicEnough } from "../lib/db";
+    import { fullWhen, relativeWhen } from "../lib/when";
 
     const feed = document.getElementById("feed") as HTMLOListElement;
     const presets: Record<string, string> = JSON.parse(feed.dataset.presets ?? "{}");
@@ -75,8 +75,7 @@ const when = (iso: string) =>
     const breakKinds: Record<string, { going: string; back: string }> = JSON.parse(feed.dataset.breaks ?? "{}");
 
     // the same words the card above renders for a break taken after an enough
-    const restLine = (e: PublicEnough) =>
-      !e.rest ? "" : e.rest.back ? `Then took a break, and is ${breakKinds[e.rest.kind]?.back}.` : `Then ${breakKinds[e.rest.kind]?.going}.`;
+    const restLine = (e: PublicEnough) => (!e.rest ? "" : (breakKinds[e.rest.kind]?.[e.rest.back ? "back" : "going"] ?? ""));
 
     // the same markup Comments.astro renders, from a PublicEnough's comments;
     // textContent throughout, so nobody's words become markup
@@ -144,8 +143,6 @@ const when = (iso: string) =>
       return box;
     }
 
-    const when = (iso: string) =>
-      new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Sydney", dateStyle: "medium", timeStyle: "short" });
 
     // the same markup Replies.astro and the card above render, built from a
     // PublicEnough; textContent throughout, so nobody's words become markup
@@ -160,7 +157,8 @@ const when = (iso: string) =>
       who.textContent = e.name;
       const time = document.createElement("time");
       time.dateTime = e.createdAt;
-      time.textContent = when(e.createdAt);
+      time.title = fullWhen(e.createdAt);
+      time.textContent = relativeWhen(e.createdAt);
       meta.append(who, " · ", time);
       const line = document.createElement("p");
       line.className = "what";
@@ -267,6 +265,14 @@ const when = (iso: string) =>
       const res = await fetch("/reply/", { method: "POST", body, headers: { accept: "application/json" } });
       if (res.ok) updateCounts(await res.json());
     });
+
+    // "12 min ago" ages while the page is open: say it again from the
+    // reader's clock now, and every minute
+    const retime = () => {
+      for (const t of feed.querySelectorAll<HTMLTimeElement>("time[datetime]")) t.textContent = relativeWhen(t.dateTime);
+    };
+    retime();
+    setInterval(retime, 60_000);
 
     const source = new EventSource("/api/events");
     source.addEventListener("enough", (event) => {

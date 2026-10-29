@@ -18,6 +18,7 @@ import {
   WORRY_MAX,
 } from "./limits";
 import { dayAfter, isDue, weekLater } from "./later";
+import { displayName } from "./names";
 import { cleanNotes } from "./notes";
 import { hoursIn, parseSpans, spansText } from "./spans";
 import {
@@ -53,9 +54,8 @@ migrate(db, { migrationsFolder: "./drizzle" });
 
 export type { Enough, Person };
 
-// The public name: derived from the id, so it never says who someone is but
-// does let people tell each other apart.
-export const displayName = (personId: number) => `A block #${personId}`;
+// The public name (names.ts): a colour and a thing, fixed for each person.
+export { displayName };
 
 // The cookie holds either the token a person was made with, or a session
 // token from logging in (accounts.ts).
