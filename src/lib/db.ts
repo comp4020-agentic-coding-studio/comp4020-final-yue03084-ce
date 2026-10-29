@@ -54,8 +54,6 @@ migrate(db, { migrationsFolder: "./drizzle" });
 
 export type { Enough, Person };
 
-// The public name (names.ts): a colour and a thing, fixed for each person.
-export { displayName };
 
 // The cookie holds either the token a person was made with, or a session
 // token from logging in (accounts.ts).
@@ -139,7 +137,8 @@ function visibleComments(ids: number[]): Map<number, PublicComment[]> {
     .all();
   for (const row of rows) {
     const list = out.get(row.enoughId) ?? [];
-    list.push({ id: row.id, name: displayName(row.personId), text: row.text, createdAt: row.createdAt });
+    // each comment its own name, never its writer's (names.ts)
+    list.push({ id: row.id, name: displayName(row.id), text: row.text, createdAt: row.createdAt });
     out.set(row.enoughId, list);
   }
   return out;
@@ -169,7 +168,8 @@ const toPublic = (
   rest: PublicEnough["rest"] = null,
 ): PublicEnough => ({
   id: row.id,
-  name: displayName(row.personId),
+  // each enough its own name, never its writer's (names.ts)
+  name: displayName(row.id),
   description: row.description,
   createdAt: row.createdAt,
   replies: counts,

@@ -9,8 +9,8 @@ import { randomBytes } from "node:crypto";
 //   [a3f9c1] POST /comment/ 303 6ms block=6
 //   [a3f9c1] comment_added block=6 enough=12 comment=3
 //
-// Who is a block number: the account id, from which the feed's name
-// ("Sage pebble", names.ts) is made. Never a username,
+// Who is a block number: the account id. The feed never shows it (each
+// enough there has its own name, names.ts). Never a username,
 // password, cookie or token, and never what someone wrote: no description,
 // notes, hours, feeling or comment text. CLAUDE.md: "Logs say who did what,
 // never what they wrote".

@@ -111,6 +111,26 @@ describe("a shared enough", () => {
 });
 
 describe("what stays private", () => {
+  // each shared enough and comment has a name of its own, so nobody can
+  // tell two are by the same person, or count how often someone stops
+  it("gives each shared enough its own name, even two by the same person", async () => {
+    const tag = marker();
+    const author = await signedIn();
+    await author.declare({ description: `first ${tag}`, shared: "on" });
+    await author.declare({ description: `second ${tag}`, shared: "on" });
+    const feed = await browser().get("/");
+    // the name on the card holding `text`, read card by card
+    const nameOf = (text: string) => {
+      const card = feed.split('<li class="card"').find((c) => c.includes(text)) ?? "";
+      return /class="who">([^<]+)</.exec(card)?.[1] ?? "";
+    };
+    const first = nameOf(`first ${tag}`);
+    const second = nameOf(`second ${tag}`);
+    expect(first).toMatch(/^[A-Z][a-z]+ [a-z]/);
+    expect(second).toMatch(/^[A-Z][a-z]+ [a-z]/);
+    expect(first).not.toBe(second);
+  });
+
   it("an unshared enough reaches nobody else, on the feed or the stream", async () => {
     const tag = marker();
     const author = await signedIn();

@@ -1,5 +1,5 @@
 ---
-import { displayName, type Person } from "../lib/db";
+import type { Person } from "../lib/db";
 import { workView } from "../lib/work";
 import LaterNotes from "./LaterNotes.astro";
 
@@ -23,8 +23,8 @@ const pages = [
 {
   person?.username ? (
     <p class="hint">
-      Signed in as <strong>{person.username}</strong> · on the feed you show as {displayName(person.id)}. Only you can
-      see this page. <a href="/account/">Account</a>
+      Signed in as <strong>{person.username}</strong>. On the feed each thing you share gets its own name, so nobody can
+      tell two are yours. Only you can see this page. <a href="/account/">Account</a>
     </p>
   ) : (
     /* not signed in: say plainly that this page needs an account, and give

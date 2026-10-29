@@ -2,7 +2,6 @@
 import { logEvent } from "../lib/log";
 import Page from "../layouts/Page.astro";
 import { hasRecords, logIn, logOut, register } from "../lib/accounts";
-import { displayName } from "../lib/db";
 import { PASSWORD_MIN, USERNAME_MAX, USERNAME_MIN } from "../lib/limits";
 import { clearPersonCookie, cookieToken, currentPerson, ensurePerson, setPersonCookie } from "../lib/person";
 
@@ -64,14 +63,14 @@ const leavesBehind = person && !person.username && hasRecords(person);
   <h1>Sign in</h1>
   <p class="hint">
     Anyone can read the feed. To call something enough, reply or take a break, you need an account: it keeps what you
-    write safe and lets you open it from any browser. On the feed you only ever show as a block number.
+    write safe and lets you open it from any browser. On the feed each thing you share gets its own name, never yours.
   </p>
 
   {
     signedIn && person ? (
       <section class="account-box">
         <p>
-          Signed in as <strong>{person.username}</strong>. On the feed you still show as {displayName(person.id)}; your
+          Signed in as <strong>{person.username}</strong>. On the feed each thing you share gets its own name; your
           username is never shown to anyone else.
         </p>
         <form method="post" class="inline-form">
@@ -85,7 +84,7 @@ const leavesBehind = person && !person.username && hasRecords(person);
           <h2 id="register-h">Create an account</h2>
           <p class="hint">
             {person
-              ? `Everything you've written as ${displayName(person.id)} stays yours, under this username.`
+              ? "Everything you've written in this browser stays yours, under this username."
               : "Pick a username and password."}
           </p>
           {refused?.form === "register" && (
