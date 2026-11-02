@@ -77,7 +77,7 @@ When I first thought of a companion, I wanted it in the pixel style of
 Stardew Valley, a game I love. Pixel art also leaves more room to play later:
 it can wear things. I gave the agent a four-step spec and checked each step
 from screenshots ([9504f28](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/9504f28)). The little one now works in a small
-taped-in picture, its sky following the clock, and each time you start, its
+picture, its sky following the clock, and each time you start, its
 tower begins again, sized to your alarm ([75a4d8b](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/75a4d8b)). On the feed,
 everyone on a break sits together on a pixel meadow, live, never saying who
 ([05e7aec](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/05e7aec)).
