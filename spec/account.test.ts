@@ -10,14 +10,21 @@ const baseUrl = inject("baseUrl");
 // One browser: a cookie jar of one cookie, sending what a browser would on a
 // same-origin form POST (see spec/enough.test.ts).
 function browser() {
-  let cookie = "";
+  // every cookie the app sets, by name (the person, and the recovery code
+  // that rides the redirect after registering); an expired one is dropped
+  const jar = new Map<string, string>();
   const send = async (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
-    if (cookie) headers.set("cookie", cookie);
+    if (jar.size) headers.set("cookie", [...jar].map(([k, v]) => `${k}=${v}`).join("; "));
     if (init.method === "POST") headers.set("sec-fetch-site", "same-origin");
     const res = await fetch(new URL(path, baseUrl), { ...init, headers, redirect: "manual" });
-    const set = res.headers.get("set-cookie");
-    if (set) cookie = set.split(";")[0];
+    for (const set of res.headers.getSetCookie()) {
+      const [pair] = set.split(";");
+      const at = pair.indexOf("=");
+      const [name, value] = [pair.slice(0, at), pair.slice(at + 1)];
+      if (value === "" || /max-age=0|expires=thu, 01 jan 1970/i.test(set)) jar.delete(name);
+      else jar.set(name, value);
+    }
     return res;
   };
   const post = (path: string, fields: Record<string, string>) =>
@@ -184,6 +191,22 @@ describe("the account page", () => {
     expect(await browser().get("/")).toContain('class="me-signin"');
   });
 
+  it("gives a recovery code right after registering, shown once", async () => {
+    const username = newName();
+    const me = browser();
+    const res = await me.register(username, PASSWORD);
+    expect(res.headers.get("location")).toBe("/account/?welcome");
+    // the code rides a short-lived cookie, never the address
+    expect(res.headers.get("location")).not.toMatch(/[a-z0-9]{4}-[a-z0-9]{4}/);
+    const first = await me.get("/account/?welcome");
+    const code = codeOn(first);
+    expect(code).toMatch(/^[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/);
+    expect(codeOn(await me.get("/account/?welcome"))).toBe("");
+    // and it works
+    const fresh = browser();
+    expect((await fresh.account({ action: "recover", username, code, password: "a-recovered-password" })).status).toBe(200);
+  });
+
   it("changing the password needs the current one, and signs out every other browser", async () => {
     const tag = marker();
     const username = newName();
@@ -215,6 +238,7 @@ describe("the account page", () => {
     const me = browser();
     await me.register(username, PASSWORD);
     await me.declare({ description: `recovered ${tag}` });
+    // registering gave one already; making another replaces it
     const code = codeOn(await (await me.account({ action: "code" })).text());
     expect(code).toMatch(/^[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/);
     // shown once: reloading the page doesn't show it again

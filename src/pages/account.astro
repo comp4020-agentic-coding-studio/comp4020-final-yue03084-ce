@@ -36,6 +36,7 @@ let refused: { form: Form; reason: string } | null = null;
 let done: { form: Form; text: string } | null = null;
 // a recovery code, shown once, right after it's made
 let freshCode: string | null = null;
+const JUST_MADE = "new-code";
 let typed = "";
 
 if (Astro.request.method === "POST") {
@@ -56,7 +57,19 @@ if (Astro.request.method === "POST") {
       block: outcome.ok ? outcome.value.id : undefined,
       reason: outcome.ok ? undefined : outcome.reason,
     });
-    if (outcome.ok) return Astro.redirect("/account/", 303);
+    if (outcome.ok) {
+      // a recovery code from the start, so nobody is left without one. It
+      // rides the redirect in a short-lived cookie (never the address, which
+      // stays in history), and the page shows it once and drops it.
+      Astro.cookies.set(JUST_MADE, newRecoveryCode(outcome.value.id), {
+        path: "/account/",
+        httpOnly: true,
+        sameSite: "lax",
+        secure,
+        maxAge: 300,
+      });
+      return Astro.redirect("/account/?welcome", 303);
+    }
     refused = { form: "register", reason: outcome.reason };
   } else if (action === "login") {
     const outcome = logIn(username, password, device);
@@ -134,6 +147,12 @@ if (Astro.request.method === "POST") {
   if (refused) Astro.response.status = 400;
 }
 
+// the code made at registering, shown on the page it redirected to, once
+const justMade = Astro.cookies.get(JUST_MADE)?.value;
+if (justMade) {
+  Astro.cookies.delete(JUST_MADE, { path: "/account/" });
+  if (Astro.request.method === "GET") freshCode = justMade;
+}
 const person = currentPerson(Astro.cookies);
 const me = person?.username ? person : undefined;
 // logging in here would switch away from what this browser wrote without an account
@@ -158,6 +177,22 @@ const said = (form: Form) =>
     me ? (
       <>
         <h1>Account</h1>
+        {freshCode && Astro.url.searchParams.has("welcome") && (
+          <section class="welcome" aria-labelledby="welcome-h">
+            <h2 id="welcome-h">Your account is ready. Keep this recovery code.</h2>
+            <p>
+              There's no email here, so if you ever forget your password, this code is the only way back in. It's shown
+              just this once:
+            </p>
+            <p class="code" data-code>
+              {freshCode}
+            </p>
+            <p class="hint">
+              Write it down or keep it in a password manager. Signed in, you can make a new one below at any time.
+            </p>
+            <a class="button" href="/">I've saved it</a>
+          </section>
+        )}
         {done?.form === "recover" && (
           <p class="done" role="status">
             {done.text}
@@ -201,7 +236,7 @@ const said = (form: Form) =>
 
         <section class="account-section" id="recovery" aria-labelledby="recovery-h">
           <h2 id="recovery-h">Recovery code</h2>
-          {freshCode ? (
+          {freshCode && !Astro.url.searchParams.has("welcome") ? (
             <div class="code-shown" role="status">
               <p>Your recovery code. It's shown only this once, so keep it somewhere safe:</p>
               <p class="code" data-code>
@@ -364,7 +399,7 @@ const said = (form: Form) =>
                   </button>
                 </span>
               </label>
-              <p class="hint">There's no email here. Once you're in, make a recovery code on your account page.</p>
+              <p class="hint">There's no email here. Next you'll get a recovery code, in case you forget your password.</p>
               <button type="submit" class="wide">
                 Create account
               </button>

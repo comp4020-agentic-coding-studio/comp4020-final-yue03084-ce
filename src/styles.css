@@ -1211,6 +1211,25 @@ button[type="submit"].wide {
   margin: var(--s1) 0 var(--s2);
 }
 
+/* right after registering: the recovery code, before anything else */
+.welcome {
+  margin: 0 0 var(--s4);
+  padding: var(--s4);
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+}
+
+.welcome h2 {
+  margin: 0 0 var(--s2);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.welcome p {
+  margin: 0 0 var(--s3);
+}
+
 .code-shown {
   margin-bottom: var(--s3);
 }
