@@ -23,11 +23,15 @@ there to speak for you at that moment.
 
 ## What's there now
 
-You can call something enough, with a one-line description, and choose
+Anyone can read; writing needs an account, but no email: when you sign up you
+get a recovery code, the only way back in if you forget your password. You can
+call something enough, with a one-line description, and choose
 whether to share it. Just for you, you can colour in the hours you worked on a
 time bar with a crayon, say how it felt, and note what you did and checked.
 Others see what's shared appear live, and can reply with a preset response or a
-short comment; three reports hide a comment. You can take a break: the feed
+short comment; three reports hide a comment. Each shared enough and comment
+gets its own name, like "Sage pebble", so two by the same person can't be told
+apart. You can take a break: the feed
 shows how many people are resting and, after a shared "enough", where they
 went, never for how long. Under the resting count, a small pixel meadow shows
 a little one for each person on a break, doing what they went to do, live for
@@ -44,7 +48,7 @@ can delete anything you've written.
 
 On Working on it, you can start a stretch of work and set an Enough alarm,
 after a number of minutes or at a time of day. A little one builds a crooked
-tower alongside you, in a small pixel picture taped into the page. Each time
+tower alongside you, in a small pixel picture. Each time
 you start, the tower begins again, sized to your alarm. The sky
 follows your clock, and you can choose what else is in the picture (a lamp, a
 little plant, or just the view) and the weather. When the alarm goes, it gets
