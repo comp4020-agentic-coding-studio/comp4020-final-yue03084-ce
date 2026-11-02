@@ -50,10 +50,20 @@ commit (see "A feature lands with its test").
   Decided 2026-10-20. Until 2026-10-29 everyone was "A block #N", one name
   per person; that read as a database id, and it let anyone count how often
   one person stopped, the comparison this app avoids.)*
+  The username shows only to its owner: in the nav's corner (beside their
+  own little one's head, `Avatar.astro`) and on `/account/`. There's no
+  email: a recovery code (shown once, kept hashed) sets a new password, and
+  changing the password or using the code signs out every other browser.
+  Deleting an account takes everything, its shared enoughs and comments too.
+  *(Account page added 2026-11-02: the old one read as too bare for a real
+  site. Email was weighed and left out: sending mail needs an outside
+  service and a domain, and an email field that did nothing would be empty.)*
   **Guarded by:** `enough.test.ts` "every write is refused, and nothing is
   written", "gives each shared enough its own name, even two by the same
   person"; `account.test.ts` "never shows the username or password to anyone
-  else, on the feed or the stream"; `ui.test.ts` "public names (names.ts)".
+  else, on the feed or the stream", and "the account page" (the corner, the
+  password, the recovery code, devices, deleting, each refused signed out);
+  `ui.test.ts` "public names (names.ts)".
   The first finds every page under `src/pages` that takes a POST, so a new
   write route is tried the day it's added, and checks it's refused with a
   redirect to `/account/` (or a 401). *(On 2026-10-29 that found `/delete/`,
@@ -67,8 +77,10 @@ commit (see "A feature lands with its test").
   alone, and the logs outlive it. A log line is read by whoever reads the
   logs, so it holds nothing a person wouldn't want there. Decided
   2026-10-21.)*
+  Nor a recovery code, or which browser someone uses.
   **Guarded by:** `lasting.test.ts` "does everything private once, and the
-  log holds none of it" (boots its own server and reads what it prints);
+  log holds none of it" (boots its own server and reads what it prints;
+  includes making and using a recovery code);
   `log.test.ts` for the line format. A new kind of private field needs
   adding to that spec's `secret`.
 - **No streaks, rankings or public totals.** Nothing that rewards keeping

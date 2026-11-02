@@ -1,25 +1,53 @@
 ---
 import { logEvent } from "../lib/log";
 import Page from "../layouts/Page.astro";
-import { hasRecords, logIn, logOut, register } from "../lib/accounts";
+import Avatar from "../components/Avatar.astro";
+import {
+  changePassword,
+  deleteAccount,
+  deviceName,
+  devicesOf,
+  endSession,
+  endSessions,
+  hasRecords,
+  hasRecoveryCode,
+  logIn,
+  logOut,
+  newRecoveryCode,
+  recover,
+  register,
+} from "../lib/accounts";
+import { bus, emitResting } from "../lib/events";
 import { PASSWORD_MIN, USERNAME_MAX, USERNAME_MIN } from "../lib/limits";
+import { outfitOf } from "../lib/outfit";
 import { clearPersonCookie, cookieToken, currentPerson, ensurePerson, setPersonCookie } from "../lib/person";
+import { fullWhen, relativeWhen } from "../lib/when";
 
 // Accounts: anyone can read the feed, but writing needs one (signedInPerson).
-// Creating one keeps whatever this browser already wrote; signing in from
-// another browser gives the same person. The username is shown only here, to
-// its owner.
+// Signed out, this page is one form at a time: sign in, create an account,
+// or set a new password with a recovery code. Signed in, it's the account:
+// who you are (your own little one's head and your username), your password,
+// a recovery code, where you're signed in, and deleting it all. The username
+// is shown only here and in the nav's corner, to its owner.
 const secure = Astro.url.protocol === "https:";
-let refused: { form: "register" | "login"; reason: string } | null = null;
+const device = deviceName(Astro.request.headers.get("user-agent"));
+type Form = "register" | "login" | "recover" | "password" | "devices" | "delete";
+let refused: { form: Form; reason: string } | null = null;
+let done: { form: Form; text: string } | null = null;
+// a recovery code, shown once, right after it's made
+let freshCode: string | null = null;
 let typed = "";
 
 if (Astro.request.method === "POST") {
   // a POST with no form body (not one a page sends) is just ignored
   const form = await Astro.request.formData().catch(() => new FormData());
   const action = String(form.get("action") ?? "");
-  const username = String(form.get("username") ?? "");
-  const password = String(form.get("password") ?? "");
+  const field = (name: string) => String(form.get(name) ?? "");
+  const username = field("username");
+  const password = field("password");
   typed = username;
+  const me = currentPerson(Astro.cookies);
+  const signedIn = me?.username ? me : undefined;
 
   if (action === "register") {
     const outcome = register(ensurePerson(Astro.cookies, secure), username, password);
@@ -31,7 +59,7 @@ if (Astro.request.method === "POST") {
     if (outcome.ok) return Astro.redirect("/account/", 303);
     refused = { form: "register", reason: outcome.reason };
   } else if (action === "login") {
-    const outcome = logIn(username, password);
+    const outcome = logIn(username, password, device);
     logEvent(outcome.ok ? "signed_in" : "sign_in_refused", {
       block: outcome.ok ? outcome.value.person.id : undefined,
       reason: outcome.ok ? undefined : outcome.reason,
@@ -41,106 +69,377 @@ if (Astro.request.method === "POST") {
       return Astro.redirect("/mine/", 303);
     }
     refused = { form: "login", reason: outcome.reason };
+  } else if (action === "recover") {
+    const outcome = recover(username, field("code"), password, device);
+    logEvent(outcome.ok ? "password_recovered" : "recover_refused", {
+      block: outcome.ok ? outcome.value.person.id : undefined,
+      reason: outcome.ok ? undefined : outcome.reason,
+    });
+    if (outcome.ok) {
+      setPersonCookie(Astro.cookies, outcome.value.token, secure);
+      // the old code is spent: show the new one now, the only time it's shown
+      freshCode = outcome.value.code;
+      done = { form: "recover", text: "Your password is changed, and you're signed in." };
+    } else refused = { form: "recover", reason: outcome.reason };
   } else if (action === "logout") {
     const token = cookieToken(Astro.cookies);
     // who, before the session it names is gone
-    const block = currentPerson(Astro.cookies)?.id;
+    const block = me?.id;
     if (token) logOut(token);
     logEvent("signed_out", { block });
     clearPersonCookie(Astro.cookies);
     return Astro.redirect("/account/", 303);
+  } else if (!signedIn) {
+    // everything below is for someone signed in (CLAUDE.md: "Writing needs an account")
+    return Astro.redirect("/account/", 303);
+  } else if (action === "password") {
+    const outcome = changePassword(signedIn, field("current"), field("new"), cookieToken(Astro.cookies) ?? null);
+    logEvent(outcome.ok ? "password_changed" : "password_refused", {
+      block: signedIn.id,
+      reason: outcome.ok ? undefined : outcome.reason,
+    });
+    if (outcome.ok) {
+      if (outcome.value) setPersonCookie(Astro.cookies, outcome.value, secure);
+      done = { form: "password", text: "Password changed. Every other browser is signed out." };
+    } else refused = { form: "password", reason: outcome.reason };
+  } else if (action === "code") {
+    freshCode = newRecoveryCode(signedIn.id);
+    logEvent("recovery_code_made", { block: signedIn.id });
+  } else if (action === "signout-others") {
+    const kept = endSessions(signedIn.id, cookieToken(Astro.cookies) ?? null);
+    if (kept) setPersonCookie(Astro.cookies, kept, secure);
+    logEvent("signed_out_elsewhere", { block: signedIn.id });
+    done = { form: "devices", text: "Every other browser is signed out." };
+  } else if (action === "signout-one") {
+    const id = Number(field("session"));
+    if (Number.isInteger(id)) endSession(signedIn.id, id);
+    logEvent("signed_out_one", { block: signedIn.id, session: id });
+    return Astro.redirect("/account/#devices", 303);
+  } else if (action === "delete") {
+    const outcome = deleteAccount(signedIn, password);
+    logEvent(outcome.ok ? "account_deleted" : "delete_account_refused", {
+      block: signedIn.id,
+      shared: outcome.ok ? outcome.value.shared.length : undefined,
+      reason: outcome.ok ? undefined : outcome.reason,
+    });
+    if (outcome.ok) {
+      // every open feed takes their shared enoughs away, and the meadow forgets them
+      for (const id of outcome.value.shared) bus.emit("removed", { id });
+      emitResting();
+      clearPersonCookie(Astro.cookies);
+      return Astro.redirect("/account/?deleted", 303);
+    }
+    refused = { form: "delete", reason: outcome.reason };
   }
   if (refused) Astro.response.status = 400;
 }
 
 const person = currentPerson(Astro.cookies);
-const signedIn = Boolean(person?.username);
+const me = person?.username ? person : undefined;
 // logging in here would switch away from what this browser wrote without an account
 const leavesBehind = person && !person.username && hasRecords(person);
+const deleted = Astro.url.searchParams.has("deleted");
+const devices = me ? devicesOf(me.id, cookieToken(Astro.cookies) ?? null) : [];
+// signed out, which form shows first: the one that was just refused, else
+// sign in (the links between them are anchors, and a little script follows
+// them; without script all three are on the page, one under the other)
+const opening = refused && ["register", "login", "recover"].includes(refused.form) ? refused.form : "login";
+// what to say above a form: why it was refused, or that it worked
+const said = (form: Form) =>
+  refused?.form === form
+    ? { kind: "refused", role: "alert" as const, text: refused.reason }
+    : done?.form === form
+      ? { kind: "done", role: "status" as const, text: done.text }
+      : null;
 ---
 
-<Page title="Sign in">
-  <h1>Sign in</h1>
-  <p class="hint">
-    Anyone can read the feed. To call something enough, reply or take a break, you need an account: it keeps what you
-    write safe and lets you open it from any browser. On the feed each thing you share gets its own name, never yours.
-  </p>
-
+<Page title={me ? "Account" : "Sign in"}>
   {
-    signedIn && person ? (
-      <section class="account-box">
-        <p>
-          Signed in as <strong>{person.username}</strong>. On the feed each thing you share gets its own name; your
-          username is never shown to anyone else.
-        </p>
-        <form method="post" class="inline-form">
+    me ? (
+      <>
+        <h1>Account</h1>
+        {done?.form === "recover" && (
+          <p class="done" role="status">
+            {done.text}
+          </p>
+        )}
+
+        <section class="account-section profile" aria-labelledby="profile-h">
+          <Avatar outfit={outfitOf(me.id)} size={72} />
+          <div>
+            <h2 id="profile-h" class="profile-name">
+              {me.username}
+            </h2>
+            <p class="hint">
+              Joined {new Date(me.createdAt).toLocaleDateString("en-AU", { month: "long", year: "numeric" })}. Only you see
+              your username; on the feed each thing you share gets its own name.
+            </p>
+            <a href="/mine/collection/">Change what your little one wears</a>
+          </div>
+        </section>
+
+        <section class="account-section" id="password" aria-labelledby="password-h">
+          <h2 id="password-h">Password</h2>
+          {said("password") && (<p class={said("password")?.kind} role={said("password")?.role}>{said("password")?.text}</p>)}
+          <form method="post" class="stack" action="/account/#password">
+            <input type="hidden" name="action" value="password" />
+            <input type="text" name="username" value={me.username} autocomplete="username" aria-label="Username" hidden />
+            <label>
+              Current password
+              <input name="current" type="password" required autocomplete="current-password" />
+            </label>
+            <label>
+              New password <small>(at least {PASSWORD_MIN} characters)</small>
+              <input name="new" type="password" required minlength={PASSWORD_MIN} autocomplete="new-password" />
+            </label>
+            <p class="hint">Changing it signs you out everywhere else.</p>
+            <div>
+              <button type="submit">Change password</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="account-section" id="recovery" aria-labelledby="recovery-h">
+          <h2 id="recovery-h">Recovery code</h2>
+          {freshCode ? (
+            <div class="code-shown" role="status">
+              <p>Your recovery code. It's shown only this once, so keep it somewhere safe:</p>
+              <p class="code" data-code>
+                {freshCode}
+              </p>
+              <p class="hint">If you forget your password, this sets a new one. Making a new code replaces this one.</p>
+            </div>
+          ) : (
+            <p class="hint">
+              {hasRecoveryCode(me)
+                ? "You have a recovery code. If you've lost it, make a new one; the old one stops working."
+                : "There's no email here, so this is how you get back in if you forget your password. You don't have one yet."}
+            </p>
+          )}
+          <form method="post" action="/account/#recovery">
+            <input type="hidden" name="action" value="code" />
+            <button type="submit" class="quiet">
+              {hasRecoveryCode(me) || freshCode ? "Make a new code" : "Make a recovery code"}
+            </button>
+          </form>
+        </section>
+
+        <section class="account-section" id="devices" aria-labelledby="devices-h">
+          <h2 id="devices-h">Where you're signed in</h2>
+          {said("devices") && (<p class={said("devices")?.kind} role={said("devices")?.role}>{said("devices")?.text}</p>)}
+          {devices.length === 0 ? (
+            <p class="hint">Only this browser, the one you made your account in.</p>
+          ) : (
+            <ul class="devices">
+              {devices.map((d) => (
+                <li>
+                  <span>
+                    {d.device ?? "A browser"}
+                    {d.here && <span class="this-one"> · this browser</span>}
+                    <small title={fullWhen(d.createdAt)}> · signed in {relativeWhen(d.createdAt).toLowerCase()}</small>
+                  </span>
+                  {!d.here && (
+                    <form method="post" action="/account/#devices">
+                      <input type="hidden" name="action" value="signout-one" />
+                      <input type="hidden" name="session" value={d.id} />
+                      <button type="submit" class="quiet">
+                        Sign out
+                      </button>
+                    </form>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          <form method="post" action="/account/#devices">
+            <input type="hidden" name="action" value="signout-others" />
+            <button type="submit" class="quiet">
+              Sign out everywhere else
+            </button>
+          </form>
+        </section>
+
+        <section class="account-section danger-zone" id="delete" aria-labelledby="delete-h">
+          <h2 id="delete-h">Delete account</h2>
+          <p class="hint">
+            Everything goes: what you've called enough (and the comments on it), your comments, breaks, notes and
+            Collection. It can't be undone.
+          </p>
+          {said("delete") && (<p class={said("delete")?.kind} role={said("delete")?.role}>{said("delete")?.text}</p>)}
+          <details open={refused?.form === "delete"}>
+            <summary class="quiet-summary">Delete my account…</summary>
+            <form method="post" class="stack" action="/account/#delete">
+              <input type="hidden" name="action" value="delete" />
+              <input type="text" name="username" value={me.username} autocomplete="username" aria-label="Username" hidden />
+              <label>
+                Your password, to be sure
+                <input name="password" type="password" required autocomplete="current-password" />
+              </label>
+              <div>
+                <button type="submit" class="danger">
+                  Delete everything
+                </button>
+              </div>
+            </form>
+          </details>
+        </section>
+
+        <form method="post" class="account-logout">
           <input type="hidden" name="action" value="logout" />
           <button type="submit" class="quiet">Log out</button>
         </form>
-      </section>
+      </>
     ) : (
-      <div class="account-forms">
-        <section class="account-box" id="register" aria-labelledby="register-h">
-          <h2 id="register-h">Create an account</h2>
-          <p class="hint">
-            {person
-              ? "Everything you've written in this browser stays yours, under this username."
-              : "Pick a username and password."}
+      <>
+        <h1 class="visually-hidden">Sign in</h1>
+        {deleted && (
+          <p class="done" role="status">
+            Your account and everything in it are gone.
           </p>
-          {refused?.form === "register" && (
-            <p class="refused" role="alert">
-              {refused.reason}
+        )}
+        <div class="auth" data-opening={opening}>
+          <section class="auth-card" id="login" aria-labelledby="login-h">
+            <h2 id="login-h">Sign in</h2>
+            <p class="hint">Anyone can read the feed. To call something enough, reply or take a break, sign in.</p>
+            {leavesBehind && (
+              <p class="warn">
+                What you wrote in this browser without an account stays with it; logging in switches you to your account.
+              </p>
+            )}
+            {said("login") && (<p class={said("login")?.kind} role={said("login")?.role}>{said("login")?.text}</p>)}
+            <form method="post" class="stack">
+              <input type="hidden" name="action" value="login" />
+              <label>
+                Username
+                <input name="username" required autocomplete="username" value={refused?.form === "login" ? typed : ""} />
+              </label>
+              <label>
+                <span class="label-row">
+                  Password <a href="#recover">Forgot it?</a>
+                </span>
+                <span class="secret">
+                  <input name="password" type="password" required autocomplete="current-password" />
+                  <button type="button" class="show-secret" aria-pressed="false" hidden>
+                    Show
+                  </button>
+                </span>
+              </label>
+              <button type="submit" class="wide">
+                Sign in
+              </button>
+            </form>
+            <p class="switch">
+              New here? <a href="#register">Create an account</a>
             </p>
-          )}
-          <form method="post" class="stack">
-            <input type="hidden" name="action" value="register" />
-            <label>
-              Username <small>({USERNAME_MIN}–{USERNAME_MAX} letters, numbers, _ or -)</small>
-              <input
-                name="username"
-                required
-                minlength={USERNAME_MIN}
-                maxlength={USERNAME_MAX}
-                pattern="[A-Za-z0-9_\-]+"
-                autocomplete="username"
-                value={refused?.form === "register" ? typed : ""}
-              />
-            </label>
-            <label>
-              Password <small>(at least {PASSWORD_MIN} characters)</small>
-              <input name="password" type="password" required minlength={PASSWORD_MIN} autocomplete="new-password" />
-            </label>
-            <p class="hint">There's no password reset, so keep it somewhere safe.</p>
-            <button type="submit">Create account</button>
-          </form>
-        </section>
+          </section>
 
-        <section class="account-box" id="login" aria-labelledby="login-h">
-          <h2 id="login-h">Sign in</h2>
-          {leavesBehind && (
-            <p class="warn">
-              What you wrote in this browser without an account stays with it; logging in switches you to your account.
+          <section class="auth-card" id="register" aria-labelledby="register-h">
+            <h2 id="register-h">Create an account</h2>
+            <p class="hint">
+              {person
+                ? "Everything you've written in this browser stays yours, under this username."
+                : "It keeps what you write and lets you open it from any browser. Your username is never shown to anyone."}
             </p>
-          )}
-          {refused?.form === "login" && (
-            <p class="refused" role="alert">
-              {refused.reason}
+            {said("register") && (<p class={said("register")?.kind} role={said("register")?.role}>{said("register")?.text}</p>)}
+            <form method="post" class="stack">
+              <input type="hidden" name="action" value="register" />
+              <label>
+                Username <small>({USERNAME_MIN}–{USERNAME_MAX} letters, numbers, _ or -)</small>
+                <input
+                  name="username"
+                  required
+                  minlength={USERNAME_MIN}
+                  maxlength={USERNAME_MAX}
+                  pattern="[A-Za-z0-9_\-]+"
+                  autocomplete="username"
+                  value={refused?.form === "register" ? typed : ""}
+                />
+              </label>
+              <label>
+                Password <small>(at least {PASSWORD_MIN} characters)</small>
+                <span class="secret">
+                  <input name="password" type="password" required minlength={PASSWORD_MIN} autocomplete="new-password" />
+                  <button type="button" class="show-secret" aria-pressed="false" hidden>
+                    Show
+                  </button>
+                </span>
+              </label>
+              <p class="hint">There's no email here. Once you're in, make a recovery code on your account page.</p>
+              <button type="submit" class="wide">
+                Create account
+              </button>
+            </form>
+            <p class="switch">
+              Have an account? <a href="#login">Sign in</a>
             </p>
-          )}
-          <form method="post" class="stack">
-            <input type="hidden" name="action" value="login" />
-            <label>
-              Username
-              <input name="username" required autocomplete="username" value={refused?.form === "login" ? typed : ""} />
-            </label>
-            <label>
-              Password
-              <input name="password" type="password" required autocomplete="current-password" />
-            </label>
-            <button type="submit">Sign in</button>
-          </form>
-        </section>
-      </div>
+          </section>
+
+          <section class="auth-card" id="recover" aria-labelledby="recover-h">
+            <h2 id="recover-h">Forgot your password?</h2>
+            <p class="hint">Use the recovery code you saved to set a new one.</p>
+            {said("recover") && (<p class={said("recover")?.kind} role={said("recover")?.role}>{said("recover")?.text}</p>)}
+            <form method="post" class="stack">
+              <input type="hidden" name="action" value="recover" />
+              <label>
+                Username
+                <input
+                  name="username"
+                  required
+                  autocomplete="username"
+                  value={refused?.form === "recover" ? typed : ""}
+                />
+              </label>
+              <label>
+                Recovery code
+                <input name="code" required autocomplete="off" spellcheck="false" placeholder="xxxx-xxxx-xxxx" />
+              </label>
+              <label>
+                New password <small>(at least {PASSWORD_MIN} characters)</small>
+                <input name="password" type="password" required minlength={PASSWORD_MIN} autocomplete="new-password" />
+              </label>
+              <button type="submit" class="wide">
+                Set new password
+              </button>
+            </form>
+            <p class="switch">
+              No code? Without one there's no way back in, sorry. <a href="#login">Back to sign in</a>
+            </p>
+          </section>
+        </div>
+      </>
     )
   }
 </Page>
+
+<script>
+  // One form at a time: the links between them are anchors, and whichever is
+  // named (by the address, or by the server after a refusal) shows. Without
+  // this script every form is on the page, one under the other.
+  const auth = document.querySelector<HTMLElement>(".auth");
+  if (auth) {
+    auth.classList.add("one-at-a-time");
+    const forms = ["login", "register", "recover"];
+    const show = () => {
+      const want = location.hash.slice(1);
+      const id = forms.includes(want) ? want : (auth.dataset.opening ?? "login");
+      for (const card of auth.querySelectorAll<HTMLElement>(".auth-card")) card.hidden = card.id !== id;
+    };
+    show();
+    addEventListener("hashchange", () => {
+      show();
+      auth.querySelector<HTMLElement>(".auth-card:not([hidden]) input:not([type=hidden])")?.focus();
+    });
+  }
+  // a Show button beside a password, for checking what you typed
+  for (const button of document.querySelectorAll<HTMLButtonElement>(".show-secret")) {
+    const input = button.parentElement?.querySelector("input");
+    if (!input) continue;
+    button.hidden = false;
+    button.addEventListener("click", () => {
+      const showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+      button.textContent = showing ? "Show" : "Hide";
+      button.setAttribute("aria-pressed", String(!showing));
+    });
+  }
+</script>

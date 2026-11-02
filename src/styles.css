@@ -996,6 +996,285 @@ button.quiet:hover {
   color: var(--muted);
 }
 
+/* The nav's corner: who's signed in (their little one's head and username,
+   opening a small menu), or Sign in. Pushed to the right of the nav. */
+nav .me,
+nav .me-signin {
+  margin-left: auto;
+}
+
+.me {
+  position: relative;
+}
+
+.me summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 2.75rem;
+  list-style: none;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.me summary::-webkit-details-marker {
+  display: none;
+}
+
+/* a small caret after the name */
+.me summary::after {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  margin: -0.2rem 0 0 0.1rem;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(45deg);
+}
+
+.me-name {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* on a phone, just the head, so the corner stays on the nav's line */
+@media (max-width: 30rem) {
+  .me-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  nav {
+    gap: 0 var(--s3);
+  }
+}
+
+.me-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 10;
+  display: grid;
+  min-width: 11rem;
+  padding: var(--s1) 0;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+}
+
+.me-menu a,
+.me-menu .menu-item {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.6rem var(--s3);
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.me-menu form {
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+.me-menu a:hover,
+.me-menu .menu-item:hover {
+  background: var(--accent-soft);
+}
+
+/* Signed out: one narrow card at a time, centred */
+.auth {
+  display: grid;
+  gap: var(--s4);
+  max-width: 24rem;
+  margin: var(--s4) auto 0;
+}
+
+.auth.one-at-a-time .auth-card[hidden] {
+  display: none;
+}
+
+.auth-card {
+  padding: var(--s4);
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+
+.auth-card h2 {
+  margin: 0 0 var(--s1);
+  font-size: 1.5rem;
+}
+
+.auth-card .hint {
+  margin: 0 0 var(--s3);
+}
+
+.auth-card .switch {
+  margin: var(--s3) 0 0;
+  padding-top: var(--s3);
+  border-top: 1px solid var(--line);
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.label-row a {
+  font-size: 0.875rem;
+}
+
+/* a password with a Show button inside its right edge */
+.secret {
+  position: relative;
+  display: block;
+}
+
+.secret input {
+  padding-right: 4.5rem;
+}
+
+.show-secret {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  min-width: 2.75rem;
+  padding: 0 var(--s3);
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+button[type="submit"].wide {
+  width: 100%;
+}
+
+.done {
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--c-sage);
+  background: var(--accent-soft);
+}
+
+/* Signed in: the account, as sections divided by rules */
+.account-section {
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--line);
+}
+
+.account-section h2 {
+  margin: 0 0 var(--s2);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.account-section .stack {
+  max-width: 24rem;
+}
+
+.account-section .hint {
+  margin: 0 0 var(--s3);
+}
+
+.profile {
+  display: flex;
+  gap: var(--s3);
+  align-items: flex-start;
+  border-top: 0;
+  padding-top: var(--s2);
+}
+
+.profile .profile-name {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 1.375rem;
+  font-weight: 500;
+}
+
+.profile .hint {
+  margin: var(--s1) 0 var(--s2);
+}
+
+.code-shown {
+  margin-bottom: var(--s3);
+}
+
+.code-shown p {
+  margin: 0 0 var(--s2);
+}
+
+.code {
+  display: inline-block;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+  user-select: all;
+}
+
+.devices {
+  list-style: none;
+  margin: 0 0 var(--s3);
+  padding: 0;
+}
+
+.devices li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.devices form {
+  margin: 0;
+}
+
+.this-one {
+  color: var(--muted);
+}
+
+.danger-zone h2 {
+  color: var(--warn);
+}
+
+.quiet-summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--warn);
+  cursor: pointer;
+}
+
+.danger-zone .stack {
+  margin-top: var(--s2);
+}
+
+.account-logout {
+  padding-top: var(--s3);
+  border-top: 1px solid var(--line);
+}
+
 /* Mine without an account: two clear ways in */
 .mine-gate-actions {
   display: flex;

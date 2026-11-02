@@ -1,0 +1,45 @@
+---
+import { gridRects, paletteCss } from "../lib/pixel";
+import { isWearable, KEEPER, wornAt } from "../lib/sprites";
+import type { Outfit } from "../lib/collection";
+
+// Someone's own little one as a picture of them: its head, from the standing
+// frame, with whatever it wears on its head from their Collection. Shown only
+// to its owner (the account menu, the account page); the feed never shows a
+// face. Decoration: the name beside it says who.
+interface Props {
+  outfit: Outfit;
+  size: number;
+}
+const { outfit, size } = Astro.props;
+const frame = KEEPER.frames.stand;
+// the head and the hat above it: the straw hat's brim is 18 wide and starts
+// at the frame's top, so a 20×16 window (rows 0–15) holds the whole of it
+const head = frame.slice(0, 16);
+const hat = outfit.head && isWearable(outfit.head) ? wornAt(frame, outfit.head) : null;
+const body = gridRects(head) + (hat ? gridRects(hat.rows, hat.x, hat.y) : "");
+const css = paletteCss(".avatar", { weather: false });
+---
+
+<span class="avatar" aria-hidden="true" style={`--size:${size}px`}>
+  <svg viewBox="0 0 20 16" shape-rendering="crispEdges" set:html={body} />
+</span>
+<style is:global set:html={css}></style>
+
+<style>
+  .avatar {
+    display: inline-grid;
+    place-items: end center;
+    flex: none;
+    width: var(--size);
+    height: var(--size);
+    overflow: hidden;
+    background: var(--card);
+    border: 1px solid var(--line);
+  }
+
+  .avatar svg {
+    width: 100%;
+    height: auto;
+  }
+</style>

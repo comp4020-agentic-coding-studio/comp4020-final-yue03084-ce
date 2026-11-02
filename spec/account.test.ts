@@ -29,6 +29,8 @@ function browser() {
     register: (username: string, password: string) => post("/account/", { action: "register", username, password }),
     login: (username: string, password: string) => post("/account/", { action: "login", username, password }),
     logout: () => post("/account/", { action: "logout" }),
+    account: (fields: Record<string, string>) => post("/account/", fields),
+    comment: (enough: string, text: string) => post("/comment/", { enough, text }),
   };
 }
 
@@ -158,5 +160,152 @@ describe("accounts", () => {
     await other.register(newName(), PASSWORD);
     await other.remove(id);
     expect(await browser().get("/")).toContain(`not yours ${tag}`);
+  });
+});
+
+// The account page (2026-11-02): your own little one's head and username in
+// the nav's corner, a password you can change, a recovery code instead of
+// email, where you're signed in, and deleting it all.
+describe("the account page", () => {
+  const codeOn = (html: string) => /data-code[^>]*>\s*([a-z0-9-]+)\s*</.exec(html)?.[1] ?? "";
+  const enoughOn = (html: string, tag: string) =>
+    new RegExp(`data-enough="(\\d+)"[\\s\\S]*?${tag}`).exec(html)?.[1] ?? "";
+
+  it("shows your username in the nav's corner only to you", async () => {
+    const username = newName();
+    const me = browser();
+    await me.register(username, PASSWORD);
+    for (const path of ["/", "/mine/", "/account/"]) {
+      expect(await me.get(path), path).toMatch(new RegExp(`class="me-name"[^>]*>${username}<`));
+    }
+    const other = browser();
+    await other.register(newName(), PASSWORD);
+    expect(await other.get("/")).not.toContain(username);
+    expect(await browser().get("/")).toContain('class="me-signin"');
+  });
+
+  it("changing the password needs the current one, and signs out every other browser", async () => {
+    const tag = marker();
+    const username = newName();
+    const here = browser();
+    await here.register(username, PASSWORD);
+    await here.declare({ description: `kept ${tag}` });
+    const elsewhere = browser();
+    await elsewhere.login(username, PASSWORD);
+
+    const wrong = await here.account({ action: "password", current: "not-the-password", new: "a-new-long-password" });
+    expect(wrong.status).toBe(400);
+    expect(await elsewhere.get("/mine/all/")).toContain(`kept ${tag}`);
+
+    const short = await here.account({ action: "password", current: PASSWORD, new: "x".repeat(PASSWORD_MIN - 1) });
+    expect(short.status).toBe(400);
+
+    expect((await here.account({ action: "password", current: PASSWORD, new: "a-new-long-password" })).status).toBe(200);
+    // this browser stays signed in (it made the account, so it moved to a session)
+    expect(await here.get("/mine/all/")).toContain(`kept ${tag}`);
+    // the other is out, and the old password no longer works
+    expect(await elsewhere.get("/mine/all/")).not.toContain(`kept ${tag}`);
+    expect((await browser().login(username, PASSWORD)).status).toBe(400);
+    expect((await browser().login(username, "a-new-long-password")).status).toBe(303);
+  });
+
+  it("a recovery code sets a new password once, signs out everywhere, and gives a new code", async () => {
+    const tag = marker();
+    const username = newName();
+    const me = browser();
+    await me.register(username, PASSWORD);
+    await me.declare({ description: `recovered ${tag}` });
+    const code = codeOn(await (await me.account({ action: "code" })).text());
+    expect(code).toMatch(/^[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/);
+    // shown once: reloading the page doesn't show it again
+    expect(codeOn(await me.get("/account/"))).toBe("");
+
+    // a wrong code changes nothing
+    const wrong = await browser().account({ action: "recover", username, code: "aaaa-bbbb-cccc", password: "a-recovered-password" });
+    expect(wrong.status).toBe(400);
+    expect((await browser().login(username, PASSWORD)).status).toBe(303);
+
+    // typed in capitals and without dashes still matches
+    const fresh = browser();
+    const res = await fresh.account({
+      action: "recover",
+      username: username.toUpperCase(),
+      code: code.toUpperCase().replace(/-/g, " "),
+      password: "a-recovered-password",
+    });
+    expect(res.status).toBe(200);
+    const next = codeOn(await res.text());
+    expect(next).not.toBe("");
+    expect(next).not.toBe(code);
+    expect(await fresh.get("/mine/all/")).toContain(`recovered ${tag}`);
+    // the browser that made the account is signed out
+    expect(await me.get("/mine/all/")).not.toContain(`recovered ${tag}`);
+    expect((await browser().login(username, "a-recovered-password")).status).toBe(303);
+    // the old code is spent
+    const again = await browser().account({ action: "recover", username, code, password: "yet-another-password" });
+    expect(again.status).toBe(400);
+  });
+
+  it("lists where you're signed in, and signs the others out", async () => {
+    const tag = marker();
+    const username = newName();
+    const me = browser();
+    await me.register(username, PASSWORD);
+    await me.declare({ description: `devices ${tag}` });
+    const phone = browser();
+    await phone.login(username, PASSWORD);
+    const listed = await phone.get("/account/");
+    expect(listed).toContain("this browser");
+    expect(listed.match(/<li>/g)?.length ?? 0).toBeGreaterThanOrEqual(1);
+
+    await phone.account({ action: "signout-others" });
+    expect(await phone.get("/mine/all/")).toContain(`devices ${tag}`);
+    expect(await me.get("/mine/all/")).not.toContain(`devices ${tag}`);
+  });
+
+  it("deleting the account needs the password, then takes everything, the feed's too", async () => {
+    const tag = marker();
+    const username = newName();
+    const leaving = browser();
+    await leaving.register(username, PASSWORD);
+    await leaving.declare({ description: `leaving ${tag}`, shared: "on" });
+
+    const staying = browser();
+    await staying.register(newName(), PASSWORD);
+    await staying.declare({ description: `staying ${tag}`, shared: "on" });
+    const theirs = enoughOn(await staying.get("/mine/all/"), `staying ${tag}`);
+    await leaving.comment(theirs, `bye ${tag}`);
+    expect(await browser().get("/")).toContain(`bye ${tag}`);
+
+    expect((await leaving.account({ action: "delete", password: "not-the-password" })).status).toBe(400);
+    expect(await browser().get("/")).toContain(`leaving ${tag}`);
+
+    const res = await leaving.account({ action: "delete", password: PASSWORD });
+    expect(res.status).toBe(303);
+    const feed = await browser().get("/");
+    expect(feed).not.toContain(`leaving ${tag}`);
+    expect(feed).not.toContain(`bye ${tag}`);
+    expect(feed).toContain(`staying ${tag}`);
+    expect((await browser().login(username, PASSWORD)).status).toBe(400);
+    // the username is free again
+    expect((await browser().register(username, PASSWORD)).status).toBe(303);
+  });
+
+  it("refuses every account change from someone signed out, and changes nothing", async () => {
+    const username = newName();
+    await browser().register(username, PASSWORD);
+    const reader = browser();
+    for (const fields of <Record<string, string>[]>[
+      { action: "password", current: PASSWORD, new: "a-new-long-password" },
+      { action: "code" },
+      { action: "signout-others" },
+      { action: "signout-one", session: "1" },
+      { action: "delete", password: PASSWORD },
+    ]) {
+      const res = await reader.account(fields);
+      expect(res.status, fields.action).toBe(303);
+      expect(res.headers.get("location"), fields.action).toContain("/account/");
+    }
+    expect((await browser().login(username, PASSWORD)).status).toBe(303);
   });
 });

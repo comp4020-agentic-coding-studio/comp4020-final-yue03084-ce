@@ -1,6 +1,9 @@
 ---
 import "../styles.css";
+import Avatar from "../components/Avatar.astro";
 import { NOTE_COLOURS, SITE_NAME } from "../lib/limits";
+import { outfitOf } from "../lib/outfit";
+import { signedInPerson } from "../lib/person";
 
 interface Props {
   // the page's own name; leave it out for the home page, which is just the site
@@ -23,6 +26,11 @@ const links = [
   // not a nav item
   { href: "/mine/", label: "Mine" },
 ];
+// The corner of the nav: who's signed in, as their own little one's head and
+// their username, opening a menu; or a way to sign in. Only ever this
+// browser's own person, so the username never reaches anyone else.
+const me = signedInPerson(Astro.cookies);
+const myOutfit = me ? outfitOf(me.id) : null;
 // the README lives at /readme/ (the course's markers start there), linked from
 // the foot of every page rather than the nav
 const about = "/readme/";
@@ -59,6 +67,28 @@ const about = "/readme/";
             {l.label}
           </a>
         ))
+      }
+      {
+        me && myOutfit ? (
+          <details class="me">
+            <summary>
+              <Avatar outfit={myOutfit} size={28} />
+              <span class="me-name">{me.username}</span>
+            </summary>
+            <div class="me-menu">
+              <a href="/account/">Account</a>
+              <a href="/mine/collection/">Collection</a>
+              <form method="post" action="/account/">
+                <input type="hidden" name="action" value="logout" />
+                <button type="submit" class="menu-item">Log out</button>
+              </form>
+            </div>
+          </details>
+        ) : (
+          <a class="me-signin" href="/account/" aria-current={here === "/account/" ? "page" : undefined}>
+            Sign in
+          </a>
+        )
       }
     </nav>
     <main>

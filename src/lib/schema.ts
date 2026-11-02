@@ -17,6 +17,9 @@ export const people = sqliteTable("people", {
   token: text("token").notNull().unique(),
   username: text("username").unique(),
   passwordHash: text("password_hash"),
+  // a one-time code for setting a new password without the old one, hashed
+  // like the password; shown to its owner once, replaced each time it's used
+  recoveryHash: text("recovery_hash"),
   createdAt: createdAt(),
 });
 
@@ -29,6 +32,9 @@ export const sessions = sqliteTable("sessions", {
     .notNull()
     .references(() => people.id),
   token: text("token").notNull().unique(),
+  // which browser, in a few words ("Firefox on macOS"), for the owner's list
+  // of where they're signed in; never the full user agent, never in a log
+  device: text("device"),
   createdAt: createdAt(),
 });
 

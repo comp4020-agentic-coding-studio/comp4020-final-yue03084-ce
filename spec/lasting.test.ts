@@ -134,6 +134,16 @@ describe("what lasts and what's logged", () => {
     await other.send("/reply/", { enough: id, preset: "seen" });
     await writer.send("/urge/", { enough: id, choice: "tomorrow", note: secret.drawer });
     await writer.send("/break/", { end: "1" });
+    // a recovery code, used to set a new password: neither may reach the log
+    const made = await (await writer.send("/account/", { action: "code" })).text();
+    const code = /data-code[^>]*>\s*([a-z0-9-]+)\s*</.exec(made)?.[1] ?? "";
+    expect(code).not.toBe("");
+    expect(
+      (await browser().send("/account/", { action: "recover", username: secret.username, code, password: secret.password }))
+        .status,
+    ).toBe(200);
+    expect(output).toMatch(/password_recovered block=\d+/);
+    expect(output.includes(code), "the recovery code reached the log").toBe(false);
 
     // the log did record the actions, by block number...
     expect(output).toMatch(/enough_called block=\d+/);
