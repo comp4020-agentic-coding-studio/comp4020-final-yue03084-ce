@@ -6,7 +6,7 @@ import { mine } from "../../lib/db";
 import { COLLECTION, COLLECTION_KINDS, COLLECTION_WAYS, type CollectionItem, OUTFIT_SLOTS } from "../../lib/limits";
 import { countsFor, outfitOf } from "../../lib/outfit";
 import { currentPerson } from "../../lib/person";
-import { gridRects, paletteCss } from "../../lib/pixel";
+import { gridRects, HAIR_OF_ITEM, hairCss, paletteCss } from "../../lib/pixel";
 import { frameSvg, isWearable, KITE, LANTERN, PICNIC, SUNFLOWER, TABBY } from "../../lib/sprites";
 
 // The Collection: things that come from stopping (COLLECTION in limits.ts),
@@ -33,6 +33,9 @@ const centred = (rows: readonly string[]) => {
   return `<g transform="translate(${x} ${y}) scale(${k})">${gridRects(rows)}</g>`;
 };
 const art = (item: CollectionItem): string => {
+  // a hair colour is the little one itself, with that hair
+  const hair = HAIR_OF_ITEM[item];
+  if (hair) return `<g transform="translate(2 1)" data-hair="${hair}">${frameSvg("stand")}</g>`;
   // a wearable is shown on the little one's head and shoulders
   if (isWearable(item)) return `<g transform="translate(2 1)">${frameSvg("stand", [item])}</g>`;
   if (item === "lantern") return centred(LANTERN);
@@ -42,7 +45,7 @@ const art = (item: CollectionItem): string => {
   // the blanket laid on a strip of grass
   return `<rect class="px-g" x="0" y="${BOX / 2 + 1}" width="${BOX}" height="3"/>${gridRects(PICNIC, 1, BOX / 2)}`;
 };
-const css = `${paletteCss(".collection", { weather: false })}\n.collection [data-f="stand"]{display:inline}`;
+const css = `${paletteCss(".collection", { weather: false })}\n${hairCss(".collection g")}\n.collection [data-f="stand"]{display:inline}`;
 const slotLabel = (slot: string) => COLLECTION_KINDS[slot as keyof typeof COLLECTION_KINDS];
 ---
 
@@ -91,7 +94,8 @@ const slotLabel = (slot: string) => COLLECTION_KINDS[slot as keyof typeof COLLEC
                 <fieldset class="choices">
                   <legend>{slotLabel(slot)}</legend>
                   <label class="inline">
-                    <input type="radio" name={slot} value="" checked={outfit[slot] === null} /> Nothing
+                    <input type="radio" name={slot} value="" checked={outfit[slot] === null} />{" "}
+                    {slot === "hair" ? "Brown" : "Nothing"}
                   </label>
                   {itemsFor(slot)
                     .filter((item) => isUnlocked(item, counts))

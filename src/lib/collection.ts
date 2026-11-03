@@ -1,3 +1,4 @@
+import { HAIR_OF_ITEM, type Hair } from "./pixel";
 import {
   COLLECTION,
   COLLECTION_WAYS,
@@ -20,7 +21,15 @@ import {
 
 export type Counts = Record<CollectionWay, number>;
 export type Outfit = Record<OutfitSlot, CollectionItem | null>;
-export const NO_OUTFIT: Outfit = { head: null, neck: null, held: null, companion: null, ground: null, sky: null };
+export const NO_OUTFIT: Outfit = {
+  hair: null,
+  head: null,
+  neck: null,
+  held: null,
+  companion: null,
+  ground: null,
+  sky: null,
+};
 
 export const ITEMS = Object.keys(COLLECTION) as CollectionItem[];
 
@@ -72,9 +81,16 @@ export function wearing(outfit: Outfit, counts: Counts): Outfit {
   return out;
 }
 
-// The same as a plain list of item keys, for the meadow.
+// What's worn, as a plain list of item keys, for the meadow; the hair goes
+// separately (hairOf).
 export const wearsList = (outfit: Outfit): CollectionItem[] =>
-  OUTFIT_SLOTS.map((slot) => outfit[slot]).filter((item): item is CollectionItem => item !== null);
+  OUTFIT_SLOTS.filter((slot) => slot !== "hair")
+    .map((slot) => outfit[slot])
+    .filter((item): item is CollectionItem => item !== null);
+
+// The hair colour someone's little one has: brown unless they've chosen one
+// from the Collection. A key of HAIRS in pixel.ts.
+export const hairOf = (outfit: Outfit): Hair => (outfit.hair ? HAIR_OF_ITEM[outfit.hair] : "brown") ?? "brown";
 
 // The scene things someone can choose for their picture: the plain ones, and
 // any from the Collection they've unlocked.

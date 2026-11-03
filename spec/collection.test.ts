@@ -2,6 +2,7 @@ import { describe, expect, inject, it } from "vitest";
 import {
   type Counts,
   checkOutfit,
+  hairOf,
   NO_OUTFIT,
   progressText,
   sceneThingAllowed,
@@ -10,6 +11,7 @@ import {
   wearsList,
 } from "../src/lib/collection.ts";
 import { COLLECTION } from "../src/lib/limits.ts";
+import { HAIRS } from "../src/lib/pixel.ts";
 
 // The Collection: things that come from stopping. Against the running app:
 // nothing to begin with; breaks, letting go and resting at the alarm unlock
@@ -173,7 +175,10 @@ describe("the Collection", () => {
     expect(data.ones.some((o: { kind: string; wears: string[] }) => o.kind === "nap" && o.wears.includes("strawhat"))).toBe(
       true,
     );
-    for (const one of data.ones) expect(Object.keys(one).sort()).toEqual(["kind", "wears"]);
+    for (const one of data.ones) {
+      expect(Object.keys(one).sort()).toEqual(["hair", "kind", "wears"]);
+      expect(Object.keys(HAIRS)).toContain(one.hair);
+    }
     const feed = await browser().get("/");
     expect(/data-ones="([^"]*)"/.exec(feed)?.[1]).toContain("strawhat");
     // how it came, and how far along anyone is, are never public
@@ -181,6 +186,36 @@ describe("the Collection", () => {
       expect(text).not.toMatch(/more breaks?|Unlocked|letting it go|alarm rings|days? here|condition|progress/);
     }
     await me.rest({ end: "1" });
+  });
+
+  it("gives a little one its owner's hair on the meadow, whoever comes and goes", async () => {
+    const me = await signedIn();
+    await breaks(me, 5);
+    await me.outfit({ hair: "goldhair" });
+    const other = await signedIn();
+    await other.rest({ kind: "tea" });
+    const hairs = async () => {
+      const received = await readStream(() => me.rest({ kind: "walk" }), "event: resting", 3_000);
+      return JSON.parse(/event: resting\ndata: (.*)/.exec(received)?.[1] ?? "{}").ones as { kind: string; hair: string }[];
+    };
+    expect((await hairs()).find((o) => o.kind === "walk")?.hair).toBe("gold");
+    // someone resting before them leaves: still gold, not the next one along
+    await other.rest({ end: "1" });
+    expect((await hairs()).find((o) => o.kind === "walk")?.hair).toBe("gold");
+    // a hair colour that hasn't come can't be chosen
+    const newcomer = await signedIn();
+    await newcomer.outfit({ hair: "silverhair" });
+    expect(await newcomer.get("/mine/collection/?refused=1")).toContain('class="refused"');
+    await me.rest({ end: "1" });
+  });
+
+  it("counts changing what you're doing on a break as the same break", async () => {
+    const me = await signedIn();
+    await me.rest({ kind: "tea" });
+    await me.rest({ kind: "nap" });
+    await me.rest({ kind: "walk" });
+    await me.rest({ end: "1" });
+    expect(progressOf(await me.get("/mine/collection/"), "strawhat")).toBe("2 more breaks");
   });
 
   it("won't let the sunflower into the picture until it's come", async () => {
@@ -209,11 +244,12 @@ describe("the Collection's arithmetic", () => {
   it("unlocks each thing at its own number of times stopping, and only from stopping", () => {
     expect(unlocked(counts())).toEqual([]);
     expect(unlocked(counts({ breaks: 3 }))).toEqual(["strawhat"]);
-    expect(unlocked(counts({ breaks: 10 }))).toEqual(["strawhat", "tabby"]);
-    expect(unlocked(counts({ letGo: 10 }))).toEqual(["scarf", "lantern"]);
-    expect(unlocked(counts({ alarmRests: 10 }))).toEqual(["flowercrown", "sunflower"]);
-    expect(unlocked(counts({ days: 7 }))).toEqual(["picnic"]);
-    expect(unlocked(counts({ days: 14 }))).toEqual(["picnic", "kite"]);
+    expect(unlocked(counts({ breaks: 10 }))).toEqual(["strawhat", "tabby", "goldhair"]);
+    expect(unlocked(counts({ letGo: 10 }))).toEqual(["scarf", "lantern", "redhair"]);
+    expect(unlocked(counts({ alarmRests: 10 }))).toEqual(["flowercrown", "sunflower", "silverhair"]);
+    expect(unlocked(counts({ days: 3 }))).toEqual(["darkhair"]);
+    expect(unlocked(counts({ days: 7 }))).toEqual(["picnic", "darkhair"]);
+    expect(unlocked(counts({ days: 14 }))).toEqual(["picnic", "kite", "darkhair"]);
   });
 
   it("says how many more in words, never a percentage", () => {
@@ -234,6 +270,16 @@ describe("the Collection's arithmetic", () => {
     expect(checkOutfit({ head: "flowercrown" }, c).ok).toBe(false);
     expect(checkOutfit({ neck: "strawhat" }, c).ok).toBe(false);
     expect(checkOutfit({ head: "crown" }, c).ok).toBe(false);
+  });
+
+  it("starts everyone brown, and a hair colour only once it's come", () => {
+    expect(hairOf(NO_OUTFIT)).toBe("brown");
+    expect(checkOutfit({ hair: "goldhair" }, counts({ breaks: 4 })).ok).toBe(false);
+    const gold = checkOutfit({ hair: "goldhair" }, counts({ breaks: 5 }));
+    expect(gold.ok && hairOf(gold.value)).toBe("gold");
+    expect(checkOutfit({ head: "goldhair" }, counts({ breaks: 5 })).ok).toBe(false);
+    // the hair isn't something worn: it goes to the meadow on its own
+    expect(wearsList({ ...NO_OUTFIT, hair: "goldhair" })).toEqual([]);
   });
 
   it("stops showing something that's no longer theirs, and lists what's worn as keys", () => {

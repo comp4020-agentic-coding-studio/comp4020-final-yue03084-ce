@@ -1,7 +1,7 @@
 ---
 import { MEADOW_MAX } from "../lib/limits";
 import { meadowNow } from "../lib/outfit";
-import { gridRects, HAIRS, paletteCss } from "../lib/pixel";
+import { gridRects, hairCss, paletteCss } from "../lib/pixel";
 import {
   frameSvg,
   KITE,
@@ -21,7 +21,7 @@ import {
 // open page, the moment someone goes or comes back (the "resting" event).
 // What it shows is what the resting count already says, drawn: never who,
 // never for how long (CLAUDE.md: "Effort and check records are private").
-// Hair colours only tell the little ones apart, by place in the line. Up to
+// Each has its owner's hair colour (brown, or one from their Collection). Up to
 // MEADOW_MAX are drawn; the rest are "just out of the picture".
 // Decoration: hidden from screen readers, as the count beside it says it in
 // words. With reduced motion everyone holds still. Each wears what its person
@@ -72,10 +72,7 @@ const wearCss = SHOWN.map(
   (k) => `.meadow [data-wears~="${k}"] [data-w="${k}"],.meadow [data-wears~="${k}"] [data-has="${k}"]{display:inline}`,
 ).join("\n");
 const frameCss = POSES.map((n) => `.meadow .one[data-frame="${n}"] [data-f="${n}"]{display:inline}`).join("\n");
-const hairCss = HAIRS.map(
-  (c, i) => `.meadow .one[data-hair="${i}"]{--px-h:${c.h};--px-o:${c.o};--px-h2:${c.H}}`,
-).join("\n");
-const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCss}\n.meadow [data-w],.meadow [data-has]{display:none}\n${wearCss}`;
+const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCss(".meadow .one")}\n.meadow [data-w],.meadow [data-has]{display:none}\n${wearCss}`;
 ---
 
 <figure class="meadow" aria-hidden="true" hidden={ones.length === 0} data-sky="day" data-max={MEADOW_MAX} data-ones={JSON.stringify(ones)}>
@@ -188,7 +185,7 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
 
 <script>
   import { arrivals } from "../lib/meadow";
-  import { HAIRS, skyFor } from "../lib/pixel";
+  import { skyFor } from "../lib/pixel";
   import { WALK } from "../lib/sprites";
 
   // Where each little one sits, what it does, and the live updates: a new
@@ -198,6 +195,7 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
   interface One {
     kind: string;
     wears: string[];
+    hair: string;
   }
   const W = 160;
   const GROUND = 38;
@@ -315,7 +313,7 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
       before = kinds;
       const shown = list.slice(0, max);
       ones.replaceChildren();
-      shown.forEach(({ kind, wears }, i) => {
+      shown.forEach(({ kind, wears, hair }, i) => {
         // one spot per little one: what it wears and has with it, the things
         // on the grass around it, then the little one itself
         const spot = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -323,7 +321,7 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.setAttribute("class", "one");
         g.dataset.kind = kind;
-        g.dataset.hair = String(i % HAIRS.length);
+        g.dataset.hair = /^[a-z]+$/.test(hair) ? hair : "brown";
         g.dataset.frame = still[kind] ?? "sit";
         g.innerHTML = template.innerHTML;
         const x = spotFor(i, shown.length);

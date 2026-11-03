@@ -237,6 +237,8 @@ export const outfits = sqliteTable("outfits", {
   personId: integer("person_id")
     .primaryKey()
     .references(() => people.id),
+  // a hair colour from the Collection (darkhair…); null is the brown everyone starts with
+  hair: text("hair"),
   head: text("head"),
   neck: text("neck"),
   held: text("held"),

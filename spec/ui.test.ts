@@ -139,8 +139,8 @@ describe("public names (names.ts)", () => {
 });
 
 // Who floats down onto the meadow on a parachute: only someone who went on a
-// break while the page was open. The list is what each little one is doing,
-// in the order they went (the server never says who).
+// break while the page was open. The list is the little ones in the order
+// they went (the server never says who); a newcomer joins the end.
 describe("parachutes on the meadow (meadow.ts)", () => {
   it("floats nobody in when the page opens, however many are resting", () => {
     expect(arrivals(null, [])).toEqual([]);
@@ -160,8 +160,8 @@ describe("parachutes on the meadow (meadow.ts)", () => {
     expect(arrivals(["tea"], [])).toEqual([]);
   });
 
-  it("when one leaves as another arrives, floats in only the new one", () => {
-    expect(arrivals(["tea", "nap"], ["nap", "walk"])).toEqual([1]);
-    expect(arrivals(["tea", "nap", "move"], ["tea", "move", "watch"])).toEqual([2]);
+  it("floats nobody in when someone changes what they're doing", () => {
+    expect(arrivals(["tea", "walk"], ["tea", "nap"])).toEqual([]);
+    expect(arrivals(["walk", "watch"], ["nap", "watch"])).toEqual([]);
   });
 });

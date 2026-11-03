@@ -93,9 +93,9 @@ commit (see "A feature lands with its test").
 - **Someone arriving on the meadow floats down on a parachute.** Only
   someone who goes on a break while the page is open; whoever is already
   resting when it opens is simply there, so a reload isn't a shower of
-  parachutes. Worked out on the page from what each little one is doing, in
-  order (`arrivals` in `src/lib/meadow.ts`); the server sends nothing new, so
-  it says no more about who than the meadow did. With reduced motion nobody
+  parachutes. Worked out on the page from the line of little ones, which
+  keeps its order (`arrivals` in `src/lib/meadow.ts`); the server sends
+  nothing for it. With reduced motion nobody
   floats. *(Asked for 2026-11-03: a playful way in for a new little one.)*
   **Guarded by:** `ui.test.ts` "parachutes on the meadow (meadow.ts)";
   `enough.test.ts` "put each resting person's little one on the meadow…"
@@ -108,10 +108,24 @@ commit (see "A feature lands with its test").
   and never in a row or reset. Never from work hours, tower height or
   bricks. How far along someone is stays on their own `/mine/collection/`;
   what they choose to wear is public on the meadow, as item keys, never who
-  and never how it came. *(The same reason as no streaks: a reward for
+  and never how it came. A break is counted once however many times its kind
+  is changed: changing it is the same break. The little one is the
+  account's: everyone starts brown, other hair colours come from the
+  Collection, and its hair and things go with it everywhere (Working on it,
+  the avatar, the meadow). *(Until 2026-11-03 the meadow gave out hair by
+  place in the line, so when one person left or came back, everyone behind
+  them changed colour; and switching from walk to nap started a new break,
+  so tapping between kinds unlocked the straw hat in seconds. Hair by place
+  had been the agent's choice in the 2026-10-27 sub-agent round, not a
+  decision. A colour says nothing about who: there are five, among many
+  people, and the things a little one wears already go with the account.)* *(The same reason as no streaks: a reward for
   working is a reason to keep working. Decided 2026-10-27.)*
   **Guarded by:** `collection.test.ts` "unlocks each thing at its own number
-  of times stopping, and only from stopping", "counts resting when the alarm
+  of times stopping, and only from stopping", "counts changing what you're
+  doing on a break as the same break", "gives a little one its owner's hair
+  on the meadow, whoever comes and goes", "starts everyone brown…";
+  `enough.test.ts` "changing what you're doing on a break keeps your place
+  on the meadow"; "counts resting when the alarm
   rang towards the flower crown; an ordinary break doesn't", "puts what a
   resting person wears on the meadow, never who, and nobody's progress", "is
   for its owner…".

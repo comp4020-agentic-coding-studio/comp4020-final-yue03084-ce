@@ -176,6 +176,7 @@ export const SNOOZE_MINUTES = 10;
 // picture (scene, chosen with the lamp and the plant). How far along anyone
 // is stays theirs; only what they choose to show goes on the meadow.
 export const COLLECTION_KINDS = {
+  hair: "Its hair",
   head: "On its head",
   neck: "Round its neck",
   held: "Beside it",
@@ -207,9 +208,14 @@ export const COLLECTION = {
   lantern: { label: "Little lantern", kind: "held", condition: { what: "letGo", n: 10 } },
   sunflower: { label: "Sunflower", kind: "scene", condition: { what: "alarmRests", n: 10 } },
   kite: { label: "Kite", kind: "sky", condition: { what: "days", n: 14 } },
+  // hair colours: everyone starts brown (HAIRS in pixel.ts); these come later
+  darkhair: { label: "Dark brown hair", kind: "hair", condition: { what: "days", n: 3 } },
+  goldhair: { label: "Golden hair", kind: "hair", condition: { what: "breaks", n: 5 } },
+  redhair: { label: "Auburn hair", kind: "hair", condition: { what: "letGo", n: 5 } },
+  silverhair: { label: "Silver hair", kind: "hair", condition: { what: "alarmRests", n: 5 } },
 } as const satisfies Record<string, { label: string; kind: CollectionKind; condition: { what: CollectionWay; n: number } }>;
 export type CollectionItem = keyof typeof COLLECTION;
 export const isCollectionItem = (key: string): key is CollectionItem => Object.hasOwn(COLLECTION, key);
 // the slots a person fills from the Collection page (the scene is chosen with the picture)
-export const OUTFIT_SLOTS = ["head", "neck", "held", "companion", "ground", "sky"] as const;
+export const OUTFIT_SLOTS = ["hair", "head", "neck", "held", "companion", "ground", "sky"] as const;
 export type OutfitSlot = (typeof OUTFIT_SLOTS)[number];

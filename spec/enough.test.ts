@@ -425,6 +425,23 @@ describe("breaks", () => {
     expect(ended).toContain(`"count":${before}`);
   });
 
+  it("changing what you're doing on a break keeps your place on the meadow", async () => {
+    const first = await signedIn();
+    const second = await signedIn();
+    await first.rest({ kind: "tea" });
+    await second.rest({ kind: "watch" });
+    const kinds = async (then: () => Promise<unknown>) => {
+      const got = await readStream(then, "event: resting", 3_000);
+      return (JSON.parse(/event: resting\ndata: (.*)/.exec(got)?.[1] ?? "{}").ones as { kind: string }[]).map((o) => o.kind);
+    };
+    const after = await kinds(() => first.rest({ kind: "nap" }));
+    // first is still ahead of second, now napping; no one new joined the end
+    expect(after.indexOf("nap")).toBeLessThan(after.lastIndexOf("watch"));
+    expect(after).not.toContain("tea");
+    await first.rest({ end: "1" });
+    await second.rest({ end: "1" });
+  });
+
   it("put each resting person's little one on the meadow, live: what they're doing, never who", async () => {
     const someone = await signedIn();
     const started = await readStream(() => someone.rest({ kind: "nap" }), "event: resting", 3_000);
@@ -432,11 +449,12 @@ describe("breaks", () => {
     const kinds = data.ones.map((o: { kind: string }) => o.kind);
     expect(kinds).toContain("nap");
     expect(data.ones).toHaveLength(data.count);
-    // only the count and the little ones, each only what it's doing and what
-    // it wears (item keys): no block number, person, time or id
+    // only the count and the little ones, each only what it's doing, what it
+    // wears (item keys) and its hair colour: no block number, person, time or id
     expect(Object.keys(data).sort()).toEqual(["count", "ones"]);
     for (const one of data.ones) {
-      expect(Object.keys(one).sort()).toEqual(["kind", "wears"]);
+      expect(Object.keys(one).sort()).toEqual(["hair", "kind", "wears"]);
+      expect(typeof one.hair === "string" && /^[a-z]+$/.test(one.hair)).toBe(true);
       expect(typeof one.kind === "string" && /^[a-z]+$/.test(one.kind)).toBe(true);
       expect(one.wears.every((k: unknown) => typeof k === "string" && /^[a-z]+$/.test(k))).toBe(true);
     }

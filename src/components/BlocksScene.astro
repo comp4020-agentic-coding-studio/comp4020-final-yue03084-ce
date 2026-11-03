@@ -45,7 +45,7 @@ const POSES = ["stand", "blink", "crouch", "stretch1", "tea1", "tea2", "sip", ..
 const frames = POSES.map((name) => `<g data-f="${name}">${gridRects(KEEPER.frames[name])}</g>`).join("");
 const frameCss = POSES.map((n) => `.scene .one[data-frame="${n}"] [data-f="${n}"]{display:inline}`).join("\n");
 // two hair colours, so the two can be told apart
-const hairCss = [0, 2]
+const hairCss = (["brown", "gold"] as const)
   .map((h, i) => `.scene .one[data-hair="${i}"]{--px-h:${HAIRS[h].h};--px-o:${HAIRS[h].o};--px-h2:${HAIRS[h].H}}`)
   .join("\n");
 const css = `${paletteCss(".scene", { weather: false })}\n.scene [data-f]{display:none}\n${frameCss}\n${hairCss}`;

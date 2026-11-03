@@ -332,7 +332,7 @@ export function currentBreak(personId: number) {
   return db.select().from(breaks).where(and(eq(breaks.personId, personId), stillGoing())).get();
 }
 
-// Start a break: ends any one already going, and can name the enough it
+// Start a break, or change what the one already going is, and name the enough it
 // follows (only one of their own). fromAlarm marks one taken when the Enough
 // alarm rang (the Collection counts those). Returns the enough's public card
 // if that one is shared, so the feed can show where they went.
@@ -346,7 +346,17 @@ export function startBreak(
     const own = db.select().from(enoughs).where(and(eq(enoughs.id, enoughId), eq(enoughs.personId, personId))).get();
     if (!own) enoughId = null;
   }
-  endBreak(personId);
+  // already on a break: changing what they're doing is the same break, kept
+  // in its place on the meadow and counted once towards the Collection
+  const going = currentBreak(personId);
+  if (going) {
+    db.update(breaks)
+      .set({ kind, ...(enoughId !== null && going.enoughId === null ? { enoughId } : {}), ...(fromAlarm ? { fromAlarm } : {}) })
+      .where(eq(breaks.id, going.id))
+      .run();
+    const after = enoughId ?? going.enoughId;
+    return { ok: true, value: after === null ? null : (publicEnough(after) ?? null) };
+  }
   db.insert(breaks).values({ personId, kind, enoughId, fromAlarm }).run();
   return { ok: true, value: enoughId === null ? null : (publicEnough(enoughId) ?? null) };
 }

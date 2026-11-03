@@ -1,6 +1,7 @@
 import { and, count, eq } from "drizzle-orm";
-import { type Counts, NO_OUTFIT, type Outfit, wearing, wearsList } from "./collection";
+import { type Counts, hairOf, NO_OUTFIT, type Outfit, wearing, wearsList } from "./collection";
 import { db, restingPeople } from "./db";
+import type { Hair } from "./pixel";
 import { type BreakKind, type CollectionItem, isCollectionItem, OUTFIT_SLOTS } from "./limits";
 import { breaks, enoughs, outfits, urges, workSessions } from "./schema";
 import { localDate } from "./summary";
@@ -63,13 +64,18 @@ export function setOutfit(personId: number, outfit: Outfit): void {
     .run();
 }
 
-// One little one on the meadow: what its person went to do and the item keys
-// it shows. Built field by field: never a person id, block number, username,
-// time or how long, and nothing about how anything was unlocked.
+// One little one on the meadow: what its person went to do, the item keys it
+// shows and its hair colour. Built field by field: never a person id, block
+// number, username, time or how long, and nothing about how anything was
+// unlocked.
 export interface MeadowOne {
   kind: BreakKind;
   wears: CollectionItem[];
+  hair: Hair;
 }
 
 export const meadowNow = (): MeadowOne[] =>
-  restingPeople().map(({ personId, kind }) => ({ kind, wears: wearsList(outfitOf(personId)) }));
+  restingPeople().map(({ personId, kind }) => {
+    const outfit = outfitOf(personId);
+    return { kind, wears: wearsList(outfit), hair: hairOf(outfit) };
+  });

@@ -1,8 +1,8 @@
 ---
 import { BRICKS, CARRY_SECONDS, DEFAULT_SCENE_THING, DEFAULT_WEATHER, FLICKER_BELOW } from "../lib/limits";
-import { gridRects, paletteCss } from "../lib/pixel";
+import { gridRects, hairCss, paletteCss } from "../lib/pixel";
 import type { Scene } from "../lib/scene";
-import { NO_OUTFIT, type Outfit } from "../lib/collection";
+import { hairOf, NO_OUTFIT, type Outfit } from "../lib/collection";
 import {
   blockRows,
   brickRows,
@@ -231,7 +231,7 @@ const ringCss = Array.from({ length: RINGS }, (_, lit) =>
 )
   .flat()
   .join(",");
-const css = `${paletteCss(".little-one")}\n${frameCss}\n${ringCss}{display:none}`;
+const css = `${paletteCss(".little-one")}\n${frameCss}\n${hairCss(".little-one .keeper")}\n${ringCss}{display:none}`;
 ---
 
 <figure
@@ -298,6 +298,7 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${ringCss}{display:none}
       <g
         class="keeper"
         data-frame={still}
+        data-hair={hairOf(outfit)}
         transform={`translate(24 ${GROUND - KEEPER.height + 1})`}
         set:html={frames}
       />

@@ -1,23 +1,15 @@
 // Who just sat down on the meadow, so the page can float them in on a
-// parachute. The server never says who anyone is: it sends the little ones in
-// the order they went on their break (restingPeople in db.ts), so someone who
-// leaves drops out of the list and someone new joins at the end. Comparing
-// what each one is doing before and after is enough: whatever in the new list
-// can't be matched, in order, against the old one has just arrived. Changing
-// an outfit changes nothing here, and two people doing the same thing may
-// look like one staying, which only costs a parachute.
+// parachute. The server never says who anyone is, but it keeps the little
+// ones in the order they went on their break (restingPeople in db.ts):
+// changing what you're doing keeps your place, leaving drops you out, and
+// someone new joins at the end. Each going or coming sends its own update, so
+// if the line is longer than last time, the extra ones at the end are new;
+// otherwise nobody is (someone left, changed what they're doing, or changed
+// what they wear).
 //
 // `before` is null when the page has just opened: whoever is already resting
 // was there first, and nobody floats in.
-export function arrivals(before: readonly string[] | null, after: readonly string[]): number[] {
+export function arrivals(before: readonly unknown[] | null, after: readonly unknown[]): number[] {
   if (before === null) return [];
-  let i = 0;
-  let k = 0;
-  // the longest start of `after` that's still in `before`, in order
-  for (; k < after.length; k++) {
-    while (i < before.length && before[i] !== after[k]) i++;
-    if (i === before.length) break;
-    i++;
-  }
-  return after.map((_, n) => n).slice(k);
+  return after.map((_, n) => n).slice(Math.min(before.length, after.length));
 }

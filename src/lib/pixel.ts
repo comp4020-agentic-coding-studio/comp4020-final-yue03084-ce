@@ -145,17 +145,33 @@ export const WEATHER_SKIES = {
   snow: { y: "#dfe6ea", Y: "#eef1f0", u: "#f3efdc" },
 } as const satisfies Record<string, Partial<Record<Ink, string>>>;
 
-// Hair colours for the little ones on the meadow, so a few resting together
-// can be told apart without saying who anyone is: each is the hair, its
-// outline and its highlight (inks h, o and H). Picked by place in the line,
-// never by person.
-export const HAIRS = [
-  { h: "#9a5b3a", o: "#5a3526", H: "#c4875a" },
-  { h: "#4a3a33", o: "#2a201c", H: "#6e5a4e" },
-  { h: "#c79a55", o: "#8a6230", H: "#e6c27f" },
-  { h: "#a8473a", o: "#6a2a22", H: "#cf7462" },
-  { h: "#6d6a62", o: "#45423c", H: "#97938a" },
-] as const;
+// Hair colours: the hair, its outline and its highlight (inks h, o and H).
+// Everyone's little one starts brown; the others come from the Collection
+// (darkhair and the rest in limits.ts), and a little one has its owner's
+// colour everywhere it's drawn: on Working on it, as their avatar, and on the
+// meadow, where it's one of five, which says nothing about whose it is.
+export const HAIRS = {
+  brown: { h: "#9a5b3a", o: "#5a3526", H: "#c4875a" },
+  dark: { h: "#4a3a33", o: "#2a201c", H: "#6e5a4e" },
+  gold: { h: "#c79a55", o: "#8a6230", H: "#e6c27f" },
+  red: { h: "#a8473a", o: "#6a2a22", H: "#cf7462" },
+  silver: { h: "#6d6a62", o: "#45423c", H: "#97938a" },
+} as const;
+export type Hair = keyof typeof HAIRS;
+export const isHair = (key: string): key is Hair => Object.hasOwn(HAIRS, key);
+// which Collection thing gives which colour
+export const HAIR_OF_ITEM: Partial<Record<string, Hair>> = {
+  darkhair: "dark",
+  goldhair: "gold",
+  redhair: "red",
+  silverhair: "silver",
+};
+// the CSS that recolours a little one's hair inside `scope`, one rule per
+// colour, chosen by a data-hair attribute
+export const hairCss = (scope: string) =>
+  Object.entries(HAIRS)
+    .map(([key, c]) => `${scope}[data-hair="${key}"]{--px-h:${c.h};--px-o:${c.o};--px-h2:${c.H}}`)
+    .join("\n");
 
 // Which sky a local hour gets.
 export const skyFor = (hour: number): Sky => (hour >= 7 && hour < 17 ? "day" : hour >= 17 && hour < 19 ? "dusk" : "night");
