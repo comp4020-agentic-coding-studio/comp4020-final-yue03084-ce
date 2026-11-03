@@ -154,6 +154,20 @@ const MALLET_DOWN = ["..................dd", "..............Tsspdd", "..........
 const tapping = (t: Tier, down: boolean) =>
   over(pad(walking(t, LEGS.stand, HANDS.none)), 0, down ? 15 : 10, down ? MALLET_DOWN : MALLET_UP);
 
+// a low tower is tended crouched: the same mallet, raised beside its head and
+// knocked down near the grass
+const CROUCH_MALLET_UP = [
+  ".................ddd",
+  ".................DDD",
+  "..................p.",
+  "..................p.",
+  ".................p..",
+  "................p...",
+];
+const CROUCH_MALLET_DOWN = ["..................dd", "................ppdd", "..................DD"];
+const crouchTapping = (t: Tier, down: boolean) =>
+  over(pad(crouching(t)), 0, down ? 18 : 14, down ? CROUCH_MALLET_DOWN : CROUCH_MALLET_UP);
+
 const frames: Record<string, Rows> = {
   blink: standing(0, EYES.shut),
   rub: over(standing(1, EYES.shut), 9, 10, ["SSs", "SSs", ".s."]),
@@ -182,6 +196,8 @@ for (const t of tiers) {
   frames[`sit${s}`] = sitting(t);
   frames[`tap1${s}`] = tapping(t, false);
   frames[`tap2${s}`] = tapping(t, true);
+  frames[`ctap1${s}`] = crouchTapping(t, false);
+  frames[`ctap2${s}`] = crouchTapping(t, true);
 }
 // every frame must be exactly 20×24 once padded, or the drawing has a mistake in it
 for (const [name, rows] of Object.entries(frames)) {
@@ -190,6 +206,25 @@ for (const [name, rows] of Object.entries(frames)) {
 }
 
 export const KEEPER: Actor = { width: 20, height: 24, frames };
+
+// How it reaches the top of a tower this many pixels tall to knock it: low,
+// it crouches (the mallet lands 4 above the grass); then it stands (7 above);
+// taller, it climbs a ladder, its feet `lift` pixels up, so the mallet lands
+// just under the top. Never so high its head leaves the picture.
+export const CROUCH_BELOW = 8;
+export const LADDER_ABOVE = 14;
+export function reachFor(height: number): { how: "crouch" | "stand" | "ladder"; lift: number } {
+  if (height < CROUCH_BELOW) return { how: "crouch", lift: 0 };
+  if (height <= LADDER_ABOVE) return { how: "stand", lift: 0 };
+  return { how: "ladder", lift: Math.min(height - 10, 26) };
+}
+
+// The ladder leaning on the tower, 8 wide: two rails and a rung every three
+// rows, from 6 above where its feet stand down to the grass, with a rung
+// where its feet are (row 6).
+export function ladderRows(lift: number): string[] {
+  return Array.from({ length: lift + 7 }, (_, i) => (i === 1 || (i >= 6 && (i - 6) % 3 === 0) ? "NnnnnnnN" : "N......N"));
+}
 
 // the order the walking frames play in
 export const WALK = ["walk1", "walk2", "walk3", "walk4"] as const;

@@ -3,7 +3,7 @@ import { SCENE_THINGS, type SceneThing, WEATHERS } from "../lib/limits";
 import type { Scene } from "../lib/scene";
 
 // Choose what's in the little one's picture and the weather, kept with your
-// account. Two groups of radio buttons in one plain form: labelled, and the
+// account as soon as it's chosen. Two groups of radio buttons in one plain form: labelled, and the
 // arrow keys move within a group. The owner's alone. Only the things they can
 // choose are offered: the sunflower once it's come from their Collection.
 interface Props {
@@ -34,8 +34,28 @@ const { scene, things } = Astro.props;
       ))
     }
   </fieldset>
+  <!-- without the script, a plain form; with it, each choice is kept as it's made -->
   <button type="submit" class="quiet">Keep this</button>
 </form>
+
+<script>
+  // A choice shows in the picture at once, wherever it is (on the page or in
+  // its own small window: the same picture, found now, before it can move),
+  // and is kept with the account in the background, through the same form.
+  const form = document.querySelector<HTMLFormElement>(".scene-picker");
+  const picture = document.querySelector<HTMLElement>(".little-one");
+  if (form) {
+    form.querySelector("button")?.setAttribute("hidden", "");
+    form.addEventListener("change", () => {
+      const data = new FormData(form);
+      if (picture) {
+        picture.dataset.thing = String(data.get("thing"));
+        picture.dataset.weather = String(data.get("weather"));
+      }
+      void fetch(form.action, { method: "POST", body: new URLSearchParams(data as unknown as string[][]), redirect: "manual" });
+    });
+  }
+</script>
 
 <style>
   .scene-picker {

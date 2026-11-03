@@ -115,9 +115,17 @@ commit (see "A feature lands with its test").
   nothing is cached offline and there's no push, so no page is ever stale.
   *(Asked for by the tutor on 2026-11-03: PWA for phones, and the little one
   working alongside you.)*
-  **Guarded by:** `work.test.ts` "offers to keep it beside you…";
-  `ui.test.ts` "adding it to a home screen". **Not tested:** the small
-  window opening and the picture moving there and back, checked in a browser.
+  What's in the picture and the weather change as soon as they're chosen,
+  on the page or in the small window, and are kept in the background; every
+  choice is drawn already and only shown by `data-thing`/`data-weather`.
+  Between bricks it knocks the tower crouched when it's low, standing, or up
+  a ladder that grows with it (`reachFor` in `sprites.ts`). *(Asked for
+  2026-11-04: "Keep this" then "Bring it back" was two steps for one choice,
+  and it tapped a two-brick tower standing up.)*
+  **Guarded by:** `work.test.ts` "offers to keep it beside you…", "draws
+  every choice…", "reaching the top of the tower"; `ui.test.ts` "adding it
+  to a home screen". **Not tested:** the small window opening and the
+  picture moving there and back, the climb itself: checked in a browser.
 - **The Collection unlocks only from stopping.** Its things (`COLLECTION` in
   `src/lib/limits.ts`, arithmetic in `src/lib/collection.ts`) come from
   breaks taken, letting a recheck go, resting when the alarm rang
@@ -289,6 +297,11 @@ reload"; `lasting.test.ts` "keeps what was written through a restart".
   `spec/global-setup.ts` boots the built server (`dist/server/entry.mjs`)
   with a throwaway `DATA_DIR` unless `APP_URL` is set; CI sets it to the
   Docker image it built.
+- Spec files run one at a time (`fileParallelism: false` in
+  `vitest.config.ts`), about 17s instead of 8. *(They share one server, and
+  the resting count and the meadow are everyone's: on 2026-11-04 three
+  different specs failed now and then because another file rested at the
+  same moment.)*
 - `spec/invariants.test.ts` is the course's (`/` answers, `/readme/` has every
   README heading in the server's HTML): keep it as it is.
 - What each spec checks is in its test names; which decision each guards is

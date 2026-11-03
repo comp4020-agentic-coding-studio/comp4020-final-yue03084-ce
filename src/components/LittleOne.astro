@@ -50,12 +50,16 @@ import { tiredness, towerPlan } from "../lib/worktime";
 // What it wears and has with it comes from its owner's Collection (outfit.ts):
 // a hat or crown, a scarf, a lantern set down beside it, a tabby keeping it
 // company. Only what they chose is drawn; nothing else is in the page.
+// Everything its owner can choose for the picture is drawn, and the
+// choice only shows one (data-thing, data-weather), so the picker beside it
+// changes it at once, even in its own small window.
 interface Props {
   view: WorkView;
   scene?: Scene;
   outfit?: Outfit;
+  sunflower?: boolean;
 }
-const { view, scene, outfit = NO_OUTFIT } = Astro.props;
+const { view, scene, outfit = NO_OUTFIT, sunflower: canSunflower = false } = Astro.props;
 const worn = [outfit.head, outfit.neck].filter((k): k is NonNullable<typeof k> => k !== null).filter(isWearable);
 const thing = scene?.thing ?? DEFAULT_SCENE_THING;
 const weather = scene?.weather ?? DEFAULT_WEATHER;
@@ -281,7 +285,7 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${hairCss(".little-one .
         <g class="can" set:html={can} />
       </g>
       {
-        thing === "sunflower" && (
+        (canSunflower || thing === "sunflower") && (
           <g class="for-sunflower">
             <g class="plant" set:html={sunflower} />
             <g class="can" set:html={can} />
@@ -293,6 +297,8 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${hairCss(".little-one .
       <g class="pile" set:html={pile} />
       <!-- this session's tower; the script lays its bricks, starting from the work so far -->
       <g class="tower"></g>
+      <!-- leaning on the tower once it's too tall to reach from the grass -->
+      <g class="ladder"></g>
       <!-- the drawings the script copies a block from -->
       <defs set:html={blocks} />
       <g
@@ -407,12 +413,14 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${hairCss(".little-one .
 
   /* only the thing its owner chose is in the picture */
   .for-lamp,
-  .for-plant {
+  .for-plant,
+  .for-sunflower {
     display: none;
   }
 
   [data-thing="lamp"] .for-lamp,
-  [data-thing="plant"] .for-plant {
+  [data-thing="plant"] .for-plant,
+  [data-thing="sunflower"] .for-sunflower {
     display: inline;
   }
 
@@ -503,7 +511,8 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${hairCss(".little-one .
 </style>
 
 <script>
-  import { skyFor } from "../lib/pixel";
+  import { gridRects, skyFor } from "../lib/pixel";
+  import { ladderRows, reachFor } from "../lib/sprites";
   import { bricksLaid, tiredness, towerPlan } from "../lib/worktime";
 
   const SVG = "http://www.w3.org/2000/svg";
@@ -526,7 +535,8 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${hairCss(".little-one .
     const keeper = fig.querySelector<SVGGElement>(".keeper");
     const tower = fig.querySelector<SVGGElement>(".tower");
     const held = fig.querySelector<SVGGElement>(".held");
-    if (!keeper || !tower || !held) continue;
+    const ladder = fig.querySelector<SVGGElement>(".ladder");
+    if (!keeper || !tower || !held || !ladder) continue;
 
     // the sky follows the clock where you are
     const setSky = () => (fig.dataset.sky = skyFor(new Date().getHours()));
@@ -565,7 +575,16 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${hairCss(".little-one .
       const x = TOWER - Math.floor((plan.perLayer * plan.width) / 2) + wobble + j * plan.width;
       tower.append(block(inkAt(laid), plan.width, h, x, top));
       laid += 1;
+      setLadder();
     };
+    // the ladder, once the tower is taller than it can reach from the grass,
+    // just left of it, growing with it
+    const towerLeft = () => TOWER - Math.floor((plan.perLayer * plan.width) / 2);
+    function setLadder() {
+      const reach = reachFor(GROUND - top);
+      ladder!.innerHTML =
+        reach.how === "ladder" ? gridRects(ladderRows(reach.lift), towerLeft() - 12, GROUND - reach.lift - 6) : "";
+    }
     // how many bricks the work so far has earned: from the server's count at
     // load, then the clock while the page stays open and working
     const loaded = Date.now();
@@ -575,6 +594,8 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${hairCss(".little-one .
     for (let i = earned(); i > 0; i--) lay();
 
     let x = PILE;
+    // how far up the ladder its feet are; 0 on the grass
+    let lift = 0;
     let facing: 1 | -1 = 1;
     // the umbrella rides just above the top of whatever frame is showing
     const umbrella = fig.querySelector<SVGGElement>(".umbrella");
@@ -591,9 +612,9 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${hairCss(".little-one .
       facing = dir;
       keeper.dataset.frame = frame;
       const left = dir === 1 ? x : x + WIDTH;
-      keeper.setAttribute("transform", `translate(${left} ${GROUND - HEIGHT + 1}) scale(${dir} 1)`);
+      keeper.setAttribute("transform", `translate(${left} ${GROUND - HEIGHT + 1 - lift}) scale(${dir} 1)`);
       // centred on the little one (its handle over the middle of the frame)
-      umbrella?.setAttribute("transform", `translate(${x - 3} ${GROUND - HEIGHT + 1 + topOf(frame) - 10})`);
+      umbrella?.setAttribute("transform", `translate(${x - 3} ${GROUND - HEIGHT + 1 - lift + topOf(frame) - 10})`);
     };
     // the brick it carries rides in its hands, just in front of it
     const hold = (ink: string | null) => {
@@ -615,13 +636,15 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${hairCss(".little-one .
 
     // rain falls two pixels a frame, slanting a little; snow one pixel every
     // few frames, drifting side to side. Back to the top past the grass.
-    const weather = fig.dataset.weather;
-    const flakes = [...fig.querySelectorAll<SVGRectElement>(`.weather.${weather} rect`)];
-    if (flakes.length) {
+    // Both are in the picture; only the one chosen now moves (and shows), so
+    // choosing another starts it falling at once.
+    for (const weather of ["rain", "snow"]) {
+      const flakes = [...fig.querySelectorAll<SVGRectElement>(`.weather.${weather} rect`)];
       const rain = weather === "rain";
       let tick = 0;
       setInterval(
         () => {
+          if (fig.dataset.weather !== weather) return;
           tick += 1;
           flakes.forEach((f, i) => {
             let fx = Number(f.getAttribute("x"));
@@ -736,15 +759,29 @@ const css = `${paletteCss(".little-one")}\n${frameCss}\n${hairCss(".little-one .
     // between bricks, beside the tower: a few knocks with its mallet, then a
     // step back to look the tower over; now and then a stretch, and sleepy,
     // it drowses as well
+    // How it knocks depends on how tall the tower is (reachFor in sprites.ts):
+    // crouched for a low one, standing, or up the ladder for a tall one.
+    const climb = async (to: number, t: ReturnType<typeof now>) => {
+      let n = 0;
+      while (lift !== to) {
+        lift += Math.sign(to - lift);
+        place(`${n++ % 2 ? "walk1" : "walk3"}${tier(t)}`, 1);
+        await pause(ms(t) * 1.5);
+      }
+    };
     const tend = async () => {
       const t = now();
-      await walk(TAPPING_AT(TOWER - Math.floor((plan.perLayer * plan.width) / 2)), null);
+      const reach = reachFor(GROUND - top);
+      await walk(TAPPING_AT(towerLeft()), null);
+      if (reach.how === "ladder") await climb(reach.lift, t);
+      const tap = reach.how === "crouch" ? "ctap" : "tap";
       for (let i = 0; i < 3; i++) {
-        place(`tap1${tier(t)}`, 1);
+        place(`${tap}1${tier(t)}`, 1);
         await pause(ms(t) * 3);
-        place(`tap2${tier(t)}`, 1);
+        place(`${tap}2${tier(t)}`, 1);
         await pause(ms(t) * 2);
       }
+      if (lift) await climb(0, t);
       place(`stand${tier(t)}`, 1);
       await pause(ms(t) * 2);
       await walk(BESIDE_TOWER - 8, null);

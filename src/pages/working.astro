@@ -27,7 +27,7 @@ const things = counts ? sceneThingsFor(counts) : [];
   {
     person ? (
       <>
-        <WorkPanel view={view} scene={scene ?? undefined} outfit={outfit} />
+        <WorkPanel view={view} scene={scene ?? undefined} outfit={outfit} sunflower={things.includes("sunflower")} />
         {view && scene && <ScenePicker scene={scene} things={things} />}
       </>
     ) : (

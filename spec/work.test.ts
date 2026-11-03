@@ -23,6 +23,7 @@ import {
   tiredness,
   towerPlan,
 } from "../src/lib/worktime.ts";
+import { CROUCH_BELOW, KEEPER, LADDER_ABOVE, ladderRows, reachFor } from "../src/lib/sprites.ts";
 
 // Work sessions, the little one and the Enough alarm. Against the running
 // app: they're the owner's alone (never on the feed or the stream, another
@@ -216,6 +217,20 @@ describe("the little one's tower", () => {
 });
 
 describe("the little one's picture", () => {
+  // The picker changes the picture on the page at once (its script sets
+  // data-thing and data-weather), so every choice has to be drawn already.
+  it("draws every choice, so a new one shows at once, and still keeps it through the form", async () => {
+    const me = await signedIn();
+    await me.work({ action: "start", tz: "660" });
+    const html = await me.get("/working/");
+    for (const part of ["for-lamp", "for-plant", "weather rain", "weather snow"]) expect(html, part).toContain(`class="${part}"`);
+    // the sunflower only once it's theirs, as before
+    expect(html).not.toContain('class="for-sunflower"');
+    expect((await me.scene({ thing: "plant", weather: "rain" })).status).toBe(303);
+    expect(sceneIn(await me.get("/working/"))).toMatchObject({ thing: "plant", weather: "rain" });
+    await me.work({ action: "finish" });
+  });
+
   // Keep it beside you moves this picture into a small window of its own
   // (WorkPanel's script). The button is hidden until the script finds a
   // browser that can, so a page without it never offers what it can't do.
@@ -379,5 +394,32 @@ describe("work arithmetic (worktime.ts)", () => {
   it("recovers fully after a long enough rest, partly after a short one", () => {
     expect(carriedAfterRest(30, 10)).toBe(0);
     expect(carriedAfterRest(30, 5)).toBeCloseTo(15);
+  });
+});
+
+// How it tends the tower, by its height in pixels (sprites.ts): crouched
+// for a low one, standing, then up a ladder that grows with it.
+describe("reaching the top of the tower (sprites.ts)", () => {
+  it("crouches for a low tower, stands for a middling one, climbs a ladder for a tall one", () => {
+    expect(reachFor(0).how).toBe("crouch");
+    expect(reachFor(CROUCH_BELOW - 1).how).toBe("crouch");
+    expect(reachFor(CROUCH_BELOW).how).toBe("stand");
+    expect(reachFor(LADDER_ABOVE).how).toBe("stand");
+    expect(reachFor(LADDER_ABOVE + 1)).toEqual({ how: "ladder", lift: LADDER_ABOVE - 9 });
+    expect(reachFor(46).lift).toBeLessThanOrEqual(26);
+  });
+
+  it("puts a rung under its feet and the ladder's foot on the grass", () => {
+    for (const lift of [5, 12, 26]) {
+      const rows = ladderRows(lift);
+      // its feet are `lift` above the grass; the ladder starts 6 above them
+      expect(rows).toHaveLength(lift + 7);
+      expect(rows[6]).toBe("NnnnnnnN");
+      expect(rows.every((r) => r.startsWith("N") && r.endsWith("N"))).toBe(true);
+    }
+  });
+
+  it("has a crouched knock for each look, fresh to nearly asleep", () => {
+    for (const name of ["ctap1", "ctap2", "ctap1~1", "ctap2~1", "ctap1~2", "ctap2~2"]) expect(KEEPER.frames[name], name).toHaveLength(24);
   });
 });

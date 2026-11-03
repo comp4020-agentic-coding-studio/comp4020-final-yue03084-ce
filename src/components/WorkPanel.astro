@@ -15,8 +15,10 @@ interface Props {
   view: WorkView | null;
   scene?: Scene;
   outfit?: Outfit;
+  // whether the sunflower is theirs to choose, so it's drawn ready
+  sunflower?: boolean;
 }
-const { view, scene, outfit } = Astro.props;
+const { view, scene, outfit, sunflower } = Astro.props;
 const resting = view?.state === "resting";
 ---
 
@@ -69,7 +71,7 @@ const resting = view?.state === "resting";
     ) : (
       <div class="work-on">
         <div class="little-one-home">
-          <LittleOne view={view} scene={scene} outfit={outfit} />
+          <LittleOne view={view} scene={scene} outfit={outfit} sunflower={sunflower} />
           <p class="hint away-note" hidden>The little one is in its own small window, beside whatever you're working on.</p>
         </div>
         <p class="work-status" aria-live="polite">
