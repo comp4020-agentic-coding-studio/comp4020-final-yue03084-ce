@@ -425,27 +425,35 @@ describe("breaks", () => {
     expect(ended).toContain(`"count":${before}`);
   });
 
-  it("changing what you're doing on a break keeps your place on the meadow", async () => {
-    const first = await signedIn();
-    const second = await signedIn();
-    await first.rest({ kind: "tea" });
-    await second.rest({ kind: "watch" });
-    const kinds = async (then: () => Promise<unknown>) => {
-      const got = await readStream(then, "event: resting", 3_000);
-      return (JSON.parse(/event: resting\ndata: (.*)/.exec(got)?.[1] ?? "{}").ones as { kind: string }[]).map((o) => o.kind);
-    };
-    const after = await kinds(() => first.rest({ kind: "nap" }));
-    // first is still ahead of second, now napping; no one new joined the end
-    expect(after.indexOf("nap")).toBeLessThan(after.lastIndexOf("watch"));
-    expect(after).not.toContain("tea");
-    await first.rest({ end: "1" });
-    await second.rest({ end: "1" });
+  // The stream never says who, so a check from outside can't tell one tea
+  // from another, and other specs rest at the same time on the same server.
+  // The order is decided inside, by account (restingPeople in db.ts), so it's
+  // checked there, on a throwaway database of its own.
+  it("changing what you're doing on a break keeps your place on the meadow (db.ts)", async () => {
+    process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "spec-meadow-"));
+    const db = await import("../src/lib/db.ts");
+    const first = db.createPerson(`first-${marker()}`);
+    const second = db.createPerson(`second-${marker()}`);
+    db.startBreak(first.id, "tea", null);
+    db.startBreak(second.id, "watch", null);
+    db.startBreak(first.id, "nap", null);
+    // first is still ahead of second, now napping, and on the meadow once
+    expect(db.restingPeople()).toEqual([
+      { personId: first.id, kind: "nap" },
+      { personId: second.id, kind: "watch" },
+    ]);
+    db.endBreak(first.id);
+    db.endBreak(second.id);
+    expect(db.restingPeople()).toEqual([]);
   });
 
   it("put each resting person's little one on the meadow, live: what they're doing, never who", async () => {
     const someone = await signedIn();
-    const started = await readStream(() => someone.rest({ kind: "nap" }), "event: resting", 3_000);
-    const data = JSON.parse(/event: resting\ndata: (.*)/.exec(started)?.[1] ?? "{}");
+    // other specs rest and come back on the same server at the same time, so
+    // wait for the update that has the nap in it, not just the first one
+    const started = await readStream(() => someone.rest({ kind: "nap" }), '"kind":"nap"', 3_000);
+    const lines = [...started.matchAll(/event: resting\ndata: (.*)/g)].map((m) => m[1]);
+    const data = JSON.parse(lines.find((l) => l.includes('"kind":"nap"')) ?? "{}");
     const kinds = data.ones.map((o: { kind: string }) => o.kind);
     expect(kinds).toContain("nap");
     expect(data.ones).toHaveLength(data.count);

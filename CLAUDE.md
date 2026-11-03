@@ -304,6 +304,13 @@ reload"; `lasting.test.ts` "keeps what was written through a restart".
   in (`later.ts`, `when.ts`, `worktime.ts`, `summary.ts`, `collection.ts`).
   Showing and putting away kept notes is tested on `db.ts` itself with its
   own throwaway `DATA_DIR`. *(The spec can't move the server's clock.)*
+- A spec that needs to know *whose* something is (an order between people,
+  one person's break among others) checks it inside, on `db.ts` with its
+  own `DATA_DIR`, where every row has its account. The stream and the feed
+  never say who, and every spec file shares one server at once, so from
+  outside one person's "tea" can't be told from another spec's. *(On
+  2026-11-04 the meadow-order spec failed now and then because a work spec
+  rested with "tea" at the same moment; nothing in the app was wrong.)*
 - A spec that needs the server's own output or a restart boots its own copy
   of `dist/server/entry.mjs` on its own `DATA_DIR`, as `lasting.test.ts` does.
   *(The shared test server's output is discarded, and in CI it's a Docker
