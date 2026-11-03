@@ -95,12 +95,16 @@ commit (see "A feature lands with its test").
   resting when it opens is simply there, so a reload isn't a shower of
   parachutes. Worked out on the page from the line of little ones, which
   keeps its order (`arrivals` in `src/lib/meadow.ts`); the server sends
-  nothing for it. With reduced motion nobody
-  floats. *(Asked for 2026-11-03: a playful way in for a new little one.)*
+  nothing for it. With reduced motion nobody floats, and nor does anyone on
+  the page that has just sent a break form: the update can beat the reload,
+  and showed its own person a parachute for a moment. *(Asked for
+  2026-11-03: a playful way in for a new little one. The flash was found the
+  same day by tapping I'm back and a break in turn.)*
   **Guarded by:** `ui.test.ts` "parachutes on the meadow (meadow.ts)";
   `enough.test.ts` "put each resting person's little one on the meadow…"
-  (the event still holds only kind and wears). **Not tested:** how it looks
-  and moves, checked in a browser.
+  (the event holds only kind, wears and hair). **Not tested:** how it looks
+  and moves, and the page that sent the form not floating its own person:
+  both checked in a browser.
 - **The Collection unlocks only from stopping.** Its things (`COLLECTION` in
   `src/lib/limits.ts`, arithmetic in `src/lib/collection.ts`) come from
   breaks taken, letting a recheck go, resting when the alarm rang

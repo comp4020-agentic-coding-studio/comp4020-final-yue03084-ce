@@ -302,14 +302,24 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
       })();
     };
 
-    // what each little one was doing at the last redraw, in order; null until
-    // the first, so whoever's resting when the page opens doesn't float in
+    // the little ones at the last redraw, in order; null until the first, so
+    // whoever's resting when the page opens doesn't float in
     let before: string[] | null = null;
+    // Taking a break (or coming back) from this page posts a form, and the
+    // page reloads with the answer. The update about it can arrive first, and
+    // would float this page's own person in for a moment before the reload.
+    // So from the moment a break form is sent, nobody floats here: the page
+    // that comes back shows them already on the grass, as anyone there when
+    // a page opens. Every other page still sees them float down.
+    let leaving = false;
+    document.addEventListener("submit", (event) => {
+      if ((event.target as HTMLFormElement).action.endsWith("/break/")) leaving = true;
+    });
 
     const draw = (list: One[]) => {
       generation += 1;
       const kinds = list.map((one) => one.kind);
-      const arriving = new Set(reduced ? [] : arrivals(before, kinds));
+      const arriving = new Set(reduced || leaving ? [] : arrivals(before, kinds));
       before = kinds;
       const shown = list.slice(0, max);
       ones.replaceChildren();
