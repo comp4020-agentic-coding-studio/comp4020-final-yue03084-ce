@@ -105,6 +105,19 @@ commit (see "A feature lands with its test").
   (the event holds only kind, wears and hair). **Not tested:** how it looks
   and moves, and the page that sent the form not floating its own person:
   both checked in a browser.
+- **The little one can come with you; the site can be installed.** On
+  Together, "Keep it beside you" moves the little one's picture itself into
+  a small window that stays on top (Document Picture-in-Picture, Chrome and
+  Edge only; the button stays hidden elsewhere), so it carries on mid-step
+  and comes back when the window closes. It closes with the page, on Go, I'm
+  back or Finish. The site has a manifest and an icon drawn from the
+  standing frame (`src/lib/icon.ts`), so it can be added to a home screen;
+  nothing is cached offline and there's no push, so no page is ever stale.
+  *(Asked for by the tutor on 2026-11-03: PWA for phones, and the little one
+  working alongside you.)*
+  **Guarded by:** `work.test.ts` "offers to keep it beside you…";
+  `ui.test.ts` "adding it to a home screen". **Not tested:** the small
+  window opening and the picture moving there and back, checked in a browser.
 - **The Collection unlocks only from stopping.** Its things (`COLLECTION` in
   `src/lib/limits.ts`, arithmetic in `src/lib/collection.ts`) come from
   breaks taken, letting a recheck go, resting when the alarm rang

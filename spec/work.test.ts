@@ -216,6 +216,25 @@ describe("the little one's tower", () => {
 });
 
 describe("the little one's picture", () => {
+  // Keep it beside you moves this picture into a small window of its own
+  // (WorkPanel's script). The button is hidden until the script finds a
+  // browser that can, so a page without it never offers what it can't do.
+  it("offers to keep it beside you while working or resting, hidden until the browser can", async () => {
+    const me = await signedIn();
+    // not before starting: there is no little one yet
+    expect(await me.get("/working/")).not.toMatch(/<button[^>]*keep-beside/);
+    await me.work({ action: "start", tz: "660" });
+    for (const html of [await me.get("/working/"), (await me.work({ action: "rest", kind: "walk" }), await me.get("/working/"))]) {
+      const button = /<button[^>]*keep-beside[^>]*>([^<]*)</.exec(html);
+      expect(button?.[1]).toBe("Keep it beside you");
+      expect(button?.[0]).toContain("hidden");
+      // the picture sits in the place it comes back to
+      expect(html).toMatch(/class="little-one-home"[^>]*>\s*<figure[^>]*class="little-one"/);
+    }
+    await me.rest({ end: "1", back: "/working/" });
+    await me.work({ action: "finish" });
+  });
+
   it("keeps what you choose, after a reload and the next time you work", async () => {
     const me = await signedIn();
     await me.work({ action: "start", tz: "660" });

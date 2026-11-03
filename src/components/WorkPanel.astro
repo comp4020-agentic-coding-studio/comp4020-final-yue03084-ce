@@ -68,7 +68,10 @@ const resting = view?.state === "resting";
       </form>
     ) : (
       <div class="work-on">
-        <LittleOne view={view} scene={scene} outfit={outfit} />
+        <div class="little-one-home">
+          <LittleOne view={view} scene={scene} outfit={outfit} />
+          <p class="hint away-note" hidden>The little one is in its own small window, beside whatever you're working on.</p>
+        </div>
         <p class="work-status" aria-live="polite">
           {resting
             ? `You're on a break (${view.restLabel?.toLowerCase() ?? "resting"}). The little one is resting too.`
@@ -104,6 +107,8 @@ const resting = view?.state === "resting";
             <input type="hidden" name="action" value="finish" />
             <button type="submit">Finish and call it enough</button>
           </form>
+          <!-- only where the browser can open a window that stays on top (the script shows it) -->
+          <button type="button" class="quiet keep-beside" hidden>Keep it beside you</button>
         </div>
       </div>
     )
@@ -162,6 +167,44 @@ const resting = view?.state === "resting";
       void Notification.requestPermission();
     }
   });
+
+  // Keep it beside you: the little one, still working, in a small window that
+  // stays on top of everything else (Document Picture-in-Picture, Chrome and
+  // Edge only; elsewhere the button stays hidden). The picture itself moves
+  // there, so it carries on mid-step; closing the window brings it back. It
+  // closes when this page goes, on Go, I'm back or Finish, like the page.
+  interface PipWindow extends Window {
+    document: Document;
+  }
+  const pipApi = (window as unknown as { documentPictureInPicture?: { requestWindow(o: object): Promise<PipWindow> } })
+    .documentPictureInPicture;
+  const keep = document.querySelector<HTMLButtonElement>(".keep-beside");
+  const home = document.querySelector<HTMLElement>(".little-one-home");
+  const picture = home?.querySelector<HTMLElement>(".little-one");
+  if (pipApi && keep && home && picture) {
+    keep.hidden = false;
+    const note = home.querySelector<HTMLElement>(".away-note");
+    let pip: PipWindow | null = null;
+    const back = () => {
+      home.prepend(picture);
+      if (note) note.hidden = true;
+      keep.textContent = "Keep it beside you";
+      pip = null;
+    };
+    keep.addEventListener("click", async () => {
+      if (pip) return pip.close();
+      // the picture is 112×60 pixels: three times that, and a little edge
+      pip = await pipApi.requestWindow({ width: 352, height: 196 });
+      // the page's styles go with it: the palette, the frames, the colours
+      for (const s of document.querySelectorAll('style, link[rel="stylesheet"]')) pip.document.head.append(s.cloneNode(true));
+      pip.document.title = "The little one";
+      pip.document.body.classList.add("pip");
+      pip.document.body.append(picture);
+      if (note) note.hidden = false;
+      keep.textContent = "Bring it back";
+      pip.addEventListener("pagehide", back);
+    });
+  }
 
   // the Enough alarm, while the page is open: a notification at the moment,
   // and the overlay whenever you look at the page after it
@@ -227,6 +270,25 @@ const resting = view?.state === "resting";
     background: var(--card);
     border: 1px solid var(--line-strong);
     border-radius: var(--radius);
+  }
+
+  /* in its own window: the picture alone, filling it */
+  :global(body.pip) {
+    margin: 0;
+    padding: var(--s1);
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+    background: var(--bg);
+  }
+
+  :global(body.pip .little-one) {
+    margin: 0;
+  }
+
+  :global(body.pip .little-one svg) {
+    width: 100%;
   }
 
   .work-status {
