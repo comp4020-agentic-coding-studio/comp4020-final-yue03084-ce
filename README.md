@@ -35,7 +35,7 @@ apart. You can take a break: the feed
 shows how many people are resting and, after a shared "enough", where they
 went, never for how long. Under the resting count, a small pixel meadow shows
 a little one for each person on a break, doing what they went to do, live for
-everyone and never saying who. Mine has three pages: Looking back adds up a day, week
+everyone and never saying who. You has three pages: Looking back adds up a day, week
 or month for you alone (what you called enough, how it felt, when you worked,
 how often you wanted to check again), and Each one keeps every record in full.
 There, "I want to check it again" shows what you wrote when you stopped, then
@@ -46,7 +46,7 @@ page, Collection, fills with small things that come only from stopping
 and what you choose to wear shows on your little one and on the meadow. You
 can delete anything you've written.
 
-On Working on it, you can start a stretch of work and set an Enough alarm,
+On Together, you can start a stretch of work and set an Enough alarm,
 after a number of minutes or at a time of day. A little one builds a crooked
 tower alongside you, in a small pixel picture. Each time
 you start, the tower begins again, sized to your alarm. The sky

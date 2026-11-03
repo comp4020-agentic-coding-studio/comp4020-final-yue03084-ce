@@ -115,7 +115,7 @@ commit (see "A feature lands with its test").
   and never how it came. A break is counted once however many times its kind
   is changed: changing it is the same break. The little one is the
   account's: everyone starts brown, other hair colours come from the
-  Collection, and its hair and things go with it everywhere (Working on it,
+  Collection, and its hair and things go with it everywhere (Together,
   the avatar, the meadow). *(Until 2026-11-03 the meadow gave out hair by
   place in the line, so when one person left or came back, everyone behind
   them changed colour; and switching from walk to nap started a new break,
@@ -295,7 +295,8 @@ reload"; `lasting.test.ts` "keeps what was written through a restart".
   of `dist/server/entry.mjs` on its own `DATA_DIR`, as `lasting.test.ts` does.
   *(The shared test server's output is discarded, and in CI it's a Docker
   container the spec can't read or restart.)*
-- Mine is three pages: `/mine/` is Looking back (a day, week or month added
+- You (the nav's name since 2026-11-03; the URL is still `/mine/`, and the
+  code and spec names still say Mine) is three pages: `/mine/` is Looking back (a day, week or month added
   up for the owner, `src/lib/summary.ts`, never compared with another
   period), `/mine/all/` is Each one, the full cards, and `/mine/collection/`
   is the Collection.
