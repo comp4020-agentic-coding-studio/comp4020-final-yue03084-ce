@@ -2,6 +2,7 @@ import { JSDOM } from "jsdom";
 import { describe, expect, inject, it } from "vitest";
 import { NOTE_COLOURS } from "../src/lib/limits";
 import { displayName } from "../src/lib/names";
+import { arrivals } from "../src/lib/meadow";
 import { relativeWhen } from "../src/lib/when";
 
 // The look, as far as the server's HTML can show it: every page says it has
@@ -134,5 +135,33 @@ describe("public names (names.ts)", () => {
     expect(new Set(first).size).toBe(256);
     for (const n of first) expect(n).not.toMatch(/#|\d/);
     expect(displayName(257)).toBe("Sage pebble II");
+  });
+});
+
+// Who floats down onto the meadow on a parachute: only someone who went on a
+// break while the page was open. The list is what each little one is doing,
+// in the order they went (the server never says who).
+describe("parachutes on the meadow (meadow.ts)", () => {
+  it("floats nobody in when the page opens, however many are resting", () => {
+    expect(arrivals(null, [])).toEqual([]);
+    expect(arrivals(null, ["tea", "nap", "walk"])).toEqual([]);
+  });
+
+  it("floats in whoever joins the end of the line", () => {
+    expect(arrivals([], ["tea"])).toEqual([0]);
+    expect(arrivals(["tea", "nap"], ["tea", "nap", "walk"])).toEqual([2]);
+    expect(arrivals(["tea"], ["tea", "nap", "move"])).toEqual([1, 2]);
+  });
+
+  it("floats nobody in when someone leaves, or nothing changes", () => {
+    expect(arrivals(["tea", "nap", "walk"], ["tea", "walk"])).toEqual([]);
+    expect(arrivals(["tea", "nap"], ["nap"])).toEqual([]);
+    expect(arrivals(["tea", "nap"], ["tea", "nap"])).toEqual([]);
+    expect(arrivals(["tea"], [])).toEqual([]);
+  });
+
+  it("when one leaves as another arrives, floats in only the new one", () => {
+    expect(arrivals(["tea", "nap"], ["nap", "walk"])).toEqual([1]);
+    expect(arrivals(["tea", "nap", "move"], ["tea", "move", "watch"])).toEqual([2]);
   });
 });

@@ -329,6 +329,31 @@ export const UMBRELLA = [
   ".............n.............",
 ];
 
+// A parachute for someone arriving on the meadow: a striped canopy, pink and
+// cream, 24 wide and centred over the 20-wide frame, its two cords coming
+// down to the hands of the stretch1 frame (row 12, at x 1 and 18). Laid over
+// the frame from 6 rows above its top (y -6), so it reads as rows -6 to 11.
+export const PARACHUTE = (() => {
+  // which columns each dome row fills, top to bottom
+  const dome: [number, number][] = [
+    [8, 15],
+    [4, 19],
+    [2, 21],
+    [1, 22],
+    [0, 23],
+  ];
+  // stripes across the canopy: pink, cream, pink, cream, pink (4, 6, 4, 6, 4)
+  const stripe = (c: number) => (c < 4 || (c >= 10 && c < 14) || c >= 20 ? "2" : "a");
+  const rows = dome.map(([from, to]) =>
+    Array.from({ length: 24 }, (_, c) => (c >= from && c <= to ? stripe(c) : ".")).join(""),
+  );
+  // the cords, from under the canopy to the hands (frame x 1 and 18 are canopy columns 3 and 20)
+  const cord = Array.from({ length: 24 }, (_, c) => (c === 3 || c === 20 ? "n" : ".")).join("");
+  while (rows.length < 18) rows.push(cord);
+  return rows;
+})();
+export const PARACHUTE_AT = { x: -2, y: -6 };
+
 // a little "z", three by three, rising off a nap
 export const ZED = ["ooo", ".o.", "ooo"];
 

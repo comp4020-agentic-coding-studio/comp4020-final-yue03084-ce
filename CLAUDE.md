@@ -90,6 +90,17 @@ commit (see "A feature lands with its test").
   **Guarded by:** `enough.test.ts` "shows no running total, streak or
   ranking, however much there is" (the feed's visible text). **Not tested:**
   pages other than the feed; a total worded some new way.
+- **Someone arriving on the meadow floats down on a parachute.** Only
+  someone who goes on a break while the page is open; whoever is already
+  resting when it opens is simply there, so a reload isn't a shower of
+  parachutes. Worked out on the page from what each little one is doing, in
+  order (`arrivals` in `src/lib/meadow.ts`); the server sends nothing new, so
+  it says no more about who than the meadow did. With reduced motion nobody
+  floats. *(Asked for 2026-11-03: a playful way in for a new little one.)*
+  **Guarded by:** `ui.test.ts` "parachutes on the meadow (meadow.ts)";
+  `enough.test.ts` "put each resting person's little one on the meadow…"
+  (the event still holds only kind and wears). **Not tested:** how it looks
+  and moves, checked in a browser.
 - **The Collection unlocks only from stopping.** Its things (`COLLECTION` in
   `src/lib/limits.ts`, arithmetic in `src/lib/collection.ts`) come from
   breaks taken, letting a recheck go, resting when the alarm rang

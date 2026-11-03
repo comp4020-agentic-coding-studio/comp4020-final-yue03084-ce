@@ -2,7 +2,18 @@
 import { MEADOW_MAX } from "../lib/limits";
 import { meadowNow } from "../lib/outfit";
 import { gridRects, HAIRS, paletteCss } from "../lib/pixel";
-import { frameSvg, KITE, LANTERN, PICNIC, TABBY, WALK, WEARABLES, type Wearable } from "../lib/sprites";
+import {
+  frameSvg,
+  KITE,
+  LANTERN,
+  PARACHUTE,
+  PARACHUTE_AT,
+  PICNIC,
+  TABBY,
+  WALK,
+  WEARABLES,
+  type Wearable,
+} from "../lib/sprites";
 
 // The meadow: everyone on a break right now, as little ones on the grass of
 // one shared picture on the feed. Each is doing what they went to do: tea,
@@ -18,6 +29,10 @@ import { frameSvg, KITE, LANTERN, PICNIC, TABBY, WALK, WEARABLES, type Wearable 
 // above, a tabby or a lantern beside it): item keys only, never whose, and
 // never how anything came (meadowNow in outfit.ts). While nobody's resting the
 // picture is hidden, and the count above it is the whole empty state.
+// Someone who goes on a break while the page is open floats down onto the
+// grass on a parachute, then gets on with their break (arrivals in
+// meadow.ts says who's new); whoever was already there when it opened is
+// simply there. With reduced motion nobody floats.
 const ones = meadowNow();
 const W = 160;
 const H = 44;
@@ -40,6 +55,7 @@ const POSES = ["tea1", "tea2", "sip", "nap1", "nap2", "stretch1", "stretch2", "s
 // every frame carries every wearable, hidden; a little one shows only its own
 const wearables = Object.keys(WEARABLES) as Wearable[];
 const frames = POSES.map((name) => frameSvg(name, wearables)).join("");
+const chute = `<g class="chute">${gridRects(PARACHUTE, PARACHUTE_AT.x, PARACHUTE_AT.y)}</g>`;
 // what goes on the grass around it, drawn from its spot (x 0) and left there
 // while it strolls: the blanket under it, the kite high above, the tabby and
 // the lantern beside it
@@ -73,6 +89,7 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
       <!-- the drawing every little one is copied from -->
       <template id="meadow-one" set:html={frames} />
       <template id="meadow-around" set:html={around} />
+      <template id="meadow-chute" set:html={chute} />
       <!-- the script places the little ones; without it the picture is just the meadow -->
       <g class="ones"></g>
     </svg>
@@ -170,6 +187,7 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
 </style>
 
 <script>
+  import { arrivals } from "../lib/meadow";
   import { HAIRS, skyFor } from "../lib/pixel";
   import { WALK } from "../lib/sprites";
 
@@ -189,6 +207,7 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
     const ones = fig.querySelector<SVGGElement>(".ones");
     const template = fig.querySelector<HTMLTemplateElement>("#meadow-one");
     const aroundTemplate = fig.querySelector<HTMLTemplateElement>("#meadow-around");
+    const chuteTemplate = fig.querySelector<HTMLTemplateElement>("#meadow-chute");
     const more = fig.querySelector<HTMLElement>(".meadow-more");
     const empty = fig.querySelector<HTMLElement>(".meadow-empty");
     if (!ones || !template) continue;
@@ -205,8 +224,8 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
       const gap = (W - WIDTH - 8) / Math.max(1, n);
       return Math.round(4 + gap * i + (gap - WIDTH) / 2 + (((i * 37) % 7) - 3));
     };
-    const at = (g: SVGGElement, x: number, dir: 1 | -1) =>
-      g.setAttribute("transform", `translate(${dir === 1 ? x : x + WIDTH} ${GROUND - 24 + 1}) scale(${dir} 1)`);
+    const at = (g: SVGGElement, x: number, dir: 1 | -1, lift = 0) =>
+      g.setAttribute("transform", `translate(${dir === 1 ? x : x + WIDTH} ${GROUND - 24 + 1 - lift}) scale(${dir} 1)`);
 
     // one loop per little one; a token stops it when the picture is redrawn
     let generation = 0;
@@ -260,8 +279,40 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
       })();
     };
 
+    // Floating down, a pixel at a time, swaying a pixel either way; on the
+    // grass the parachute goes and its break begins. The picture is short, so
+    // it starts with the canopy just in at the top edge, and takes its time.
+    const LIFT = 12;
+    const float = (g: SVGGElement, kind: string, x: number, dir: 1 | -1, gen: number) => {
+      const chute = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      chute.innerHTML = chuteTemplate?.innerHTML ?? "";
+      g.append(chute);
+      g.dataset.frame = "stretch1";
+      at(g, x, dir, LIFT);
+      void (async () => {
+        for (let lift = LIFT; lift > 0 && gen === generation; lift--) {
+          const sway = Math.round(Math.sin(lift / 3));
+          at(g, x + sway, dir, lift);
+          await pause(220);
+        }
+        if (gen !== generation) return;
+        at(g, x, dir);
+        chute.remove();
+        g.dataset.frame = "stand";
+        await pause(500);
+        live(g, kind, x, gen);
+      })();
+    };
+
+    // what each little one was doing at the last redraw, in order; null until
+    // the first, so whoever's resting when the page opens doesn't float in
+    let before: string[] | null = null;
+
     const draw = (list: One[]) => {
       generation += 1;
+      const kinds = list.map((one) => one.kind);
+      const arriving = new Set(reduced ? [] : arrivals(before, kinds));
+      before = kinds;
       const shown = list.slice(0, max);
       ones.replaceChildren();
       shown.forEach(({ kind, wears }, i) => {
@@ -276,13 +327,15 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
         g.dataset.frame = still[kind] ?? "sit";
         g.innerHTML = template.innerHTML;
         const x = spotFor(i, shown.length);
-        at(g, x, i % 2 ? -1 : 1);
+        const dir = i % 2 ? -1 : 1;
+        at(g, x, dir);
         const around = document.createElementNS("http://www.w3.org/2000/svg", "g");
         around.innerHTML = aroundTemplate?.innerHTML ?? "";
         around.setAttribute("transform", `translate(${x} 0)`);
         spot.append(around, g);
         ones.append(spot);
-        live(g, kind, x, generation);
+        if (arriving.has(i)) float(g, kind, x, dir, generation);
+        else live(g, kind, x, generation);
       });
       if (more) {
         more.hidden = list.length <= max;
