@@ -41,8 +41,8 @@ const day = (iso: string) =>
   new Date(iso).toLocaleDateString("en-AU", { timeZone: TIME_ZONE, weekday: "short", day: "numeric", month: "short" });
 ---
 
-<Page title="Mine">
-  <h1>What you put down</h1>
+<Page title="You">
+  <h1>What you set down</h1>
   <MineTop person={person} hasRows={rows.length > 0} />
   {
     (person?.username || rows.length > 0) && (

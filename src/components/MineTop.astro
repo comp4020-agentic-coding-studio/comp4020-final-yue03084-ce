@@ -52,6 +52,6 @@ const pages = [
   )
 }
 {person?.username && <LaterNotes personId={person.id} />}
-<nav class="subnav" aria-label="Mine">
+<nav class="subnav" aria-label="You">
   {pages.map((p) => <a href={p.href} aria-current={here === p.href ? "page" : undefined}>{p.label}</a>)}
 </nav>

@@ -50,7 +50,7 @@ const slotLabel = (slot: string) => COLLECTION_KINDS[slot as keyof typeof COLLEC
 ---
 
 <Page title="Collection">
-  <h1>What you put down</h1>
+  <h1>What you set down</h1>
   <MineTop person={person} hasRows={rows.length > 0} />
   {
     counts && outfit && (
@@ -109,7 +109,7 @@ const slotLabel = (slot: string) => COLLECTION_KINDS[slot as keyof typeof COLLEC
               ))}
               <button type="submit" class="quiet">Keep this</button>
               {isUnlocked("sunflower", counts) && (
-                <p class="hint">The sunflower goes in the picture: choose it on <a href="/working/">Working on it</a>.</p>
+                <p class="hint">The sunflower goes in the picture: choose it on <a href="/working/">Together</a>.</p>
               )}
             </form>
           ) : (

@@ -20,11 +20,11 @@ const shades = (theme: "light" | "dark") =>
 // the dark shades follow the system setting, like the rest of the palette in styles.css
 const colourCss = `:root { ${shades("light")} } @media (prefers-color-scheme: dark) { :root { ${shades("dark")} } }`;
 const links = [
-  { href: "/", label: "Put down for now" },
-  { href: "/working/", label: "Working on it" },
+  { href: "/", label: "Things set down" },
+  { href: "/working/", label: "Together" },
   // Call it enough is the button on the feed (and Finish on Working on it),
   // not a nav item
-  { href: "/mine/", label: "Mine" },
+  { href: "/mine/", label: "You" },
 ];
 // The corner of the nav: who's signed in, as their own little one's head and
 // their username, opening a menu; or a way to sign in. Only ever this

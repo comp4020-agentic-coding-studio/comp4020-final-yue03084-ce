@@ -26,8 +26,8 @@ const miniBar = (text: string) => {
 const when = fullWhen;
 ---
 
-<Page title="Mine">
-  <h1>What you put down</h1>
+<Page title="You">
+  <h1>What you set down</h1>
   <MineTop person={person} hasRows={rows.length > 0} />
   {person?.username && rows.length === 0 && <p>Nothing yet. <a href="/enough/">Call something enough</a></p>}
   <ol class="feed mine">
