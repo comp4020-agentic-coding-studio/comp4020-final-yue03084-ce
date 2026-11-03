@@ -3,6 +3,8 @@ import { describe, expect, inject, it } from "vitest";
 import { NOTE_COLOURS } from "../src/lib/limits";
 import { displayName } from "../src/lib/names";
 import { arrivals } from "../src/lib/meadow";
+import { ICON_SIZES, iconRows } from "../src/lib/icon";
+import { KEEPER } from "../src/lib/sprites";
 import { relativeWhen } from "../src/lib/when";
 
 // The look, as far as the server's HTML can show it: every page says it has
@@ -163,5 +165,42 @@ describe("parachutes on the meadow (meadow.ts)", () => {
   it("floats nobody in when someone changes what they're doing", () => {
     expect(arrivals(["tea", "walk"], ["tea", "nap"])).toEqual([]);
     expect(arrivals(["walk", "watch"], ["nap", "watch"])).toEqual([]);
+  });
+});
+
+// The site can be added to a home screen (a PWA without offline pages): every
+// page names the manifest, the manifest names icons that exist, and the icon
+// is the little one itself, drawn from its standing frame.
+describe("adding it to a home screen", () => {
+  it("every page links the manifest and an icon", async () => {
+    for (const path of PAGES) {
+      const doc = await page(path);
+      expect(doc.querySelector('link[rel="manifest"]')?.getAttribute("href"), path).toBe("/manifest.webmanifest");
+      expect(doc.querySelector('link[rel="apple-touch-icon"]')?.getAttribute("href"), path).toBe("/icon-180.png");
+    }
+  });
+
+  it("opens as its own app, with icons that are real pictures", async () => {
+    const res = await fetch(new URL("/manifest.webmanifest", baseUrl));
+    expect(res.headers.get("content-type")).toContain("application/manifest+json");
+    const manifest = await res.json();
+    expect(manifest).toMatchObject({ name: "Crooked Tower", start_url: "/", display: "standalone" });
+    const sizes = manifest.icons.map((i: { sizes: string }) => i.sizes);
+    expect(sizes).toEqual(expect.arrayContaining(["192x192", "512x512"]));
+    for (const size of ICON_SIZES) {
+      const icon = await fetch(new URL(`/icon-${size}.png`, baseUrl));
+      expect(icon.headers.get("content-type"), String(size)).toBe("image/png");
+      const bytes = new Uint8Array(await icon.arrayBuffer());
+      // a PNG, at the size it says
+      expect([...bytes.slice(1, 4)].map((b) => String.fromCharCode(b)).join("")).toBe("PNG");
+      expect(new DataView(bytes.buffer).getUint32(16)).toBe(size);
+    }
+    expect((await fetch(new URL("/icon-64.png", baseUrl))).status).toBe(404);
+  });
+
+  it("draws the icon from the little one's own standing frame", () => {
+    const rows = iconRows();
+    expect(rows).toHaveLength(24);
+    expect(rows.slice(4).map((r) => r.slice(2, 22))).toEqual(KEEPER.frames.stand.slice(0, 20));
   });
 });

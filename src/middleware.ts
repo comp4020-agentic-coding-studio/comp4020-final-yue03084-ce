@@ -7,7 +7,12 @@ import { currentPerson } from "./lib/person";
 // event lines written while handling it carry the same id. Static assets and
 // the long-lived event stream aren't logged per request: they'd drown the
 // rest. A crash is logged with where it happened, then rethrown.
-const quiet = (path: string) => path.startsWith("/_astro/") || path === "/favicon.svg" || path === "/api/events";
+const quiet = (path: string) =>
+  path.startsWith("/_astro/") ||
+  path.startsWith("/icon-") ||
+  path === "/favicon.svg" ||
+  path === "/manifest.webmanifest" ||
+  path === "/api/events";
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname;
