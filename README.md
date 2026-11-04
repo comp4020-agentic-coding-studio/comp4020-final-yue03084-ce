@@ -35,9 +35,9 @@ apart. You can take a break: the feed
 shows how many people are resting and, after a shared "enough", where they
 went, never for how long. Under the resting count, a small pixel meadow shows
 a little one for each person on a break, doing what they went to do, live for
-everyone and never saying who. You has three pages: Looking back adds up a day, week
+everyone and never saying who. You has three pages: Summary adds up a day, week
 or month for you alone (what you called enough, how it felt, when you worked,
-how often you wanted to check again), and Each one keeps every record in full.
+how often you wanted to check again), and History keeps every record in full.
 There, "I want to check it again" shows what you wrote when you stopped, then
 lets you leave it or check anyway, or write it down for tomorrow, when it comes
 back to you. A worry written when you stop comes back a week later. The third
