@@ -110,13 +110,16 @@ commit (see "A feature lands with its test").
   "Take a break: walk · tea · …", plus "Working" and Finish while working,
   or "On a break (tea) · I'm back". The feed and Together have no break,
   back or finish buttons of their own; the feed keeps the resting count and
-  the meadow (`Resting.astro`) for anyone. Call it enough's "And now?" and
+  the meadow (`Resting.astro`) for anyone. The meadow is always there, empty
+  and saying so when nobody's resting, so it doesn't come and go with
+  other people (hidden until 2026-11-04; that read as broken). Call it enough's "And now?" and
   the alarm's overlay still rest, as part of what they're for. Never how
   long. *(2026-11-04: with breaks on the feed, on Together and at the end of
   Call it enough, the agent and I both lost track of where things were;
   adding a bar on top would have meant three I'm backs, so the others went.)*
   **Guarded by:** `work.test.ts` "the status bar" (signed out, each state on
-  every page, only one of each, back to the page it came from).
+  every page, only one of each, back to the page it came from, links on
+  hover); `ui.test.ts` "keeps the meadow on the feed, saying it's empty…".
 - **The little one can come with you; the site can be installed.** On
   Together, "Keep it beside you" moves the little one's picture itself into
   a small window that stays on top (Document Picture-in-Picture, Chrome and

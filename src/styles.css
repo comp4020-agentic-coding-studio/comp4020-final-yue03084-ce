@@ -714,14 +714,10 @@ button.danger:hover {
   border-color: var(--accent);
 }
 
-/* who's resting: the count and the meadow, only while someone is, 24px
+/* who's resting: the count, while someone is, and the meadow, always, 24px
    above the list; taking a break is in the status bar (StatusBar.astro) */
 .breakbox {
   margin: 0 0 var(--s4);
-}
-
-.breakbox:has(.resting:empty) {
-  margin: 0;
 }
 
 .resting {

@@ -28,7 +28,8 @@ import {
 // chose from their Collection (a hat, a scarf; a blanket under it, a kite
 // above, a tabby or a lantern beside it): item keys only, never whose, and
 // never how anything came (meadowNow in outfit.ts). While nobody's resting the
-// picture is hidden, and the count above it is the whole empty state.
+// meadow stays, empty, with a line saying anyone can sit down on it, so it
+// doesn't come and go with other people (2026-11-04).
 // Someone who goes on a break while the page is open floats down onto the
 // grass on a parachute, then gets on with their break (arrivals in
 // meadow.ts says who's new); whoever was already there when it opened is
@@ -75,7 +76,7 @@ const frameCss = POSES.map((n) => `.meadow .one[data-frame="${n}"] [data-f="${n}
 const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCss(".meadow .one")}\n.meadow [data-w],.meadow [data-has]{display:none}\n${wearCss}`;
 ---
 
-<figure class="meadow" aria-hidden="true" hidden={ones.length === 0} data-sky="day" data-max={MEADOW_MAX} data-ones={JSON.stringify(ones)}>
+<figure class="meadow" aria-hidden="true" data-sky="day" data-max={MEADOW_MAX} data-ones={JSON.stringify(ones)}>
   <style set:html={css}></style>
   <div class="meadow-page">
     <svg viewBox={`0 0 ${W} ${H}`} width={W * 3} height={H * 3} shape-rendering="crispEdges" role="presentation" focusable="false">
@@ -111,10 +112,6 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
     border: 1px solid var(--line);
     border-radius: 0;
     background: var(--card);
-  }
-
-  .meadow[hidden] {
-    display: none;
   }
 
   svg {
@@ -176,8 +173,8 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
     color: var(--muted);
   }
 
-  /* the count above says it already */
-  .meadow-empty {
+  .meadow-more[hidden],
+  .meadow-empty[hidden] {
     display: none;
   }
 
@@ -350,7 +347,6 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
         more.textContent = `and ${Math.max(0, list.length - max)} more just out of the picture`;
       }
       if (empty) empty.hidden = list.length > 0;
-      fig.hidden = list.length === 0;
     };
 
     draw(JSON.parse(fig.dataset.ones ?? "[]"));

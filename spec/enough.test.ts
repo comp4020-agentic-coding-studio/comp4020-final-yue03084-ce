@@ -469,6 +469,8 @@ describe("breaks", () => {
     // and the page draws the meadow from the same list, for anyone
     const feed = await browser().get("/");
     expect(feed).toContain('class="meadow"');
+    // never hidden: it stays, empty, when nobody's resting (2026-11-04)
+    expect(/<figure class="meadow"[^>]*>/.exec(feed)?.[0]).not.toMatch(/\shidden[\s>=]/);
     expect(/data-ones="([^"]*)"/.exec(feed)?.[1]).toContain("nap");
     await someone.rest({ end: "1" });
   });

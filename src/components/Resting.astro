@@ -2,8 +2,8 @@
 import Meadow from "./Meadow.astro";
 import { restingNow } from "../lib/db";
 
-// How many people are on a break (a number, never who) and the meadow, only
-// while someone is resting; nobody resting is an empty line, not a sentence.
+// How many people are on a break (a number, never who) and the meadow, empty
+// while nobody is; nobody resting is an empty count line, not a sentence.
 // Anyone sees it. The feed's script keeps the count live. Taking a break is
 // in the status bar under the nav (StatusBar.astro), the one place for it.
 const count = restingNow();

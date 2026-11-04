@@ -101,6 +101,19 @@ describe("the look", () => {
   });
 
   // The pictures are decoration: hidden from screen readers, the meaning in the text beside them.
+  // The meadow doesn't come and go with other people: with nobody resting
+  // it's there, empty, saying so. Read on db-free terms: a page where its
+  // empty line shows has no little ones in it.
+  it("keeps the meadow on the feed, saying it's empty when nobody's resting", async () => {
+    const doc = await page("/");
+    const meadow = doc.querySelector(".meadow");
+    expect(meadow?.hasAttribute("hidden")).toBe(false);
+    const ones = JSON.parse(meadow?.getAttribute("data-ones") ?? "[]");
+    const empty = meadow?.querySelector(".meadow-empty");
+    expect(empty?.textContent).toContain("The meadow's empty");
+    expect(empty?.hasAttribute("hidden")).toBe(ones.length > 0);
+  });
+
   it("keeps the pixel pictures hidden and the resting count polite", async () => {
     const doc = await page("/");
     for (const fig of doc.querySelectorAll(".scene, .meadow")) expect(fig.getAttribute("aria-hidden")).toBe("true");
