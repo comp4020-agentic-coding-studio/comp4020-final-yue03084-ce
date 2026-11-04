@@ -480,6 +480,21 @@ describe("the status bar", () => {
     await me.work({ action: "finish" });
   });
 
+  // Its choices are submit buttons drawn as links, so they must undo the
+  // site's filled submit-button hover, or "I'm back" turns into a black box
+  // (2026-11-04). Read from the page's own CSS: the rule clears the fill.
+  it("keeps its choices as links on hover, never a filled button", async () => {
+    const me = await signedIn();
+    const html = await me.get("/");
+    // the page's styles, inline and in the files it links
+    let css = html;
+    for (const [, href] of html.matchAll(/<link rel="stylesheet" href="(\/[^"]+)"/g)) css += await me.get(href);
+    const hover = /\.status-link[^{,]*:hover[^{]*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    // "none", or "0 0" as the build writes it
+    expect(hover).toMatch(/background:\s*(none|0 0)/);
+    expect(hover).toContain("underline");
+  });
+
   it("comes back to the page it was sent from", async () => {
     const me = await signedIn();
     const res = await me.rest({ kind: "walk", back: "/mine/" });

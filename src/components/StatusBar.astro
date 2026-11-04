@@ -98,6 +98,8 @@ const kind = resting ? BREAK_KINDS[resting.kind as BreakKind] : undefined;
     min-height: 2.75rem;
     padding: 0;
     border: 0;
+    border-radius: 0;
+    font-weight: 400;
     background: none;
     color: var(--accent);
     font: inherit;
@@ -105,7 +107,12 @@ const kind = resting ? BREAK_KINDS[resting.kind as BreakKind] : undefined;
     cursor: pointer;
   }
 
+  /* the site's submit button turns near-black on hover (styles.css); these
+     are links in a line, so they keep no fill and no edge, only an underline */
   .status-link:hover {
+    background: none;
+    border-color: transparent;
+    color: var(--accent-hover);
     text-decoration: underline;
     text-underline-offset: 0.2em;
   }
