@@ -1,0 +1,18 @@
+---
+import Meadow from "./Meadow.astro";
+import { restingNow } from "../lib/db";
+
+// How many people are on a break (a number, never who) and the meadow, only
+// while someone is resting; nobody resting is an empty line, not a sentence.
+// Anyone sees it. The feed's script keeps the count live. Taking a break is
+// in the status bar under the nav (StatusBar.astro), the one place for it.
+const count = restingNow();
+const resting = (n: number) => (n === 0 ? "" : n === 1 ? "1 person is on a break right now." : `${n} people are on a break right now.`);
+---
+
+<section class="breakbox" aria-label="Who's resting">
+  <p class="resting" id="resting" aria-live="polite" data-template-one="1 person is on a break right now." data-template-none="">
+    {resting(count)}
+  </p>
+  <Meadow />
+</section>

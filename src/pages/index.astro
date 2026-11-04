@@ -1,6 +1,6 @@
 ---
 import BlocksScene from "../components/BlocksScene.astro";
-import BreakBox from "../components/BreakBox.astro";
+import Resting from "../components/Resting.astro";
 import Comments from "../components/Comments.astro";
 import Replies from "../components/Replies.astro";
 import Page from "../layouts/Page.astro";
@@ -31,7 +31,7 @@ const canJoin = Boolean(signedInPerson(Astro.cookies));
       or take a break.
     </p>
   )}
-  <BreakBox />
+  <Resting />
 
   <ol
     class="feed"

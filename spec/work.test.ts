@@ -228,6 +228,9 @@ describe("the little one's picture", () => {
     expect(html).not.toContain('class="for-sunflower"');
     expect((await me.scene({ thing: "plant", weather: "rain" })).status).toBe(303);
     expect(sceneIn(await me.get("/working/"))).toMatchObject({ thing: "plant", weather: "rain" });
+    // its script takes the button away rather than hiding it: the site's
+    // button style would show a hidden one (2026-11-04)
+    expect(html).toMatch(/querySelector\(.button.\)\?\.remove\(\)/);
     await me.work({ action: "finish" });
   });
 
@@ -421,5 +424,66 @@ describe("reaching the top of the tower (sprites.ts)", () => {
 
   it("has a crouched knock for each look, fresh to nearly asleep", () => {
     for (const name of ["ctap1", "ctap2", "ctap1~1", "ctap2~1", "ctap1~2", "ctap2~2"]) expect(KEEPER.frames[name], name).toHaveLength(24);
+  });
+});
+
+// The status bar under the nav (StatusBar.astro) is the one place to take a
+// break, come back or finish, on every page, for its owner only. Neither
+// the feed nor Together has its own any more, so there's never two of one.
+describe("the status bar", () => {
+  const PAGES = ["/", "/working/", "/enough/", "/mine/", "/mine/all/", "/mine/collection/", "/account/", "/readme/"];
+  const bar = (html: string) => /<section class="status"[\s\S]*?<\/section>/.exec(html)?.[0] ?? "";
+  const count = (html: string, re: RegExp) => (html.match(re) ?? []).length;
+
+  it("isn't there for someone signed out", async () => {
+    for (const path of PAGES) expect(bar(await browser().get(path)), path).toBe("");
+  });
+
+  it("says where you are on every page: free, working or on a break, never how long", async () => {
+    const me = await signedIn();
+    for (const path of PAGES) {
+      const free = bar(await me.get(path));
+      expect(free, path).toContain("Take a break:");
+      expect(free, path).not.toContain("Finish");
+      expect(free, path).not.toContain("I'm back");
+    }
+    await me.work({ action: "start", tz: "660" });
+    for (const path of PAGES) {
+      const working = bar(await me.get(path));
+      expect(working, path).toContain("Working");
+      expect(working, path).toContain("Finish");
+      expect(working, path).toContain("Take a break:");
+    }
+    await me.rest({ kind: "nap", back: "/working/" });
+    for (const path of PAGES) {
+      const resting = bar(await me.get(path));
+      expect(resting, path).toContain("On a break (nap)");
+      expect(resting, path).toContain("I'm back");
+      expect(resting, path).not.toContain("Take a break:");
+      expect(resting, path).not.toMatch(/\d+\s*(min|hour|h\b)/);
+    }
+    await me.rest({ end: "1" });
+    await me.work({ action: "finish" });
+  });
+
+  it("is the only way to rest, come back or finish on a page", async () => {
+    const me = await signedIn();
+    expect(count(await me.get("/"), /action="\/break\/"/g)).toBe(1);
+    await me.work({ action: "start", tz: "660" });
+    const working = await me.get("/working/");
+    expect(count(working, /name="action" value="finish"/g)).toBe(1);
+    // the alarm's own overlay rests too, but only when it rings: not here, with no alarm
+    expect(count(working, /action="\/break\/"/g)).toBe(1);
+    await me.rest({ kind: "tea" });
+    for (const path of ["/", "/working/"]) expect(count(await me.get(path), />I'm back</g), path).toBe(1);
+    await me.rest({ end: "1" });
+    await me.work({ action: "finish" });
+  });
+
+  it("comes back to the page it was sent from", async () => {
+    const me = await signedIn();
+    const res = await me.rest({ kind: "walk", back: "/mine/" });
+    expect(res.headers.get("location")).toBe("/mine/");
+    expect((await me.rest({ end: "1", back: "/working/" })).headers.get("location")).toBe("/working/");
   });
 });

@@ -1,0 +1,149 @@
+---
+import { currentBreak } from "../lib/db";
+import { BREAK_KINDS, type BreakKind } from "../lib/limits";
+import { signedInPerson } from "../lib/person";
+import { workView } from "../lib/work";
+
+// Where you are, under the nav on every page, for the signed-in person only:
+// the one place to take a break, come back, or finish working. Three states:
+//   free:     "Take a break: walk · tea · …"
+//   working:  "Working · Take a break: walk · tea · …  Finish"
+//   resting:  "On a break (tea) · I'm back"
+// Never how long, or how much. The forms are the same as ever (/break/ and
+// /work/), and each comes back to the page it was sent from.
+const person = signedInPerson(Astro.cookies);
+const here = Astro.url.pathname;
+const resting = person ? currentBreak(person.id) : undefined;
+const working = person && !resting ? workView(person.id) : null;
+const kind = resting ? BREAK_KINDS[resting.kind as BreakKind] : undefined;
+---
+
+{
+  person && (
+    <section class="status" aria-label="Where you are">
+      {resting ? (
+        <form method="post" action="/break/" class="status-line">
+          <input type="hidden" name="end" value="1" />
+          <input type="hidden" name="back" value={here} />
+          <span class="status-where">On a break ({kind?.short ?? "resting"})</span>
+          <button type="submit" class="status-link">I'm back</button>
+        </form>
+      ) : (
+        <div class="status-line">
+          {working && <span class="status-where">Working</span>}
+          <form method="post" action="/break/" class="status-break">
+            <input type="hidden" name="back" value={here} />
+            <span>Take a break:</span>
+            {Object.entries(BREAK_KINDS).map(([key, k]) => (
+              <button type="submit" name="kind" value={key} class="status-link" aria-label={k.label}>
+                {k.short}
+              </button>
+            ))}
+          </form>
+          {working && (
+            <form method="post" action="/work/" class="status-finish">
+              <input type="hidden" name="action" value="finish" />
+              <button type="submit" class="status-link">Finish</button>
+            </form>
+          )}
+        </div>
+      )}
+    </section>
+  )
+}
+
+<style>
+  /* a thin line under the nav, as wide as the page: the body's colour for
+     where you are, the accent for what you can do; no box */
+  .status {
+    max-width: 40rem;
+    margin: 0 auto var(--s3);
+    border-bottom: 1px solid var(--line);
+    font-size: 0.9375rem;
+  }
+
+  .status-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 var(--s2);
+    line-height: 2.75rem;
+  }
+
+  .status-where {
+    color: var(--fg);
+    font-weight: 600;
+  }
+
+  .status-break {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* working, a "·" between where you are and what you can do */
+  .status-where + .status-break::before {
+    content: "·";
+    margin-right: var(--s2);
+    color: var(--muted);
+  }
+
+  .status-break span {
+    color: var(--muted);
+    margin-right: var(--s1);
+  }
+
+  /* each choice a link-like button, as tall as the line (44px) to tap */
+  .status-link {
+    min-height: 2.75rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    line-height: inherit;
+    cursor: pointer;
+  }
+
+  .status-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  /* the dot follows a choice, so a wrapped line never starts with one */
+  .status-break .status-link:not(:last-child)::after {
+    content: "·";
+    margin: 0 var(--s2);
+    color: var(--muted);
+    display: inline-block;
+  }
+
+  /* finishing is its own thing, at the end of the line */
+  .status-finish {
+    margin-left: auto;
+  }
+
+  /* on a phone: where you are and Finish on the first line, the breaks under */
+  @media (max-width: 46rem) {
+    .status-where {
+      order: 1;
+    }
+
+    .status-finish {
+      order: 2;
+    }
+
+    .status-break {
+      order: 3;
+      flex-basis: 100%;
+    }
+
+    .status-where + .status-break::before {
+      content: none;
+    }
+  }
+
+  .status-finish .status-link {
+    font-weight: 600;
+  }
+</style>

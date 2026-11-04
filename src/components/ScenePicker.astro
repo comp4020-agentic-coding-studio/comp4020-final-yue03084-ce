@@ -45,7 +45,8 @@ const { scene, things } = Astro.props;
   const form = document.querySelector<HTMLFormElement>(".scene-picker");
   const picture = document.querySelector<HTMLElement>(".little-one");
   if (form) {
-    form.querySelector("button")?.setAttribute("hidden", "");
+    // removed, not hidden: the site's button style would show it anyway
+    form.querySelector("button")?.remove();
     form.addEventListener("change", () => {
       const data = new FormData(form);
       if (picture) {

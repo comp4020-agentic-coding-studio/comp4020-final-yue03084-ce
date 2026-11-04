@@ -714,48 +714,14 @@ button.danger:hover {
   border-color: var(--accent);
 }
 
-/* take a break: no box, one line of links under the description, 24px
-   above the list. The resting count and the meadow sit under it only while
-   someone is resting. */
+/* who's resting: the count and the meadow, only while someone is, 24px
+   above the list; taking a break is in the status bar (StatusBar.astro) */
 .breakbox {
   margin: 0 0 var(--s4);
 }
 
-/* the label and the choices run on like one sentence, wrapping word by word */
-.break-line {
-  margin-top: var(--s1);
-}
-
-.break-line > h2,
-.break-line > form,
-.break-line > p {
-  display: inline;
-}
-
-.break-line > h2::after {
-  content: " ";
-  white-space: pre;
-}
-
-/* "Take a break:" reads as the start of the line, in the body's colour */
-.breakbox h2 {
+.breakbox:has(.resting:empty) {
   margin: 0;
-  font-family: var(--font-body);
-  font-size: 0.9375rem;
-  font-weight: 400;
-  line-height: 1.6;
-  color: var(--fg);
-}
-
-/* one line box for the label and the links, so they share a baseline; each
-   line as tall as the links' 44px tap rows, so a wrapped line sits evenly */
-.break-line {
-  font-size: 0.9375rem;
-  line-height: 2.75rem;
-}
-
-.break-line > h2 {
-  line-height: inherit;
 }
 
 .resting {
@@ -766,40 +732,6 @@ button.danger:hover {
 
 .resting:empty {
   display: none;
-}
-
-.break-back span {
-  margin-right: var(--s2);
-}
-
-/* the choices are links in a row, " · " between them; still the same
-   submit buttons, each as tall as the line (44px) to tap */
-.break-go button,
-.break-back button {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent);
-  font: inherit;
-  line-height: inherit;
-  vertical-align: baseline;
-  cursor: pointer;
-}
-
-.break-go button:hover,
-.break-back button:hover {
-  background: none;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-/* the dot follows a choice, so when the line wraps it stays at the end of
-   the line above, never the start of the next */
-.break-go button:not(:last-child)::after {
-  content: "·";
-  margin: 0 var(--s2);
-  color: var(--muted);
-  display: inline-block;
 }
 
 .urge-open,
@@ -980,10 +912,6 @@ button.quiet:hover {
   margin: 0 0 var(--s2);
   color: var(--muted);
   font-size: 0.875rem;
-}
-
-.breakbox .join-hint {
-  margin: 0;
 }
 
 /* without an account the replies are counts to read, not buttons to press */

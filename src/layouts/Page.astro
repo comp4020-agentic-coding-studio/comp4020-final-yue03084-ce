@@ -1,6 +1,7 @@
 ---
 import "../styles.css";
 import Avatar from "../components/Avatar.astro";
+import StatusBar from "../components/StatusBar.astro";
 import { NOTE_COLOURS, SITE_NAME } from "../lib/limits";
 import { outfitOf } from "../lib/outfit";
 import { signedInPerson } from "../lib/person";
@@ -98,6 +99,7 @@ const about = "/readme/";
         )
       }
     </nav>
+    <StatusBar />
     <main>
       <slot />
     </main>

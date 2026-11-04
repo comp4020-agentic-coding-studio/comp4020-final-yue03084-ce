@@ -5,12 +5,14 @@ import type { Scene } from "../lib/scene";
 import type { WorkView } from "../lib/work";
 import LittleOne from "./LittleOne.astro";
 
-// "Start working" on Working on it, and the little one while you do. The owner's
+// "Start working" on Together, and the little one while you do. The owner's
 // alone. Start can set an Enough alarm: after an interval, or at a clock
 // time. While the page is open the alarm sends a notification and, when you
-// look, a soft overlay: "Okay, go and rest" (a break, like anywhere else) or
-// "Give me 10 more minutes". Finish goes to Call it enough with the time bar
-// filled in. All plain forms; the script adds the alarm and the time zone.
+// look, a soft overlay: "Okay, go and rest" (a break that counts as resting
+// when the alarm rang) or "Give me 10 more minutes". Taking an ordinary
+// break, coming back and Finish are in the status bar under the nav
+// (StatusBar.astro), the one place for them on every page. All plain forms;
+// the script adds the alarm and the time zone.
 interface Props {
   view: WorkView | null;
   scene?: Scene;
@@ -85,30 +87,6 @@ const resting = view?.state === "resting";
           {view.snoozes > 0 && ` You've asked for ${SNOOZE_MINUTES} more minutes ${view.snoozes} ${view.snoozes === 1 ? "time" : "times"}.`}
         </p>
         <div class="work-actions">
-          {resting ? (
-            <form method="post" action="/break/">
-              <input type="hidden" name="end" value="1" />
-              <input type="hidden" name="back" value="/working/" />
-              <button type="submit">I'm back</button>
-            </form>
-          ) : (
-            <form method="post" action="/work/">
-              <input type="hidden" name="action" value="rest" />
-              <label class="inline take-break">
-                <span>Take a break:</span>
-                <select name="kind" aria-label="What to do">
-                  {Object.entries(BREAK_KINDS).map(([key, k]) => (
-                    <option value={key}>{k.label}</option>
-                  ))}
-                </select>
-              </label>
-              <button type="submit" class="quiet">Go</button>
-            </form>
-          )}
-          <form method="post" action="/work/">
-            <input type="hidden" name="action" value="finish" />
-            <button type="submit">Finish and call it enough</button>
-          </form>
           <!-- only where the browser can open a window that stays on top (the script shows it) -->
           <button type="button" class="quiet keep-beside" hidden>Keep it beside you</button>
         </div>

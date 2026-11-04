@@ -105,6 +105,18 @@ commit (see "A feature lands with its test").
   (the event holds only kind, wears and hair). **Not tested:** how it looks
   and moves, and the page that sent the form not floating its own person:
   both checked in a browser.
+- **One place to rest, come back or finish.** A thin status bar under the
+  nav (`StatusBar.astro`), on every page and only for its signed-in owner:
+  "Take a break: walk · tea · …", plus "Working" and Finish while working,
+  or "On a break (tea) · I'm back". The feed and Together have no break,
+  back or finish buttons of their own; the feed keeps the resting count and
+  the meadow (`Resting.astro`) for anyone. Call it enough's "And now?" and
+  the alarm's overlay still rest, as part of what they're for. Never how
+  long. *(2026-11-04: with breaks on the feed, on Together and at the end of
+  Call it enough, the agent and I both lost track of where things were;
+  adding a bar on top would have meant three I'm backs, so the others went.)*
+  **Guarded by:** `work.test.ts` "the status bar" (signed out, each state on
+  every page, only one of each, back to the page it came from).
 - **The little one can come with you; the site can be installed.** On
   Together, "Keep it beside you" moves the little one's picture itself into
   a small window that stays on top (Document Picture-in-Picture, Chrome and
