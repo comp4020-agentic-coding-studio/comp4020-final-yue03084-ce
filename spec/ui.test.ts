@@ -217,3 +217,39 @@ describe("adding it to a home screen", () => {
     expect(rows.slice(4).map((r) => r.slice(2, 22))).toEqual(KEEPER.frames.stand.slice(0, 20));
   });
 });
+
+// The words on the controls read like a product's, not a toy's: no "A …" or
+// "little" on the picture's choices, and You's tabs say what each page is.
+// The keys and addresses stay as they were (2026-11-05).
+describe("wording", () => {
+  it("names the picture's choices and You's pages plainly", async () => {
+    const cookie = await signedInCookie();
+    const start = await fetch(new URL("/work/", baseUrl), {
+      method: "POST",
+      redirect: "manual",
+      headers: { cookie, "sec-fetch-site": "same-origin" },
+      body: new URLSearchParams({ action: "start", tz: "660" }),
+    });
+    expect(start.status).toBe(303);
+    const working = await page("/working/", cookie);
+    expect(working.querySelector(".scene-picker legend")?.textContent?.trim()).toBe("Scene");
+    const labels = [...working.querySelectorAll(".scene-picker label")].map((l) => l.textContent?.trim());
+    expect(labels.slice(0, 3)).toEqual(["Lamp", "Plant", "Open view"]);
+    expect(labels.slice(3)).toEqual(["Clear", "Rain", "Snow"]);
+    for (const l of labels) expect(l).not.toMatch(/^A |little/i);
+
+    const mine = await page("/mine/", cookie);
+    const tabs = [...mine.querySelectorAll('nav[aria-label="You"] a')].map((a) => [a.textContent?.trim(), a.getAttribute("href")]);
+    expect(tabs).toEqual([
+      ["Summary", "/mine/"],
+      ["History", "/mine/all/"],
+      ["Collection", "/mine/collection/"],
+    ]);
+    await fetch(new URL("/work/", baseUrl), {
+      method: "POST",
+      redirect: "manual",
+      headers: { cookie, "sec-fetch-site": "same-origin" },
+      body: new URLSearchParams({ action: "finish" }),
+    });
+  });
+});

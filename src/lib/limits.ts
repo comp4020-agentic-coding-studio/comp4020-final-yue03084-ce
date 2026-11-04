@@ -141,11 +141,11 @@ export const BRICKS = [
 // with their account: the lamp, nothing but the view (the page is the
 // window), or a little plant; or a sunflower, from the Collection. And the weather. Keys stored, words shown.
 export const SCENE_THINGS = {
-  lamp: "A lamp",
-  window: "Just the view",
-  plant: "A little plant",
+  lamp: "Lamp",
+  plant: "Plant",
+  window: "Open view",
   // only once it's come from the Collection (COLLECTION.sunflower)
-  sunflower: "A sunflower",
+  sunflower: "Sunflower",
 } as const;
 export type SceneThing = keyof typeof SCENE_THINGS;
 export const isSceneThing = (key: string): key is SceneThing => Object.hasOwn(SCENE_THINGS, key);
@@ -183,7 +183,7 @@ export const COLLECTION_KINDS = {
   companion: "Keeping it company",
   ground: "Under it on the meadow",
   sky: "Above it on the meadow",
-  scene: "In the picture",
+  scene: "Scene",
 } as const;
 export type CollectionKind = keyof typeof COLLECTION_KINDS;
 // the ways of stopping a thing can come from, and how its progress reads:

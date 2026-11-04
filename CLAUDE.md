@@ -344,10 +344,13 @@ reload"; `lasting.test.ts` "keeps what was written through a restart".
   *(The shared test server's output is discarded, and in CI it's a Docker
   container the spec can't read or restart.)*
 - You (the nav's name since 2026-11-03; the URL is still `/mine/`, and the
-  code and spec names still say Mine) is three pages: `/mine/` is Looking back (a day, week or month added
-  up for the owner, `src/lib/summary.ts`, never compared with another
-  period), `/mine/all/` is Each one, the full cards, and `/mine/collection/`
-  is the Collection.
+  code and spec names still say Mine) is three pages: `/mine/` is Summary (a
+  day, week or month added up for the owner, `src/lib/summary.ts`, never
+  compared with another period), `/mine/all/` is History, the full cards,
+  and `/mine/collection/` is the Collection. *(Looking back and Each one
+  until 2026-11-05, renamed with the picture's choices, Scene: Lamp · Plant
+  · Open view, because they read as a toy. Guarded by `ui.test.ts`
+  "wording".)*
 - Wearables (hat, crown, scarf) are drawn once in `WEARABLES` and placed per
   frame by `anchorsOf()`, which finds the hair's top row ("oooooooo") and the
   neck ("kSSk", or above the collar when napping) in the frame itself. A new

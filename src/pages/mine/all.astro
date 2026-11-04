@@ -8,7 +8,7 @@ import { isHtml } from "../../lib/notes";
 import { describeSpan, parseSpans, roughly } from "../../lib/spans";
 import { currentPerson } from "../../lib/person";
 
-// Each one: everything this person has said was enough, private fields
+// History (Each one until 2026-11-05): everything this person has said was enough, private fields
 // included, newest first. It reads only their own rows, by their cookie.
 const person = currentPerson(Astro.cookies);
 const rows = person ? mine(person.id) : [];

@@ -17,8 +17,8 @@ import {
   TIME_ZONE,
 } from "../../lib/summary";
 
-// Looking back: one day, week or month of this person's own enoughs, added up
-// for them alone. Like Each one, it reads only their own rows, by their cookie.
+// Summary (Looking back until 2026-11-05): one day, week or month of this person's own enoughs, added up
+// for them alone. Like History, it reads only their own rows, by their cookie.
 const person = currentPerson(Astro.cookies);
 const rows = person ? mine(person.id) : [];
 const asked = Astro.url.searchParams.get("period") ?? "";

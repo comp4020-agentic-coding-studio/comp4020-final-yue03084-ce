@@ -195,7 +195,7 @@ button[type="submit"]:hover {
   padding: 0;
 }
 
-/* a card: a box with a 1px edge (Mine's Each one) */
+/* a card: a box with a 1px edge (You's History) */
 .card {
   padding: 12px var(--s3) var(--s1);
   border: 1px solid var(--line);
@@ -1244,7 +1244,7 @@ button[type="submit"].wide {
   border-radius: 0;
 }
 
-/* Mine's two pages, and the periods on Looking back: tabs as underlined words, like the site's nav */
+/* You's pages, and the periods on Summary: tabs as underlined words, like the site's nav */
 .subnav,
 .periods {
   display: flex;
@@ -1282,7 +1282,7 @@ button[type="submit"].wide {
   font-size: 0.9375rem;
 }
 
-/* Looking back: one sheet of paper for the whole period */
+/* Summary: one sheet of paper for the whole period */
 .lookback {
   padding: var(--s3);
   border: 1px solid var(--line);

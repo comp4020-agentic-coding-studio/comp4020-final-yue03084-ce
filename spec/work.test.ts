@@ -304,7 +304,7 @@ describe("the little one's picture", () => {
     const received = await readStream(() => me.scene({ thing: "plant", weather: "snow" }), 1_000);
     for (const word of ["plant", "snow", "scene", "weather"]) expect(received).not.toContain(word);
     const feed = await browser().get("/");
-    for (const word of ["data-thing", "data-weather", "A little plant", "/scene/"]) expect(feed).not.toContain(word);
+    for (const word of ["data-thing", "data-weather", "Open view", "/scene/"]) expect(feed).not.toContain(word);
     await me.work({ action: "finish" });
   });
 });
