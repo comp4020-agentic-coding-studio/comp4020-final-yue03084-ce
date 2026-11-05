@@ -31,11 +31,13 @@ time bar with a crayon, say how it felt, and note what you did and checked.
 Others see what's shared appear live, and can reply with a preset response or a
 short comment; three reports hide a comment. Each shared enough and comment
 gets its own name, like "Sage pebble", so two by the same person can't be told
-apart. You can take a break: the feed
-shows how many people are resting and, after a shared "enough", where they
+apart. You can take a break from a thin bar under the menu, on every page; it
+also shows whether you're working or on a break, with one place to finish or
+come back. The feed shows how many people are resting and, after a shared "enough", where they
 went, never for how long. Under the resting count, a small pixel meadow shows
 a little one for each person on a break, doing what they went to do, live for
-everyone and never saying who. You has three pages: Summary adds up a day, week
+everyone and never saying who. When nobody is resting, the meadow stays,
+empty. You has three pages: Summary adds up a day, week
 or month for you alone (what you called enough, how it felt, when you worked,
 how often you wanted to check again), and History keeps every record in full.
 There, "I want to check it again" shows what you wrote when you stopped, then
@@ -50,12 +52,15 @@ On Together, you can start a stretch of work and set an Enough alarm,
 after a number of minutes or at a time of day. A little one builds a crooked
 tower alongside you, in a small pixel picture. Each time
 you start, the tower begins again, sized to your alarm. The sky
-follows your clock, and you can choose what else is in the picture (a lamp, a
-little plant, or just the view) and the weather. When the alarm goes, it gets
+follows your clock, and you can choose the scene (a lamp, a plant, or an open
+view) and the weather. When the alarm goes, it gets
 sleepy: it slows down, carries smaller blocks and yawns, and the lamp dims or
 the plant droops, and a soft reminder asks whether to go and rest or take ten
-more minutes. Finishing takes you to Call it enough with the
-time already coloured in. The site follows your system's dark mode.
+more minutes. In Chrome or Edge, the little one can come out into a small
+window that stays on top of whatever else you're working on. Finishing takes
+you to Call it enough with the time already coloured in. The site follows your
+system's dark mode, and can be added to a phone's home screen to open like an
+app.
 
 ## Where the idea came from
 
