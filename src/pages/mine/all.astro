@@ -2,7 +2,9 @@
 import MineTop from "../../components/MineTop.astro";
 import Page from "../../layouts/Page.astro";
 import { mine } from "../../lib/db";
-import { DRAWER_MAX, PRESET_REPLIES, type PresetKey, URGE_CHOICES } from "../../lib/limits";
+import { PRESET_REPLIES, type PresetKey, URGE_CHOICES, WORRY_AFTER_DAYS, WORRY_MAX } from "../../lib/limits";
+import { isDue } from "../../lib/later";
+import { localDate } from "../../lib/summary";
 import { fullWhen, relativeWhen } from "../../lib/when";
 import { isHtml } from "../../lib/notes";
 import { describeSpan, parseSpans, roughly } from "../../lib/spans";
@@ -24,6 +26,10 @@ const miniBar = (text: string) => {
 };
 // the full date where it's a sentence ("You called this enough on …")
 const when = fullWhen;
+// a worry asks how it looks now once its week has come (later.ts)
+const today = localDate(Date.now());
+// just written down from "I want to check it again": say where it went
+const justWorried = Astro.url.searchParams.get("worried");
 ---
 
 <Page title="You">
@@ -84,6 +90,42 @@ const when = fullWhen;
               </>
             )}
           </dl>
+          {e.worries.length > 0 && (
+            <section class="worries" aria-label="What you worried about">
+              <h3>What you worried about</h3>
+              <ul>
+                {e.worries.map((w) => (
+                  <li id={`worry-${w.id}`}>
+                    <p class="worry-text">
+                      “{w.text}” <span class="worry-when">{relativeWhen(w.createdAt)}</span>
+                    </p>
+                    {w.since ? (
+                      <p class="worry-since">
+                        A week on: “{w.since}” <span class="worry-when">{relativeWhen(w.sinceAt ?? w.createdAt)}</span>
+                      </p>
+                    ) : (
+                      isDue(w.openFrom, today) && (
+                        <form method="post" action="/since/" class="worry-since-form">
+                          <input type="hidden" name="worry" value={w.id} />
+                          <input type="hidden" name="enough" value={e.id} />
+                          <label>
+                            A week on, how does it look now? <small>(up to {WORRY_MAX} characters)</small>
+                            <input name="since" required maxlength={WORRY_MAX} />
+                          </label>
+                          <button type="submit">Keep this</button>
+                        </form>
+                      )
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {justWorried === String(e.id) && (
+                <p class="worry-kept" role="status">
+                  Written down. It's kept here, and in {WORRY_AFTER_DAYS} days you can say how it looks.
+                </p>
+              )}
+            </section>
+          )}
           {e.shared && (
             <p class="replies-got">
               {(Object.entries(PRESET_REPLIES) as [PresetKey, string][])
@@ -126,16 +168,16 @@ const when = fullWhen;
                   {URGE_CHOICES.checked}
                 </button>
               </form>
-              {/* or a third way: write the worry down and look at it tomorrow,
-                  in the drawer at the top of Mine. Counts as wanting to check. */}
+              {/* or a third way: write down what they'd check, as a worry kept
+                  on this enough. Counts as wanting to check. */}
               <form method="post" action="/urge/" class="urge-drawer">
                 <input type="hidden" name="enough" value={e.id} />
-                <input type="hidden" name="choice" value="tomorrow" />
+                <input type="hidden" name="choice" value="worry" />
                 <label>
-                  What would you check? <small>(up to {DRAWER_MAX} characters, for tomorrow)</small>
-                  <input name="note" required maxlength={DRAWER_MAX} placeholder="e.g. the references, one more time" />
+                  What would you check? <small>(up to {WORRY_MAX} characters, kept here as a worry)</small>
+                  <input name="note" required maxlength={WORRY_MAX} placeholder="e.g. the references, one more time" />
                 </label>
-                <button type="submit">{URGE_CHOICES.tomorrow}</button>
+                <button type="submit">{URGE_CHOICES.worry}</button>
               </form>
             </div>
           </details>

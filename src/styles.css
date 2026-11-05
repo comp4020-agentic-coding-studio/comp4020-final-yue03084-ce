@@ -1388,7 +1388,90 @@ button[type="submit"].wide {
   transform: translateX(-100%);
 }
 
-/* the drawer on Mine: notes kept for tomorrow, and worries from a week ago */
+/* the worries kept on a record (History): what they worried about, in the
+   record's own words, and a line from a week on. A rule above, no box; the
+   heading reads like the record's other labels (dt). */
+.worries {
+  margin: var(--s3) 0;
+  padding-block: 12px;
+  border-block: 1px solid var(--line);
+}
+
+.worries h3 {
+  margin: 0 0 var(--s1);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.worries ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s2);
+}
+
+.worries p {
+  margin: 0;
+}
+
+.worry-when {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+/* a week on: set in a step, so it reads as the answer to the line above */
+.worry-since {
+  margin-top: var(--s1) !important;
+  padding-left: var(--s3);
+  border-left: 2px solid var(--line-strong);
+}
+
+.worry-since-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+  margin-top: var(--s1);
+}
+
+.worry-since-form label {
+  flex: 1 1 14rem;
+  font-size: 0.9rem;
+}
+
+.worry-since-form input {
+  display: block;
+  width: 100%;
+  margin-top: 0.2rem;
+}
+
+.worry-since-form button {
+  min-height: 2.75rem;
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.worry-since-form button:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.worry-kept {
+  margin-top: var(--s2) !important;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* the reminder at the top of You: worries from a week ago */
 .drawer {
   margin: 0 0 var(--s3);
   padding: var(--s3);
@@ -1449,7 +1532,7 @@ button[type="submit"].wide {
   border-color: var(--accent);
 }
 
-/* the third way out of "check it again": a line for tomorrow */
+/* the third way out of "check it again": what you'd check, as a worry */
 .urge-drawer {
   display: flex;
   flex-wrap: wrap;

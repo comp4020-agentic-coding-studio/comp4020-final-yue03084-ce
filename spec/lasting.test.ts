@@ -90,6 +90,7 @@ const secret = {
   worry: `worry ${tag}`,
   comment: `say ${tag}`.slice(0, 30),
   drawer: `drawer ${tag}`,
+  since: `since ${tag}`,
 };
 
 const enoughId = (html: string, text: string) => {
@@ -132,7 +133,12 @@ describe("what lasts and what's logged", () => {
     expect(id).not.toBe("");
     await other.send("/comment/", { enough: id, text: secret.comment });
     await other.send("/reply/", { enough: id, preset: "seen" });
-    await writer.send("/urge/", { enough: id, choice: "tomorrow", note: secret.drawer });
+    await writer.send("/urge/", { enough: id, choice: "worry", note: secret.drawer });
+    // a line a week on: refused this early, but logged, so it's tried here too
+    const worryId = /id="worry-(\d+)"/.exec(await writer.get("/mine/all/"))?.[1] ?? "";
+    expect(worryId).not.toBe("");
+    await writer.send("/since/", { worry: worryId, enough: id, since: secret.since });
+    expect(output).toMatch(/worry_looked_back_refused block=\d+ worry=\d+/);
     await writer.send("/break/", { end: "1" });
     // a recovery code, used to set a new password: neither may reach the log
     const made = await (await writer.send("/account/", { action: "code" })).text();

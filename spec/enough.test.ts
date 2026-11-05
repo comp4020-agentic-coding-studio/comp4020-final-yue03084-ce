@@ -2,8 +2,8 @@ import { describe, expect, inject, it } from "vitest";
 import { mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
-import { dayAfter, drawerHeading, isDue, weekLater } from "../src/lib/later.ts";
-import { BREAK_KINDS, DESCRIPTION_MAX, DRAWER_MAX, PASSWORD_MIN, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE, WORRY_AFTER_DAYS, WORRY_MAX } from "../src/lib/limits.ts";
+import { isDue, weekLater } from "../src/lib/later.ts";
+import { BREAK_KINDS, DESCRIPTION_MAX, PASSWORD_MIN, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE, WORRY_AFTER_DAYS, WORRY_MAX } from "../src/lib/limits.ts";
 import { periodLabel, periodRange, summarise } from "../src/lib/summary.ts";
 
 // The product rules that can be checked, against the running app: a shared
@@ -214,8 +214,8 @@ describe("limits", () => {
     expect(text(enough)).toContain(`in ${WORRY_AFTER_DAYS} days`);
 
     const all = await author.get("/mine/all/");
-    expect(attr(field(all, "note"), "maxlength")).toBe(String(DRAWER_MAX));
-    expect(text(all)).toContain(`up to ${DRAWER_MAX} characters`);
+    expect(attr(field(all, "note"), "maxlength")).toBe(String(WORRY_MAX));
+    expect(text(all)).toContain(`up to ${WORRY_MAX} characters`);
 
     const feed = await author.get("/");
     const comment = field(feed, "text");
@@ -582,46 +582,18 @@ describe("looking back", () => {
   });
 });
 
-// Things kept for later are the owner's alone: a note in the drawer for
-// tomorrow, and one worry for a week on. Neither shows before its day, and
-// neither ever reaches the feed, the stream or anyone else's Mine.
-describe("kept for later", () => {
+// Worries are their owner's alone: written when calling something enough, or
+// instead of checking it again, kept on that enough on History, and a week on
+// asking how it looks now. None ever reaches the feed, the stream or anyone
+// else's pages. (Until 2026-11-05 the second kind was a drawer note for
+// tomorrow, shown once and gone.)
+describe("worries", () => {
   const idOf = async (b: Awaited<ReturnType<typeof signedIn>>, text: string) =>
     new RegExp(`data-enough="(\\d+)"[\\s\\S]*?${text}`).exec(await b.get("/mine/all/"))?.[1] ?? "";
+  // one enough's card on History
+  const cardOf = (html: string, id: string) => new RegExp(`data-enough="${id}"[\\s\\S]*?</li>\\s*(?=<li class="card"|</ol>)`).exec(html)?.[0] ?? "";
 
-  it("a note for tomorrow counts as wanting to check, and shows nowhere today", async () => {
-    const tag = marker();
-    const note = `the second table ${tag}`;
-    const author = await signedIn();
-    await author.declare({ description: `drawer ${tag}`, shared: "on" });
-    const id = await idOf(author, `drawer ${tag}`);
-    const received = await readStream(() => author.urge(id, "tomorrow", note), note, 1_500);
-    expect(received).not.toContain(note);
-    const own = await author.get("/mine/all/");
-    expect(own).toContain("Wanted to check it again 1 time; let it go 0.");
-    // not due until tomorrow (Sydney): on neither of the owner's pages yet
-    expect(own).not.toContain(note);
-    expect(own).not.toContain("In your drawer");
-    expect(await author.get("/mine/")).not.toContain(note);
-    const other = await signedIn();
-    for (const page of ["/", "/mine/", "/mine/all/"]) expect(await other.get(page)).not.toContain(note);
-    expect(await browser().get("/")).not.toContain(note);
-  });
-
-  it(`refuses an empty note, one over ${DRAWER_MAX} characters, or one on someone else's enough`, async () => {
-    const tag = marker();
-    const author = await signedIn();
-    await author.declare({ description: `long drawer ${tag}` });
-    const id = await idOf(author, `long drawer ${tag}`);
-    for (const note of ["   ", `${tag}${"x".repeat(DRAWER_MAX)}`]) {
-      const res = await author.urge(id, "tomorrow", note);
-      expect(res.status).toBe(303);
-    }
-    await (await signedIn()).urge(id, "tomorrow", `not yours ${tag}`);
-    expect(await author.get("/mine/all/")).not.toContain("Wanted to check it again");
-  });
-
-  it("a worry is kept for its owner, and never on the feed, the stream or anyone else's Mine", async () => {
+  it("are kept on their enough for their owner, and never on the feed, the stream or anyone else's pages", async () => {
     const tag = marker();
     // words no timestamp or id could contain
     const worry = `the ending felt rushed qz${tag}`;
@@ -635,14 +607,54 @@ describe("kept for later", () => {
     expect(received).not.toContain(worry);
     expect(received).not.toMatch(/"worry"/);
     expect(await browser().get("/")).not.toContain(worry);
-    // not shown before its week, even to its owner
-    for (const page of ["/mine/", "/mine/all/"]) {
-      expect(await author.get(page)).not.toContain(worry);
-      expect(await (await signedIn()).get(page)).not.toContain(worry);
-    }
+    // on its own card, from the start
+    const id = await idOf(author, `worried ${tag}`);
+    const card = cardOf(await author.get("/mine/all/"), id);
+    expect(card).toContain("What you worried about");
+    expect(card).toContain(worry);
+    // not asked about before its week
+    expect(card).not.toContain("how does it look now");
+    // and on nobody else's pages
+    const other = await signedIn();
+    for (const page of ["/", "/mine/", "/mine/all/"]) expect(await other.get(page)).not.toContain(worry);
   });
 
-  it(`refuses a worry over ${WORRY_MAX} characters, keeping what was typed`, async () => {
+  it("writing down what you'd check keeps it as a worry, counts as wanting to check, and says where it went", async () => {
+    const tag = marker();
+    const note = `the second table qz${tag}`;
+    const author = await signedIn();
+    await author.declare({ description: `recheck ${tag}`, shared: "on" });
+    const id = await idOf(author, `recheck ${tag}`);
+    let res: Response | undefined;
+    const received = await readStream(async () => (res = await author.urge(id, "worry", note)), note, 1_500);
+    expect(received).not.toContain(note);
+    expect(res?.headers.get("location")).toBe(`/mine/all/?worried=${id}#enough-${id}`);
+    const card = cardOf(await author.get(`/mine/all/?worried=${id}`), id);
+    expect(card).toContain(note);
+    expect(card).toContain("Written down.");
+    expect(card).toContain("Wanted to check it again 1 time; let it go 0.");
+    expect(await author.get("/mine/all/")).not.toContain("Written down.");
+    const other = await signedIn();
+    for (const page of ["/", "/mine/", "/mine/all/"]) expect(await other.get(page)).not.toContain(note);
+    expect(await browser().get("/")).not.toContain(note);
+  });
+
+  it(`refuses an empty one, one over ${WORRY_MAX} characters, or one on someone else's enough`, async () => {
+    const tag = marker();
+    const author = await signedIn();
+    await author.declare({ description: `long worry ${tag}` });
+    const id = await idOf(author, `long worry ${tag}`);
+    for (const note of ["   ", `${tag}${"x".repeat(WORRY_MAX)}`]) {
+      const res = await author.urge(id, "worry", note);
+      expect(res.status).toBe(303);
+    }
+    await (await signedIn()).urge(id, "worry", `not yours ${tag}`);
+    const card = cardOf(await author.get("/mine/all/"), id);
+    expect(card).not.toContain("Wanted to check it again");
+    expect(card).not.toContain("What you worried about");
+  });
+
+  it(`refuses a worry over ${WORRY_MAX} characters when calling it enough, keeping what was typed`, async () => {
     const tag = marker();
     const worry = `${tag}${"w".repeat(WORRY_MAX)}`;
     const res = await (await signedIn()).declare({ description: `too worried ${tag}`, shared: "on", worry });
@@ -653,33 +665,20 @@ describe("kept for later", () => {
     expect(await browser().get("/")).not.toContain(`too worried ${tag}`);
   });
 
-  it(`come back on the right Sydney day: the next for the drawer, ${WORRY_AFTER_DAYS} on for a worry (later.ts)`, () => {
+  it(`come back ${WORRY_AFTER_DAYS} Sydney days on (later.ts)`, () => {
     // 13:30 UTC on the 27th is already 00:30 on the 28th in Sydney
-    expect(dayAfter("2026-10-27T13:30:00.000Z")).toBe("2026-10-29");
-    expect(dayAfter("2026-10-27T12:30:00.000Z")).toBe("2026-10-28");
-    expect(dayAfter("2026-12-31T01:00:00.000Z")).toBe("2027-01-01");
+    expect(weekLater("2026-10-27T13:30:00.000Z")).toBe("2026-11-04");
     expect(weekLater("2026-10-27T01:00:00.000Z")).toBe("2026-11-03");
     expect(weekLater("2026-02-25T01:00:00.000Z")).toBe("2026-03-04");
-    // across the day Sydney's clocks go forward (4 October 2026), still seven days
-    expect(weekLater("2026-10-01T03:00:00.000Z")).toBe("2026-10-08");
-    expect(isDue("2026-10-28", "2026-10-27")).toBe(false);
-    expect(isDue("2026-10-28", "2026-10-28")).toBe(true);
-    expect(isDue("2026-10-28", "2026-11-02")).toBe(true);
+    expect(isDue("2026-11-03", "2026-11-02")).toBe(false);
+    expect(isDue("2026-11-03", "2026-11-03")).toBe(true);
   });
 
-  it("the drawer says it's from yesterday only when it was (later.ts)", () => {
-    // openFrom is the day after the note was written; today is Tuesday 3 November
-    expect(drawerHeading(["2026-11-03"], "2026-11-03")).toBe("In your drawer from yesterday");
-    expect(drawerHeading(["2026-10-30"], "2026-11-03")).toBe("In your drawer from Thursday");
-    expect(drawerHeading(["2026-10-28"], "2026-11-03")).toBe("In your drawer");
-    expect(drawerHeading(["2026-11-03", "2026-10-30"], "2026-11-03")).toBe("In your drawer");
-  });
-
-  // The app's clock can't be moved from the spec, so what shows on which day,
-  // and who can put it away, is checked on db.ts itself, with its own
+  // The app's clock can't be moved from the spec, so what shows when, and who
+  // can answer or put away, is checked on db.ts itself, with its own
   // throwaway database in this test process.
-  it("show from their day until put away, and only their owner can put them away (db.ts)", async () => {
-    process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "spec-later-"));
+  it("a week on, ask how it looks, keep the answer beside it, and only for their owner (db.ts)", async () => {
+    process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "spec-worries-"));
     const db = await import("../src/lib/db.ts");
     const { localDate } = await import("../src/lib/summary.ts");
     const owner = db.createPerson(`owner-${marker()}`);
@@ -688,34 +687,39 @@ describe("kept for later", () => {
     const made = db.declareEnough(owner.id, { ...base, description: "a thing", worry: "the colours" });
     if (!made.ok) throw new Error(made.reason);
     const enough = made.value;
-    expect(db.putInDrawer(owner.id, enough.id, "check the margins").ok).toBe(true);
-    expect(db.putInDrawer(other.id, enough.id, "not mine").ok).toBe(false);
+    // a second worry on the same enough, from wanting to check it again
+    expect(db.writeWorry(owner.id, enough.id, "check the margins").ok).toBe(true);
+    expect(db.writeWorry(other.id, enough.id, "not mine").ok).toBe(false);
+    const kept = db.mine(owner.id)[0].worries;
+    expect(kept.map((w) => w.text)).toEqual(["the colours", "check the margins"]);
 
     const today = localDate(Date.now());
-    expect(db.dueLater(owner.id, today)).toEqual({ drawer: [], worries: [] });
-    const tomorrow = dayAfter(Date.now());
-    const due = db.dueLater(owner.id, tomorrow);
-    expect(due.drawer.map((n) => n.text)).toEqual(["check the margins"]);
-    expect(due.drawer[0].description).toBe("a thing");
-    expect(due.worries).toEqual([]);
     const week = weekLater(enough.createdAt);
-    expect(db.dueLater(owner.id, week).worries.map((n) => n.text)).toEqual(["the colours"]);
-    expect(db.dueLater(other.id, week)).toEqual({ drawer: [], worries: [] });
+    expect(db.dueLater(owner.id, today)).toEqual([]);
+    expect(db.dueLater(owner.id, week).map((n) => n.text)).toEqual(["the colours", "check the margins"]);
+    expect(db.dueLater(other.id, week)).toEqual([]);
 
-    // someone else can't put either away; the owner can, once
-    const worryId = db.dueLater(owner.id, week).worries[0].id;
-    expect(db.putAway(other.id, "drawer", due.drawer[0].id).ok).toBe(false);
-    expect(db.putAway(other.id, "worry", worryId).ok).toBe(false);
-    expect(db.dueLater(owner.id, week).drawer).toHaveLength(1);
-    expect(db.putAway(owner.id, "drawer", due.drawer[0].id).ok).toBe(true);
-    expect(db.putAway(owner.id, "drawer", due.drawer[0].id).ok).toBe(false);
-    expect(db.putAway(owner.id, "worry", worryId).ok).toBe(true);
-    expect(db.dueLater(owner.id, week)).toEqual({ drawer: [], worries: [] });
+    // not before its week; not someone else's; then kept, and the reminder goes
+    const [first, second] = kept;
+    expect(db.writeSince(owner.id, first.id, "nobody noticed", today).ok).toBe(false);
+    expect(db.writeSince(other.id, first.id, "nobody noticed", week).ok).toBe(false);
+    expect(db.writeSince(owner.id, first.id, "   ", week).ok).toBe(false);
+    expect(db.writeSince(owner.id, first.id, "nobody noticed", week).ok).toBe(true);
+    expect(db.mine(owner.id)[0].worries[0]).toMatchObject({ text: "the colours", since: "nobody noticed" });
+    expect(db.dueLater(owner.id, week).map((n) => n.text)).toEqual(["check the margins"]);
 
-    // a tomorrow note counts as wanting to check, not as letting go
+    // putting the reminder away keeps the worry on its enough
+    expect(db.putAway(other.id, second.id).ok).toBe(false);
+    expect(db.putAway(owner.id, second.id).ok).toBe(true);
+    expect(db.putAway(owner.id, second.id).ok).toBe(false);
+    expect(db.dueLater(owner.id, week)).toEqual([]);
+    expect(db.mine(owner.id)[0].worries).toHaveLength(2);
+
+    // writing one down counts as wanting to check, not as letting go
     expect(db.mine(owner.id)[0].urges).toEqual({ letGo: 0, checked: 1 });
-    // deleting the enough takes what was kept for it too
+    // deleting the enough takes its worries too
     expect(db.deleteEnough(owner.id, enough.id).ok).toBe(true);
+    expect(db.dueLater(owner.id, week)).toEqual([]);
   });
 });
 
@@ -772,8 +776,9 @@ describe("without an account", () => {
       "/delete/": { enough: id },
       "/report/": { comment: "1" },
       "/break/": { kind: "walk" },
-      "/urge/": { enough: id, choice: "tomorrow", note: `anon note ${tag}` },
-      "/put-away/": { kind: "drawer", id: "1" },
+      "/urge/": { enough: id, choice: "worry", note: `anon note ${tag}` },
+      "/put-away/": { id: "1" },
+      "/since/": { worry: "1", since: `anon since ${tag}` },
       "/work/": { action: "start", alarm: "none" },
       "/scene/": { thing: "lamp", weather: "rain" },
       "/outfit/": { head: "strawhat" },

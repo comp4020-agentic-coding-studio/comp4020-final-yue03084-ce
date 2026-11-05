@@ -35,9 +35,10 @@ commit (see "A feature lands with its test").
   compare. Decided 2026-10-12; breaks added 2026-10-14.)*
   **Guarded by:** `enough.test.ts` "hours, feeling and notes reach only their
   owner, even when shared", "is recorded for the owner only", "after a shared
-  enough, show where they went and when they're back, never how long", "a
-  worry is kept for its owner…"; `work.test.ts` "never reaches the feed or
-  the stream, and snoozes show only on the owner's Mine".
+  enough, show where they went and when they're back, never how long",
+  "worries" ("are kept on their enough for their owner…", "writing down
+  what you'd check…", "a week on, ask how it looks…"); `work.test.ts` "never
+  reaches the feed or the stream, and snoozes show only on the owner's Mine".
 - **Writing needs an account; reading doesn't.** Anyone can read the feed,
   the resting count and comments. Calling something enough, replying,
   commenting, reporting, a break, a recheck and deleting all need an account,
@@ -105,6 +106,23 @@ commit (see "A feature lands with its test").
   (the event holds only kind, wears and hair). **Not tested:** how it looks
   and moves, and the page that sent the form not floating its own person:
   both checked in a browser.
+- **Worries are kept, and looked back on.** A worry is written when calling
+  something enough, or instead of checking it again ("Write it down" in "I
+  want to check it again"). It stays on that record in History, for its
+  owner only, and a week on (`WORRY_AFTER_DAYS`) the record asks "A week on,
+  how does it look now?"; what they write stays beside it. A reminder at the
+  top of You links there; putting it away keeps the worry. No yes/no, no
+  score, no "most of your worries didn't happen": seeing them in their own
+  words is the point. *(2026-11-05: worries came back once a week later and
+  were gone, and the drawer note for tomorrow came back once on You and was
+  gone, so nothing could be looked back on. "Did it happen?" was offered and
+  turned down as too narrow. The drawer was folded in: drawer_notes is kept
+  but unread, migration 0012 copied every note into worries.)* A view of
+  worries over time is wanted next, once there are some to show.
+  **Guarded by:** `enough.test.ts` "worries" (on their enough, private,
+  counted as wanting to check, refused when empty, too long or not yours,
+  the week, and the answer on `db.ts`); `lasting.test.ts` (neither a worry
+  nor a line a week on reaches the log).
 - **One place to rest, come back or finish.** A thin status bar under the
   nav (`StatusBar.astro`), on every page and only for its signed-in owner:
   "Take a break: walk · tea · …", plus "Working" and Finish while working,
@@ -171,15 +189,15 @@ commit (see "A feature lands with its test").
   for its owner…".
 - **Numbers live in one place.** The comment length limit (30 characters),
   how many reports hide a comment (3), and how long an unended break counts
-  as going (120 minutes), and the drawer note and worry lengths and the
-  worry's week (`DRAWER_MAX`, `WORRY_MAX`, `WORRY_AFTER_DAYS`) are each one
+  as going (120 minutes), and the worry length and the worry's week
+  (`WORRY_MAX`, `WORRY_AFTER_DAYS`) are each one
   constant in `src/lib/limits.ts`, read
   by the page, the server and any message about them. *(A limit enforced in
   two places will drift; see "One fact, one piece of code".)*
   **Guarded by:** each limit's spec reads the constant, not a number:
   `enough.test.ts` "refuses a description over `DESCRIPTION_MAX`…", "…a
-  comment over `REPLY_MAX`…", "hide once `REPORTS_TO_HIDE`…", "…over
-  `DRAWER_MAX`…", "…a worry over `WORRY_MAX`…"; and "says each limit and
+  comment over `REPLY_MAX`…", "hide once `REPORTS_TO_HIDE`…", "refuses an
+  empty one, one over `WORRY_MAX`…", "…a worry over `WORRY_MAX`…"; and "says each limit and
   stops typing at it, from the same constant the server uses" checks each
   field's `maxlength` and its "(up to N characters)" against the constant.
 - **The look is plain; the pixel art is the only signature.** White page,
@@ -327,11 +345,12 @@ reload"; `lasting.test.ts` "keeps what was written through a restart".
   refused, and the test fails for the wrong reason.)*
 - Private fields (hours, spans, feeling, notes) show only on `/mine/all/`, so
   a spec that checks them, or acts on a card, reads that page.
-- Anything that depends on today's date (the drawer, a worry, relative times,
+- Anything that depends on today's date (a worry's week, relative times,
   the alarm, the tower) is tested by calling its function with `now` passed
   in (`later.ts`, `when.ts`, `worktime.ts`, `summary.ts`, `collection.ts`).
-  Showing and putting away kept notes is tested on `db.ts` itself with its
-  own throwaway `DATA_DIR`. *(The spec can't move the server's clock.)*
+  A worry coming back, answering it and putting its reminder away are
+  tested on `db.ts` itself with its own throwaway `DATA_DIR`. *(The spec
+  can't move the server's clock.)*
 - A spec that needs to know *whose* something is (an order between people,
   one person's break among others) checks it inside, on `db.ts` with its
   own `DATA_DIR`, where every row has its account. The stream and the feed

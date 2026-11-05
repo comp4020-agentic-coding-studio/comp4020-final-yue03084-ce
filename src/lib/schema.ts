@@ -192,8 +192,9 @@ export const scenes = sqliteTable("scenes", {
     .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
 });
 
-// A note someone put in the drawer instead of checking an enough again, for
-// tomorrow: shown only on its owner's Mine, from openFrom (the next Sydney
+// Until 2026-11-05: a note someone put in the drawer instead of checking an
+// enough again, for tomorrow. Migration 0012 copied every one into worries;
+// nothing reads this table now, it's kept so nothing was thrown away. Was: shown only on its owner's Mine, from openFrom (the next Sydney
 // day, "2026-10-28") until they put it away (dismissedAt). Never on the feed,
 // the stream or in a log.
 export const drawerNotes = sqliteTable("drawer_notes", {
@@ -210,9 +211,13 @@ export const drawerNotes = sqliteTable("drawer_notes", {
   createdAt: createdAt(),
 });
 
-// One worry written when calling something enough, for its owner a week on:
-// shown on their Mine from openFrom (WORRY_AFTER_DAYS Sydney days after)
-// until put away. Kept apart from enoughs so no query of the feed can reach it.
+// A worry about an enough, written when calling it enough or, later, when
+// wanting to check it again: kept on that enough for its owner to look back
+// on. A week on (openFrom, WORRY_AFTER_DAYS Sydney days after) it asks "how
+// does it look now?", and what they write goes in `since`. Never on the feed
+// or the stream; kept apart from enoughs so no query of the feed can reach it.
+// Until 2026-11-05 there was one per enough and drawer notes were their own
+// table; migration 0012 moved those in.
 export const worries = sqliteTable("worries", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   personId: integer("person_id")
@@ -220,11 +225,14 @@ export const worries = sqliteTable("worries", {
     .references(() => people.id),
   enoughId: integer("enough_id")
     .notNull()
-    .unique()
     .references(() => enoughs.id),
   text: text("text").notNull(),
   openFrom: text("open_from").notNull(),
+  // the reminder at the top of You, put away
   dismissedAt: text("dismissed_at"),
+  // what they wrote a week on, and when
+  since: text("since"),
+  sinceAt: text("since_at"),
   createdAt: createdAt(),
 });
 

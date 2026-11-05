@@ -74,22 +74,21 @@ export const BREAK_MAX_MINUTES = 120;
 export const MEADOW_MAX = 7;
 
 // What someone can choose when they want to go back and check something
-// they already called enough.
-// "tomorrow" keeps a short note in the drawer instead (DRAWER_MAX), which
-// shows on Mine from the next Sydney day; it counts as wanting to check, not
-// as letting go.
+// they already called enough. "worry" writes what they'd check as a worry on
+// that enough instead (WORRY_MAX), kept there and asked about a week on; it
+// counts as wanting to check, not as letting go. Rows from before 2026-11-05
+// may say "tomorrow" (the drawer), which counts the same.
 export const URGE_CHOICES = {
   let_go: "Okay, I'll leave it",
   checked: "I'll check it anyway",
-  tomorrow: "Write it down for tomorrow",
+  worry: "Write it down",
 } as const;
 export type UrgeChoice = keyof typeof URGE_CHOICES;
 export const isUrgeChoice = (key: string): key is UrgeChoice => Object.hasOwn(URGE_CHOICES, key);
-// How long a note put in the drawer for tomorrow can be.
-export const DRAWER_MAX = 140;
 
-// One worry about a thing, written when calling it enough, kept for its owner
-// and shown back to them WORRY_AFTER_DAYS Sydney days later.
+// A worry about a thing, written when calling it enough or when wanting to
+// check it again: kept on it for its owner, and WORRY_AFTER_DAYS Sydney days
+// later it asks how it looks now. What they write then has the same limit.
 export const WORRY_MAX = 140;
 export const WORRY_AFTER_DAYS = 7;
 

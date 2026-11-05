@@ -1,12 +1,12 @@
 import type { APIRoute } from "astro";
 import { logEvent } from "../lib/log";
-import { putInDrawer, recordUrge } from "../lib/db";
+import { recordUrge, writeWorry } from "../lib/db";
 import { isUrgeChoice } from "../lib/limits";
 import { signedInPerson } from "../lib/person";
 
 // "I want to check it again": record what they chose. Private, so nothing
-// goes on the stream. "tomorrow" also keeps their note in the drawer; the
-// log never says what the note was.
+// goes on the stream. "worry" also keeps what they'd check as a worry on that
+// enough; the log never says what it was.
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   // a POST with no form body (not one a page sends) is just ignored
   const form = await request.formData().catch(() => new FormData());
@@ -17,10 +17,12 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const choice = String(form.get("choice") ?? "");
   if (Number.isInteger(enoughId) && isUrgeChoice(choice)) {
     const outcome =
-      choice === "tomorrow"
-        ? putInDrawer(person.id, enoughId, String(form.get("note") ?? ""))
+      choice === "worry"
+        ? writeWorry(person.id, enoughId, String(form.get("note") ?? ""))
         : recordUrge(person.id, enoughId, choice);
     logEvent(outcome.ok ? "recheck" : "recheck_refused", { block: person.id, enough: enoughId, choice });
+    // written down: back to that enough, saying where it went
+    if (outcome.ok && choice === "worry") return redirect(`/mine/all/?worried=${enoughId}#enough-${enoughId}`, 303);
   }
   return redirect("/mine/all/", 303);
 };

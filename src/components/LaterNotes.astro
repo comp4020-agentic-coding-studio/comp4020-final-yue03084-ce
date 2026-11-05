@@ -1,58 +1,32 @@
 ---
 import { dueLater } from "../lib/db";
-import { drawerHeading } from "../lib/later";
 import { localDate } from "../lib/summary";
 
-// What comes back on Mine: notes put in the drawer yesterday (or before; the heading says which) and
-// worries written a week ago, each until its owner puts it away. Rendered
-// only for the signed-in owner, from their own rows.
+// The reminder at the top of You: worries whose week has come, each linking
+// to its enough on History, where the worry is kept and they can say how it
+// looks now. Putting the reminder away leaves the worry where it is.
+// Rendered only for the signed-in owner, from their own rows.
 interface Props {
   personId: number;
 }
 const { personId } = Astro.props;
-const today = localDate(Date.now());
-const { drawer, worries } = dueLater(personId, today);
-// "from yesterday" only when it was yesterday (later.ts)
-const heading = drawerHeading(drawer.map((n) => n.openFrom), today);
+const due = dueLater(personId, localDate(Date.now()));
 const back = Astro.url.pathname;
 ---
 
 {
-  drawer.length > 0 && (
-    <section class="drawer" aria-labelledby="drawer-heading">
-      <h2 id="drawer-heading">{heading}</h2>
-      <ul>
-        {drawer.map((n) => (
-          <li>
-            <p class="drawer-note">{n.text}</p>
-            <p class="drawer-about">
-              about <a href={`/mine/all/#enough-${n.enoughId}`}>{n.description}</a>
-            </p>
-            <form method="post" action="/put-away/">
-              <input type="hidden" name="kind" value="drawer" />
-              <input type="hidden" name="id" value={n.id} />
-              <input type="hidden" name="back" value={back} />
-              <button type="submit">Put it away</button>
-            </form>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-{
-  worries.length > 0 && (
+  due.length > 0 && (
     <section class="drawer" aria-labelledby="worry-heading">
       <h2 id="worry-heading">From a week ago</h2>
       <ul>
-        {worries.map((n) => (
+        {due.map((n) => (
           <li>
-            <p class="drawer-note">A week ago you worried: “{n.text}” It was enough.</p>
+            <p class="drawer-note">A week ago you worried: “{n.text}”</p>
             <p class="drawer-about">
-              about <a href={`/mine/all/#enough-${n.enoughId}`}>{n.description}</a>
+              about <a href={`/mine/all/#enough-${n.enoughId}`}>{n.description}</a>.{" "}
+              <a href={`/mine/all/#worry-${n.id}`}>How does it look now?</a>
             </p>
             <form method="post" action="/put-away/">
-              <input type="hidden" name="kind" value="worry" />
               <input type="hidden" name="id" value={n.id} />
               <input type="hidden" name="back" value={back} />
               <button type="submit">Put it away</button>
