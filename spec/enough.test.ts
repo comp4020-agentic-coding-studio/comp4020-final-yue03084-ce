@@ -607,13 +607,14 @@ describe("worries", () => {
     expect(received).not.toContain(worry);
     expect(received).not.toMatch(/"worry"/);
     expect(await browser().get("/")).not.toContain(worry);
-    // on its own card, from the start
+    // on its own card, from the start, as a part of it (no record of its own)
     const id = await idOf(author, `worried ${tag}`);
     const card = cardOf(await author.get("/mine/all/"), id);
-    expect(card).toContain("What you worried about");
+    expect(card).toContain("<dt>What you worried about</dt>");
     expect(card).toContain(worry);
-    // not asked about before its week
-    expect(card).not.toContain("how does it look now");
+    // before its week: a line can be written, but it isn't asked
+    expect(card).toContain("<summary>How does it look now?</summary>");
+    expect(card).not.toContain("A week on, how does it look now?");
     // and on nobody else's pages
     const other = await signedIn();
     for (const page of ["/", "/mine/", "/mine/all/"]) expect(await other.get(page)).not.toContain(worry);
@@ -631,7 +632,7 @@ describe("worries", () => {
     expect(res?.headers.get("location")).toBe(`/mine/all/?worried=${id}#enough-${id}`);
     const card = cardOf(await author.get(`/mine/all/?worried=${id}`), id);
     expect(card).toContain(note);
-    expect(card).toContain("Written down.");
+    expect(card).toContain("Written down. It's kept here");
     expect(card).toContain("Wanted to check it again 1 time; let it go 0.");
     expect(await author.get("/mine/all/")).not.toContain("Written down.");
     const other = await signedIn();
@@ -677,7 +678,7 @@ describe("worries", () => {
   // The app's clock can't be moved from the spec, so what shows when, and who
   // can answer or put away, is checked on db.ts itself, with its own
   // throwaway database in this test process.
-  it("a week on, ask how it looks, keep the answer beside it, and only for their owner (db.ts)", async () => {
+  it("take a line on how it looks any time, ask a week on, and only for their owner (db.ts)", async () => {
     process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "spec-worries-"));
     const db = await import("../src/lib/db.ts");
     const { localDate } = await import("../src/lib/summary.ts");
@@ -699,12 +700,11 @@ describe("worries", () => {
     expect(db.dueLater(owner.id, week).map((n) => n.text)).toEqual(["the colours", "check the margins"]);
     expect(db.dueLater(other.id, week)).toEqual([]);
 
-    // not before its week; not someone else's; then kept, and the reminder goes
+    // any time, but never someone else's or empty; then kept, and its reminder goes
     const [first, second] = kept;
-    expect(db.writeSince(owner.id, first.id, "nobody noticed", today).ok).toBe(false);
-    expect(db.writeSince(other.id, first.id, "nobody noticed", week).ok).toBe(false);
-    expect(db.writeSince(owner.id, first.id, "   ", week).ok).toBe(false);
-    expect(db.writeSince(owner.id, first.id, "nobody noticed", week).ok).toBe(true);
+    expect(db.writeSince(other.id, first.id, "nobody noticed").ok).toBe(false);
+    expect(db.writeSince(owner.id, first.id, "   ").ok).toBe(false);
+    expect(db.writeSince(owner.id, first.id, "nobody noticed").ok).toBe(true);
     expect(db.mine(owner.id)[0].worries[0]).toMatchObject({ text: "the colours", since: "nobody noticed" });
     expect(db.dueLater(owner.id, week).map((n) => n.text)).toEqual(["check the margins"]);
 

@@ -91,40 +91,49 @@ const justWorried = Astro.url.searchParams.get("worried");
             )}
           </dl>
           {e.worries.length > 0 && (
-            <section class="worries" aria-label="What you worried about">
-              <h3>What you worried about</h3>
-              <ul>
-                {e.worries.map((w) => (
-                  <li id={`worry-${w.id}`}>
+            <dl class="worries">
+              <dt>What you worried about</dt>
+              {e.worries.map((w) => {
+                const due = isDue(w.openFrom, today);
+                const ask = (
+                  <form method="post" action="/since/" class="worry-since-form">
+                    <input type="hidden" name="worry" value={w.id} />
+                    <input type="hidden" name="enough" value={e.id} />
+                    <label>
+                      {due ? "A week on, how does it look now?" : "How does it look now?"}{" "}
+                      <small>(up to {WORRY_MAX} characters)</small>
+                      <input name="since" required maxlength={WORRY_MAX} />
+                    </label>
+                    <button type="submit">Keep this</button>
+                  </form>
+                );
+                return (
+                  <dd id={`worry-${w.id}`}>
                     <p class="worry-text">
                       “{w.text}” <span class="worry-when">{relativeWhen(w.createdAt)}</span>
                     </p>
                     {w.since ? (
                       <p class="worry-since">
-                        A week on: “{w.since}” <span class="worry-when">{relativeWhen(w.sinceAt ?? w.createdAt)}</span>
+                        Later: “{w.since}” <span class="worry-when">{relativeWhen(w.sinceAt ?? w.createdAt)}</span>
                       </p>
+                    ) : due ? (
+                      ask
                     ) : (
-                      isDue(w.openFrom, today) && (
-                        <form method="post" action="/since/" class="worry-since-form">
-                          <input type="hidden" name="worry" value={w.id} />
-                          <input type="hidden" name="enough" value={e.id} />
-                          <label>
-                            A week on, how does it look now? <small>(up to {WORRY_MAX} characters)</small>
-                            <input name="since" required maxlength={WORRY_MAX} />
-                          </label>
-                          <button type="submit">Keep this</button>
-                        </form>
-                      )
+                      // before its week, a quiet link that opens the same line
+                      <details class="worry-ask">
+                        <summary>How does it look now?</summary>
+                        {ask}
+                      </details>
                     )}
-                  </li>
-                ))}
-              </ul>
+                  </dd>
+                );
+              })}
               {justWorried === String(e.id) && (
-                <p class="worry-kept" role="status">
-                  Written down. It's kept here, and in {WORRY_AFTER_DAYS} days you can say how it looks.
-                </p>
+                <dd class="worry-kept" role="status">
+                  Written down. It's kept here, and in {WORRY_AFTER_DAYS} days you'll be asked how it looks.
+                </dd>
               )}
-            </section>
+            </dl>
           )}
           {e.shared && (
             <p class="replies-got">

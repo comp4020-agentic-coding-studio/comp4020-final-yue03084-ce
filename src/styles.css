@@ -1388,29 +1388,20 @@ button[type="submit"].wide {
   transform: translateX(-100%);
 }
 
-/* the worries kept on a record (History): what they worried about, in the
-   record's own words, and a line from a week on. A rule above, no box; the
-   heading reads like the record's other labels (dt). */
+/* the worries kept on a record (History): one more part of the record,
+   labelled like the others (dt), with no rule of its own, so it never looks
+   like a record of its own. A line written later sits in a step under it. */
 .worries {
-  margin: var(--s3) 0;
-  padding-block: 12px;
-  border-block: 1px solid var(--line);
+  margin: 0.25rem 0 0;
 }
 
-.worries h3 {
+.worries dd {
   margin: 0 0 var(--s1);
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  font-weight: 400;
-  color: var(--muted);
 }
 
-.worries ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--s2);
+/* the space after the last one is the record's, before its replies */
+.worries {
+  margin-bottom: var(--s3);
 }
 
 .worries p {
@@ -1422,7 +1413,7 @@ button[type="submit"].wide {
   font-size: 0.8125rem;
 }
 
-/* a week on: set in a step, so it reads as the answer to the line above */
+/* later: set in a step, so it reads as the answer to the line above */
 .worry-since {
   margin-top: var(--s1) !important;
   padding-left: var(--s3);
@@ -1466,9 +1457,27 @@ button[type="submit"].wide {
 }
 
 .worry-kept {
-  margin-top: var(--s2) !important;
   color: var(--muted);
   font-size: 0.875rem;
+}
+
+/* before its week: a small link that opens the same line */
+.worry-ask summary {
+  display: inline-block;
+  min-height: 2.75rem;
+  line-height: 2.75rem;
+  color: var(--accent);
+  font-size: 0.875rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.worry-ask summary::-webkit-details-marker {
+  display: none;
+}
+
+.worry-ask[open] summary {
+  display: none;
 }
 
 /* the reminder at the top of You: worries from a week ago */

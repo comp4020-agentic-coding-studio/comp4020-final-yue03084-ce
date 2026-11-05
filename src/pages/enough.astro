@@ -121,7 +121,7 @@ if (Astro.request.method === "POST" && person) {
         <textarea id="notes" name="notes" rows="4">{values.notes}</textarea>
       </div>
       <label>
-        One worry about it, for a week from now <small>(optional, up to {WORRY_MAX} characters; it comes back to you in {WORRY_AFTER_DAYS} days)</small>
+        One worry about it <small>(optional, up to {WORRY_MAX} characters; it's kept with this, and in {WORRY_AFTER_DAYS} days you'll be asked how it looks)</small>
         <input name="worry" maxlength={WORRY_MAX} value={values.worry} placeholder="e.g. that the ending was rushed" />
       </label>
     </fieldset>

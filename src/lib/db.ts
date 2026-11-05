@@ -456,15 +456,15 @@ export function writeWorry(personId: number, enoughId: number, input: string): O
   return { ok: true, value: null };
 }
 
-// A week on, what they make of a worry now, in a line. Their own worry only,
-// and not before its week; written again, it replaces what was there.
-export function writeSince(personId: number, worryId: number, input: string, today: string): Outcome<null> {
+// What they make of a worry now, in a line: any time, though it's a week on
+// that History asks. Their own worry only; written again, it replaces what
+// was there. Answering puts its reminder away.
+export function writeSince(personId: number, worryId: number, input: string): Outcome<null> {
   const text = tidy(input);
   if (text === "") return { ok: false, reason: "Write a few words first." };
   if ([...text].length > WORRY_MAX) return { ok: false, reason: `Keep it to ${WORRY_MAX} characters or fewer.` };
   const w = db.select().from(worries).where(and(eq(worries.id, worryId), eq(worries.personId, personId))).get();
   if (!w) return { ok: false, reason: "That isn't one of yours." };
-  if (!isDue(w.openFrom, today)) return { ok: false, reason: "Give it a week first." };
   db.update(worries)
     .set({ since: text, sinceAt: sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`, dismissedAt: w.dismissedAt ?? sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))` })
     .where(eq(worries.id, worryId))

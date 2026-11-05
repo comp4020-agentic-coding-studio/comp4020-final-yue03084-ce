@@ -108,10 +108,15 @@ commit (see "A feature lands with its test").
   both checked in a browser.
 - **Worries are kept, and looked back on.** A worry is written when calling
   something enough, or instead of checking it again ("Write it down" in "I
-  want to check it again"). It stays on that record in History, for its
-  owner only, and a week on (`WORRY_AFTER_DAYS`) the record asks "A week on,
-  how does it look now?"; what they write stays beside it. A reminder at the
-  top of You links there; putting it away keeps the worry. No yes/no, no
+  want to check it again"). It shows on that record in History at once, as
+  one more labelled part of it (a `dt`, no rule of its own), for its owner
+  only. A line on how it looks can be written any time ("How does it look
+  now?", a quiet link); a week on (`WORRY_AFTER_DAYS`) the record asks it
+  outright and a reminder at the top of You links there. The line stays
+  beside the worry as "Later: …"; putting the reminder away keeps the
+  worry. *(Same day: answering only after a week, while the worry showed at
+  once, read as odd; and two rules round the worries made one record look
+  like three.)* No yes/no, no
   score, no "most of your worries didn't happen": seeing them in their own
   words is the point. *(2026-11-05: worries came back once a week later and
   were gone, and the drawer note for tomorrow came back once on You and was
@@ -121,8 +126,9 @@ commit (see "A feature lands with its test").
   worries over time is wanted next, once there are some to show.
   **Guarded by:** `enough.test.ts` "worries" (on their enough, private,
   counted as wanting to check, refused when empty, too long or not yours,
-  the week, and the answer on `db.ts`); `lasting.test.ts` (neither a worry
-  nor a line a week on reaches the log).
+  the week, and the line on `db.ts`); `lasting.test.ts` (neither a worry
+  nor a line on it reaches the log). **Not tested:** how it looks, checked
+  in a browser.
 - **One place to rest, come back or finish.** A thin status bar under the
   nav (`StatusBar.astro`), on every page and only for its signed-in owner:
   "Take a break: walk · tea · …", plus "Working" and Finish while working,
