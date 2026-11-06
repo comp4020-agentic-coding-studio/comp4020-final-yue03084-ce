@@ -430,30 +430,21 @@ export function myUrges(personId: number): { choice: string; createdAt: string }
     .all();
 }
 
-// Record that someone wanted to recheck one of their own enoughs, and what
-// they chose. Private: nothing goes on the bus.
-export function recordUrge(personId: number, enoughId: number, choice: UrgeChoice): Outcome<null> {
-  const own = db.select().from(enoughs).where(and(eq(enoughs.id, enoughId), eq(enoughs.personId, personId))).get();
-  if (!own) return { ok: false, reason: "That isn't one of yours." };
-  db.insert(urges).values({ enoughId, personId, choice }).run();
-  return { ok: true, value: null };
-}
-
-// "Write it down" (choice "worry"): wanting to check it again, written as a
-// worry on the enough instead. Counts as wanting to check, and comes back a
-// week on like any worry. Own enoughs only; an empty or over-long worry
-// records nothing.
-export function writeWorry(personId: number, enoughId: number, input: string): Outcome<null> {
+// Record that someone wanted to recheck one of their own enoughs, what they
+// chose (leave it, or check anyway), and, if they wrote one, what was making
+// them want to: kept as a worry on that enough and asked about a week on.
+// Private: nothing goes on the bus. A worry that's too long refuses the
+// whole thing, so nothing is half kept.
+export function recordUrge(personId: number, enoughId: number, choice: UrgeChoice, input = ""): Outcome<{ worried: boolean }> {
   const text = tidy(input);
-  if (text === "") return { ok: false, reason: "Write a few words first." };
   if ([...text].length > WORRY_MAX) return { ok: false, reason: `Keep it to ${WORRY_MAX} characters or fewer.` };
   const own = db.select().from(enoughs).where(and(eq(enoughs.id, enoughId), eq(enoughs.personId, personId))).get();
   if (!own) return { ok: false, reason: "That isn't one of yours." };
   db.transaction((tx) => {
-    const urge = tx.insert(urges).values({ enoughId, personId, choice: "worry" }).returning().get();
-    tx.insert(worries).values({ personId, enoughId, text, openFrom: weekLater(urge.createdAt) }).run();
+    const urge = tx.insert(urges).values({ enoughId, personId, choice }).returning().get();
+    if (text) tx.insert(worries).values({ personId, enoughId, text, openFrom: weekLater(urge.createdAt) }).run();
   });
-  return { ok: true, value: null };
+  return { ok: true, value: { worried: text !== "" } };
 }
 
 // What they make of a worry now, in a line: any time, though it's a week on

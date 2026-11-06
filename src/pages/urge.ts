@@ -1,12 +1,13 @@
 import type { APIRoute } from "astro";
 import { logEvent } from "../lib/log";
-import { recordUrge, writeWorry } from "../lib/db";
+import { recordUrge } from "../lib/db";
 import { isUrgeChoice } from "../lib/limits";
 import { signedInPerson } from "../lib/person";
 
-// "I want to check it again": record what they chose. Private, so nothing
-// goes on the stream. "worry" also keeps what they'd check as a worry on that
-// enough; the log never says what it was.
+// "I want to check it again": record what they chose, and keep what was
+// making them want to, if they wrote it, as a worry on that enough. Private,
+// so nothing goes on the stream; the log never says what was written. Back
+// to that enough, with its More open when a worry was kept, so they see it.
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   // a POST with no form body (not one a page sends) is just ignored
   const form = await request.formData().catch(() => new FormData());
@@ -15,14 +16,9 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if (!person) return redirect("/account/", 303);
   const enoughId = Number(form.get("enough"));
   const choice = String(form.get("choice") ?? "");
-  if (Number.isInteger(enoughId) && isUrgeChoice(choice)) {
-    const outcome =
-      choice === "worry"
-        ? writeWorry(person.id, enoughId, String(form.get("note") ?? ""))
-        : recordUrge(person.id, enoughId, choice);
-    logEvent(outcome.ok ? "recheck" : "recheck_refused", { block: person.id, enough: enoughId, choice });
-    // written down: back to that enough, saying where it went
-    if (outcome.ok && choice === "worry") return redirect(`/mine/all/?worried=${enoughId}#enough-${enoughId}`, 303);
-  }
-  return redirect("/mine/all/", 303);
+  if (!Number.isInteger(enoughId) || !isUrgeChoice(choice)) return redirect("/mine/all/", 303);
+  const outcome = recordUrge(person.id, enoughId, choice, String(form.get("note") ?? ""));
+  logEvent(outcome.ok ? "recheck" : "recheck_refused", { block: person.id, enough: enoughId, choice });
+  if (!outcome.ok) return redirect("/mine/all/", 303);
+  return redirect(outcome.value.worried ? `/mine/all/?open=${enoughId}#enough-${enoughId}` : `/mine/all/#enough-${enoughId}`, 303);
 };

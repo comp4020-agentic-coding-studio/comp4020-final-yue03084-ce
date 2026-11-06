@@ -133,7 +133,7 @@ describe("what lasts and what's logged", () => {
     expect(id).not.toBe("");
     await other.send("/comment/", { enough: id, text: secret.comment });
     await other.send("/reply/", { enough: id, preset: "seen" });
-    await writer.send("/urge/", { enough: id, choice: "worry", note: secret.drawer });
+    await writer.send("/urge/", { enough: id, choice: "let_go", note: secret.drawer });
     // a line on how a worry looks now: logged by block and worry, never its words
     const worryId = /id="worry-(\d+)"/.exec(await writer.get("/mine/all/"))?.[1] ?? "";
     expect(worryId).not.toBe("");

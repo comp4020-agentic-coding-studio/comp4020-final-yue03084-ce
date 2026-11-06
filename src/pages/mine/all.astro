@@ -2,7 +2,7 @@
 import MineTop from "../../components/MineTop.astro";
 import Page from "../../layouts/Page.astro";
 import { mine } from "../../lib/db";
-import { PRESET_REPLIES, type PresetKey, URGE_CHOICES, WORRY_AFTER_DAYS, WORRY_MAX } from "../../lib/limits";
+import { PRESET_REPLIES, type PresetKey, URGE_CHOICES, WORRY_MAX } from "../../lib/limits";
 import { isDue } from "../../lib/later";
 import { localDate } from "../../lib/summary";
 import { fullWhen, relativeWhen } from "../../lib/when";
@@ -28,8 +28,9 @@ const miniBar = (text: string) => {
 const when = fullWhen;
 // a worry asks how it looks now once its week has come (later.ts)
 const today = localDate(Date.now());
-// just written down from "I want to check it again": say where it went
-const justWorried = Astro.url.searchParams.get("worried");
+// a record to open on arrival: a worry was just kept there, or a reminder
+// on You sent them to one
+const open = Astro.url.searchParams.get("open");
 ---
 
 <Page title="You">
@@ -40,171 +41,147 @@ const justWorried = Astro.url.searchParams.get("worried");
     {
       rows.map((e) => (
         <li class="card" id={`enough-${e.id}`} data-enough={e.id}>
-          <p>
-            <q>{e.description}</q> <span class="tag">{e.shared ? "shared" : "just you"}</span>
+          {/* at a glance: what it was, and one line of when, who sees it, how long */}
+          <p class="mine-title">
+            <q>{e.description}</q>
           </p>
           <p class="when">
             <time datetime={e.createdAt} title={fullWhen(e.createdAt)}>{relativeWhen(e.createdAt)}</time>
+            {" · "}
+            {e.shared ? "shared" : "just you"}
+            {e.hours !== null && <> · {e.spans ? roughly(e.hours) : `${e.hours} ${e.hours === 1 ? "hour" : "hours"}`}</>}
           </p>
-          <dl>
-            {e.hours !== null && (
-              <>
-                <dt>Time spent</dt>
-                <dd>
-                  {e.spans
-                    ? `${roughly(e.hours)}: ${(parseSpans(e.spans) ?? []).map(describeSpan).join(", ")}`
-                    : `${e.hours} ${e.hours === 1 ? "hour" : "hours"}`}
-                  {e.spans &&
-                    (() => {
-                      const bar = miniBar(e.spans);
-                      return (
-                        bar && (
-                          <span class="minibar" aria-hidden="true" style={`--crayon: var(--c-${e.crayon ?? "clay"})`}>
-                            <span class="minibar-strip">
-                              {bar.parts.map((p) => (
-                                <span class="minibar-part" style={`left: ${p.left}%; width: ${p.width}%`} />
-                              ))}
-                            </span>
-                            <span class="minibar-ends">
-                              <span>{bar.from}</span>
-                              <span>{bar.to}</span>
-                            </span>
-                          </span>
-                        )
-                      );
-                    })()}
-                </dd>
-              </>
-            )}
-            {e.feeling && (
-              <>
-                <dt>How it felt</dt>
-                <dd>{e.feeling}</dd>
-              </>
-            )}
-            {e.notes && (
-              <>
-                <dt>What you did and checked</dt>
-                {/* cleaned on the way in (cleanNotes), so it's safe to render as HTML */}
-                {isHtml(e.notes) ? <dd class="notes rich" set:html={e.notes} /> : <dd class="notes">{e.notes}</dd>}
-              </>
-            )}
-          </dl>
-          {e.worries.length > 0 && (
-            <dl class="worries">
-              <dt>What you worried about</dt>
-              {e.worries.map((w) => {
-                const due = isDue(w.openFrom, today);
-                const ask = (
-                  <form method="post" action="/since/" class="worry-since-form">
-                    <input type="hidden" name="worry" value={w.id} />
-                    <input type="hidden" name="enough" value={e.id} />
-                    <label>
-                      {due ? "A week on, how does it look now?" : "How does it look now?"}{" "}
-                      <small>(up to {WORRY_MAX} characters)</small>
-                      <input name="since" required maxlength={WORRY_MAX} />
-                    </label>
-                    <button type="submit">Keep this</button>
-                  </form>
-                );
+          {/* everything else, folded: open when a worry was just kept here, or a
+              reminder on You sent them to one */}
+          <details class="more" open={open === String(e.id)}>
+            <summary>More</summary>
+            {e.spans &&
+              (() => {
+                const bar = miniBar(e.spans);
                 return (
-                  <dd id={`worry-${w.id}`}>
-                    <p class="worry-text">
-                      “{w.text}” <span class="worry-when">{relativeWhen(w.createdAt)}</span>
+                  bar && (
+                    <p class="minibar" style={`--crayon: var(--c-${e.crayon ?? "clay"})`}>
+                      <span class="minibar-strip" aria-hidden="true">
+                        {bar.parts.map((p) => (
+                          <span class="minibar-part" style={`left: ${p.left}%; width: ${p.width}%`} />
+                        ))}
+                      </span>
+                      <span class="minibar-ends" aria-hidden="true">
+                        <span>{bar.from}</span>
+                        <span>{bar.to}</span>
+                      </span>
+                      <span class="visually-hidden">{(parseSpans(e.spans) ?? []).map(describeSpan).join(", ")}</span>
                     </p>
-                    {w.since ? (
-                      <p class="worry-since">
-                        Later: “{w.since}” <span class="worry-when">{relativeWhen(w.sinceAt ?? w.createdAt)}</span>
-                      </p>
-                    ) : due ? (
-                      ask
-                    ) : (
-                      // before its week, a quiet link that opens the same line
-                      <details class="worry-ask">
-                        <summary>How does it look now?</summary>
-                        {ask}
-                      </details>
-                    )}
-                  </dd>
+                  )
                 );
-              })}
-              {justWorried === String(e.id) && (
-                <dd class="worry-kept" role="status">
-                  Written down. It's kept here, and in {WORRY_AFTER_DAYS} days you'll be asked how it looks.
-                </dd>
-              )}
-            </dl>
-          )}
-          {e.shared && (
-            <p class="replies-got">
-              {(Object.entries(PRESET_REPLIES) as [PresetKey, string][])
-                .filter(([key]) => e.replies[key])
-                .map(([key, label]) => `${label} ${e.replies[key]}`)
-                .join(" · ") || "No replies yet."}
-            </p>
-          )}
-          {e.comments.length > 0 && (
-            <ul class="comment-list">
-              {e.comments.map((c) => (
-                <li>
-                  <span class="who">{c.name}</span> <span class="said">{c.text}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {/* "I want to check it again": shows what they wrote down when they
-              called it enough, and the note from the wall, then lets them
-              choose. Either choice is recorded; neither stops them. Works as a
-              plain <details> without script. */}
-          <details class="urge">
-            <summary>I want to check it again</summary>
-            <div class="urge-body">
-              <p>You called this enough on {when(e.createdAt)}.</p>
-              {e.notes && (
-                <>
-                  <p class="hint">What you did and checked then:</p>
-                  {isHtml(e.notes) ? <div class="notes rich then" set:html={e.notes} /> : <p class="notes then">{e.notes}</p>}
-                </>
-              )}
-              {e.hours !== null && <p class="hint">Time you put in: {e.spans ? roughly(e.hours) : `${e.hours} hours`}.</p>}
-              <p class="wall">Live with imperfection.</p>
-              <form method="post" action="/urge/" class="urge-choices">
-                <input type="hidden" name="enough" value={e.id} />
-                <button type="submit" name="choice" value="let_go" class="let-go">
-                  {URGE_CHOICES.let_go}
-                </button>
-                <button type="submit" name="choice" value="checked" class="check-anyway">
-                  {URGE_CHOICES.checked}
-                </button>
-              </form>
-              {/* or a third way: write down what they'd check, as a worry kept
-                  on this enough. Counts as wanting to check. */}
-              <form method="post" action="/urge/" class="urge-drawer">
-                <input type="hidden" name="enough" value={e.id} />
-                <input type="hidden" name="choice" value="worry" />
-                <label>
-                  What would you check? <small>(up to {WORRY_MAX} characters, kept here as a worry)</small>
-                  <input name="note" required maxlength={WORRY_MAX} placeholder="e.g. the references, one more time" />
-                </label>
-                <button type="submit">{URGE_CHOICES.worry}</button>
-              </form>
-            </div>
+              })()}
+            {e.feeling && <p class="feeling">{e.feeling}</p>}
+            {/* cleaned on the way in (cleanNotes), so it's safe to render as HTML */}
+            {e.notes && (isHtml(e.notes) ? <div class="notes rich" set:html={e.notes} /> : <p class="notes">{e.notes}</p>)}
+            {e.worries.length > 0 && (
+              <dl class="worries">
+                <dt>Worried</dt>
+                {e.worries.map((w) => {
+                  const due = isDue(w.openFrom, today);
+                  const ask = (
+                    <form method="post" action="/since/" class="worry-since-form">
+                      <input type="hidden" name="worry" value={w.id} />
+                      <input type="hidden" name="enough" value={e.id} />
+                      <label>
+                        {due ? "A week on, how does it look now?" : "How does it look now?"}{" "}
+                        <small>(up to {WORRY_MAX} characters)</small>
+                        <input name="since" required maxlength={WORRY_MAX} />
+                      </label>
+                      <button type="submit">Keep this</button>
+                    </form>
+                  );
+                  return (
+                    <dd id={`worry-${w.id}`}>
+                      <p class="worry-text">“{w.text}”</p>
+                      {w.since ? (
+                        <p class="worry-since">Later: “{w.since}”</p>
+                      ) : due ? (
+                        ask
+                      ) : (
+                        // before its week, a quiet link that opens the same line
+                        <details class="worry-ask">
+                          <summary>How does it look now?</summary>
+                          {ask}
+                        </details>
+                      )}
+                    </dd>
+                  );
+                })}
+              </dl>
+            )}
+            {/* what others said, only when they have */}
+            {e.shared && (Object.keys(e.replies).length > 0 || e.comments.length > 0) && (
+              <div class="others">
+                {Object.keys(e.replies).length > 0 && (
+                  <p class="replies-got">
+                    {(Object.entries(PRESET_REPLIES) as [PresetKey, string][])
+                      .filter(([key]) => e.replies[key])
+                      .map(([key, label]) => `${label} ${e.replies[key]}`)
+                      .join(" · ")}
+                  </p>
+                )}
+                {e.comments.length > 0 && (
+                  <ul class="comment-list">
+                    {e.comments.map((c) => (
+                      <li>
+                        <span class="who">{c.name}</span> <span class="said">{c.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </details>
-          {(e.urges.letGo > 0 || e.urges.checked > 0) && (
-            <p class="urge-tally">
-              Wanted to check it again {e.urges.letGo + e.urges.checked}{" "}
-              {e.urges.letGo + e.urges.checked === 1 ? "time" : "times"}; let it go {e.urges.letGo}.
-            </p>
-          )}
-          {/* delete asks once more before it goes: a <details> needs no script */}
-          <details class="delete">
-            <summary>Delete</summary>
-            <form method="post" action="/delete/">
-              <input type="hidden" name="enough" value={e.id} />
-              <span>This can't be undone{e.shared ? ", and it comes off the feed for everyone" : ""}.</span>
-              <button type="submit" class="danger">Delete it</button>
-            </form>
-          </details>
+          <div class="mine-actions">
+            {/* "I want to check it again": shows what they wrote down when they
+                called it enough, and the note from the wall; they can write
+                what's making them want to, then leave it or check anyway.
+                Either is recorded; neither stops them. Works as a plain
+                <details> without script. */}
+            <details class="urge">
+              <summary>I want to check it again</summary>
+              <div class="urge-body">
+                <p>You called this enough on {when(e.createdAt)}.</p>
+                {e.notes && (
+                  <>
+                    <p class="hint">What you did and checked then:</p>
+                    {isHtml(e.notes) ? <div class="notes rich then" set:html={e.notes} /> : <p class="notes then">{e.notes}</p>}
+                  </>
+                )}
+                {e.hours !== null && <p class="hint">Time you put in: {e.spans ? roughly(e.hours) : `${e.hours} hours`}.</p>}
+                <p class="wall">Live with imperfection.</p>
+                <form method="post" action="/urge/" class="urge-choices">
+                  <input type="hidden" name="enough" value={e.id} />
+                  <label class="urge-worry">
+                    What's making you want to check? <small>(optional, up to {WORRY_MAX} characters; kept here as a worry)</small>
+                    <input name="note" maxlength={WORRY_MAX} placeholder="e.g. the references, one more time" />
+                  </label>
+                  <div class="urge-buttons">
+                    <button type="submit" name="choice" value="let_go" class="let-go">
+                      {URGE_CHOICES.let_go}
+                    </button>
+                    <button type="submit" name="choice" value="checked" class="check-anyway">
+                      {URGE_CHOICES.checked}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </details>
+            {/* delete asks once more before it goes: a <details> needs no script */}
+            <details class="delete">
+              <summary>Delete</summary>
+              <form method="post" action="/delete/">
+                <input type="hidden" name="enough" value={e.id} />
+                <span>This can't be undone{e.shared ? ", and it comes off the feed for everyone" : ""}.</span>
+                <button type="submit" class="danger">Delete it</button>
+              </form>
+            </details>
+          </div>
         </li>
       ))
     }

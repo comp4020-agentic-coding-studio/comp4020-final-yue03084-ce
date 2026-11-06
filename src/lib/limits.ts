@@ -74,14 +74,13 @@ export const BREAK_MAX_MINUTES = 120;
 export const MEADOW_MAX = 7;
 
 // What someone can choose when they want to go back and check something
-// they already called enough. "worry" writes what they'd check as a worry on
-// that enough instead (WORRY_MAX), kept there and asked about a week on; it
-// counts as wanting to check, not as letting go. Rows from before 2026-11-05
-// may say "tomorrow" (the drawer), which counts the same.
+// they already called enough. Either way they can first write what's making
+// them want to (WORRY_MAX), kept as a worry on that enough. Rows from before
+// 2026-11-06 may say "tomorrow" (the drawer) or "worry" (writing it down
+// instead of choosing); both count as wanting to check, not as letting go.
 export const URGE_CHOICES = {
   let_go: "Okay, I'll leave it",
   checked: "I'll check it anyway",
-  worry: "Write it down",
 } as const;
 export type UrgeChoice = keyof typeof URGE_CHOICES;
 export const isUrgeChoice = (key: string): key is UrgeChoice => Object.hasOwn(URGE_CHOICES, key);

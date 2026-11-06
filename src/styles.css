@@ -730,7 +730,6 @@ button.danger:hover {
   display: none;
 }
 
-.urge-open,
 .urge-choices button {
   min-height: 2.75rem;
   padding: 6px 12px;
@@ -744,7 +743,6 @@ button.danger:hover {
   transition: background-color 150ms ease-out, border-color 150ms ease-out;
 }
 
-.urge-open:hover,
 .urge-choices button:hover {
   background: var(--accent-soft);
   border-color: var(--accent);
@@ -764,19 +762,89 @@ fieldset.next small {
   font-size: 0.8125rem;
 }
 
-/* "I want to check it again" */
-.urge {
-  margin-top: 0.6rem;
+/* History: a record at a glance, everything else under More, and its two
+   actions on one quiet line at the foot */
+.mine-title {
+  margin: 0;
 }
 
-.urge summary {
+/* More and the two actions read as one line of small words: More's tap
+   area runs into the line below rather than leaving a gap */
+.more {
+  margin-top: 0;
+}
+
+.more:not([open]) + .mine-actions {
+  margin-top: calc(-1 * var(--s3));
+}
+
+.more > summary,
+.mine-actions summary,
+.mine-actions .urge-open {
   display: inline-block;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: 2.75rem;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.875rem;
   cursor: pointer;
-  color: var(--accent);
+  list-style: none;
 }
 
-.urge-open {
-  margin-top: 0.6rem;
+.more > summary::-webkit-details-marker,
+.mine-actions summary::-webkit-details-marker {
+  display: none;
+}
+
+.more > summary::after {
+  content: " ▸";
+}
+
+.more[open] > summary::after {
+  content: " ▾";
+}
+
+.more > summary:hover,
+.mine-actions .urge-open:hover,
+.mine-actions summary:hover {
+  color: var(--accent);
+  background: none;
+}
+
+.more > :not(summary) {
+  margin-block: 0 var(--s2);
+}
+
+.more[open] > summary {
+  margin-bottom: var(--s1);
+}
+
+.more .feeling {
+  color: var(--muted);
+}
+
+.others {
+  margin-top: var(--s2);
+}
+
+.mine-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--s4);
+}
+
+.mine-actions .delete {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/* an open Delete takes the whole line for its question */
+.mine-actions .delete[open] {
+  flex-basis: 100%;
 }
 
 .urge-body p {
@@ -798,6 +866,21 @@ fieldset.next small {
 }
 
 .urge-choices {
+  display: grid;
+  gap: var(--s3);
+}
+
+.urge-worry {
+  font-size: 0.9rem;
+}
+
+.urge-worry input {
+  display: block;
+  width: 100%;
+  margin-top: 0.2rem;
+}
+
+.urge-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -813,12 +896,6 @@ fieldset.next small {
 
 .urge-choices .let-go:hover {
   background: var(--primary-hover);
-}
-
-.urge-tally {
-  margin: 0.4rem 0 0;
-  color: var(--muted);
-  font-size: 0.875rem;
 }
 
 .urge-dialog {
@@ -1408,11 +1485,6 @@ button[type="submit"].wide {
   margin: 0;
 }
 
-.worry-when {
-  color: var(--muted);
-  font-size: 0.8125rem;
-}
-
 /* later: set in a step, so it reads as the answer to the line above */
 .worry-since {
   margin-top: var(--s1) !important;
@@ -1454,11 +1526,6 @@ button[type="submit"].wide {
 .worry-since-form button:hover {
   background: var(--accent-soft);
   border-color: var(--accent);
-}
-
-.worry-kept {
-  color: var(--muted);
-  font-size: 0.875rem;
 }
 
 /* before its week: a small link that opens the same line */
@@ -1521,8 +1588,7 @@ button[type="submit"].wide {
   margin-top: 0.4rem;
 }
 
-.drawer button,
-.urge-drawer button {
+.drawer button {
   min-height: 2.75rem;
   padding: 6px 12px;
   border: 1px solid var(--line-strong);
@@ -1535,32 +1601,9 @@ button[type="submit"].wide {
   transition: background-color 150ms ease-out, border-color 150ms ease-out;
 }
 
-.drawer button:hover,
-.urge-drawer button:hover {
+.drawer button:hover {
   background: var(--accent-soft);
   border-color: var(--accent);
-}
-
-/* the third way out of "check it again": what you'd check, as a worry */
-.urge-drawer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 0.5rem;
-  margin-top: var(--s3);
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-}
-
-.urge-drawer label {
-  flex: 1 1 14rem;
-  font-size: 0.9rem;
-}
-
-.urge-drawer input {
-  display: block;
-  width: 100%;
-  margin-top: 0.2rem;
 }
 
 /* the small heading on a box is a plain label, in the UI's sans */

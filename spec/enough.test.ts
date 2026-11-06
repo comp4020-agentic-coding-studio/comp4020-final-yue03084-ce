@@ -506,9 +506,11 @@ describe("rechecking", () => {
     await author.urge(id, "let_go");
     await author.urge(id, "checked");
     await (await signedIn()).urge(id, "checked");
-    const own = await author.get("/mine/all/");
-    expect(own).toContain("Wanted to check it again 2 times; let it go 1.");
-    expect(await browser().get("/")).not.toContain("Wanted to check it again");
+    // counted for its owner's Summary (History no longer carries the count)
+    const text = (await author.get("/mine/?period=day")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    expect(text).toContain("check something 2 times today, and let it go 1 of those");
+    expect(await browser().get("/")).not.toContain("check something");
+    expect(await author.get("/mine/all/")).not.toContain("Wanted to check it again");
   });
 });
 
@@ -610,7 +612,10 @@ describe("worries", () => {
     // on its own card, from the start, as a part of it (no record of its own)
     const id = await idOf(author, `worried ${tag}`);
     const card = cardOf(await author.get("/mine/all/"), id);
-    expect(card).toContain("<dt>What you worried about</dt>");
+    // under More, as one labelled part of the record
+    const more = /<details class="more"[^>]*>([\s\S]*?)<\/details>\s*<div class="mine-actions"/.exec(card)?.[1] ?? "";
+    expect(more).toContain("<dt>Worried</dt>");
+    expect(more).toContain(worry);
     expect(card).toContain(worry);
     // before its week: a line can be written, but it isn't asked
     expect(card).toContain("<summary>How does it look now?</summary>");
@@ -620,39 +625,45 @@ describe("worries", () => {
     for (const page of ["/", "/mine/", "/mine/all/"]) expect(await other.get(page)).not.toContain(worry);
   });
 
-  it("writing down what you'd check keeps it as a worry, counts as wanting to check, and says where it went", async () => {
+  it("writing what's making you want to check keeps it as a worry, either way, and opens that record", async () => {
     const tag = marker();
-    const note = `the second table qz${tag}`;
     const author = await signedIn();
     await author.declare({ description: `recheck ${tag}`, shared: "on" });
     const id = await idOf(author, `recheck ${tag}`);
+    const note = `the second table qz${tag}`;
     let res: Response | undefined;
-    const received = await readStream(async () => (res = await author.urge(id, "worry", note)), note, 1_500);
+    const received = await readStream(async () => (res = await author.urge(id, "let_go", note)), note, 1_500);
     expect(received).not.toContain(note);
-    expect(res?.headers.get("location")).toBe(`/mine/all/?worried=${id}#enough-${id}`);
-    const card = cardOf(await author.get(`/mine/all/?worried=${id}`), id);
+    // back to that record, its More open, the worry in it
+    expect(res?.headers.get("location")).toBe(`/mine/all/?open=${id}#enough-${id}`);
+    const card = cardOf(await author.get(`/mine/all/?open=${id}`), id);
+    expect(card).toMatch(/<details class="more" open/);
     expect(card).toContain(note);
-    expect(card).toContain("Written down. It's kept here");
-    expect(card).toContain("Wanted to check it again 1 time; let it go 0.");
-    expect(await author.get("/mine/all/")).not.toContain("Written down.");
+    // with nothing written, back to the record, folded
+    const plain = await author.urge(id, "checked");
+    expect(plain.headers.get("location")).toBe(`/mine/all/#enough-${id}`);
+    expect(cardOf(await author.get("/mine/all/"), id)).not.toMatch(/<details class="more" open/);
+    // never anyone else's
     const other = await signedIn();
     for (const page of ["/", "/mine/", "/mine/all/"]) expect(await other.get(page)).not.toContain(note);
     expect(await browser().get("/")).not.toContain(note);
   });
 
-  it(`refuses an empty one, one over ${WORRY_MAX} characters, or one on someone else's enough`, async () => {
+  it(`keeps nothing for one over ${WORRY_MAX} characters or on someone else's enough, and no worry for an empty one`, async () => {
     const tag = marker();
     const author = await signedIn();
     await author.declare({ description: `long worry ${tag}` });
     const id = await idOf(author, `long worry ${tag}`);
-    for (const note of ["   ", `${tag}${"x".repeat(WORRY_MAX)}`]) {
-      const res = await author.urge(id, "worry", note);
-      expect(res.status).toBe(303);
-    }
-    await (await signedIn()).urge(id, "worry", `not yours ${tag}`);
+    // too long: nothing is kept, not even the choice
+    expect((await author.urge(id, "let_go", `${tag}${"x".repeat(WORRY_MAX)}`)).status).toBe(303);
+    // someone else's: nothing either
+    await (await signedIn()).urge(id, "let_go", `not yours ${tag}`);
+    // empty: the choice counts, but there's no worry
+    await author.urge(id, "checked", "   ");
     const card = cardOf(await author.get("/mine/all/"), id);
-    expect(card).not.toContain("Wanted to check it again");
-    expect(card).not.toContain("What you worried about");
+    expect(card).not.toContain("<dt>Worried</dt>");
+    const text = (await author.get("/mine/?period=day")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    expect(text).toContain("check something 1 time today, and let it go 0 of those");
   });
 
   it(`refuses a worry over ${WORRY_MAX} characters when calling it enough, keeping what was typed`, async () => {
@@ -688,9 +699,10 @@ describe("worries", () => {
     const made = db.declareEnough(owner.id, { ...base, description: "a thing", worry: "the colours" });
     if (!made.ok) throw new Error(made.reason);
     const enough = made.value;
-    // a second worry on the same enough, from wanting to check it again
-    expect(db.writeWorry(owner.id, enough.id, "check the margins").ok).toBe(true);
-    expect(db.writeWorry(other.id, enough.id, "not mine").ok).toBe(false);
+    // a second worry on the same enough, from wanting to check it again and
+    // leaving it: that counts as letting go
+    expect(db.recordUrge(owner.id, enough.id, "let_go", "check the margins").ok).toBe(true);
+    expect(db.recordUrge(other.id, enough.id, "let_go", "not mine").ok).toBe(false);
     const kept = db.mine(owner.id)[0].worries;
     expect(kept.map((w) => w.text)).toEqual(["the colours", "check the margins"]);
 
@@ -715,8 +727,8 @@ describe("worries", () => {
     expect(db.dueLater(owner.id, week)).toEqual([]);
     expect(db.mine(owner.id)[0].worries).toHaveLength(2);
 
-    // writing one down counts as wanting to check, not as letting go
-    expect(db.mine(owner.id)[0].urges).toEqual({ letGo: 0, checked: 1 });
+    // a worry written on the way to leaving it counts as letting go
+    expect(db.mine(owner.id)[0].urges).toEqual({ letGo: 1, checked: 0 });
     // deleting the enough takes its worries too
     expect(db.deleteEnough(owner.id, enough.id).ok).toBe(true);
     expect(db.dueLater(owner.id, week)).toEqual([]);
@@ -776,7 +788,7 @@ describe("without an account", () => {
       "/delete/": { enough: id },
       "/report/": { comment: "1" },
       "/break/": { kind: "walk" },
-      "/urge/": { enough: id, choice: "worry", note: `anon note ${tag}` },
+      "/urge/": { enough: id, choice: "let_go", note: `anon note ${tag}` },
       "/put-away/": { id: "1" },
       "/since/": { worry: "1", since: `anon since ${tag}` },
       "/work/": { action: "start", alarm: "none" },

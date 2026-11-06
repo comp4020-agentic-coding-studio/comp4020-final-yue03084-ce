@@ -18,5 +18,5 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     const outcome = writeSince(person.id, id, String(form.get("since") ?? ""));
     logEvent(outcome.ok ? "worry_looked_back" : "worry_looked_back_refused", { block: person.id, worry: id });
   }
-  return redirect(Number.isInteger(enoughId) && enoughId > 0 ? `/mine/all/#enough-${enoughId}` : "/mine/all/", 303);
+  return redirect(Number.isInteger(enoughId) && enoughId > 0 ? `/mine/all/?open=${enoughId}#enough-${enoughId}` : "/mine/all/", 303);
 };

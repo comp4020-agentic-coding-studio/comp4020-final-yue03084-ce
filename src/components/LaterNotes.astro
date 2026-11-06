@@ -23,8 +23,8 @@ const back = Astro.url.pathname;
           <li>
             <p class="drawer-note">A week ago you worried: “{n.text}”</p>
             <p class="drawer-about">
-              about <a href={`/mine/all/#enough-${n.enoughId}`}>{n.description}</a>.{" "}
-              <a href={`/mine/all/#worry-${n.id}`}>How does it look now?</a>
+              about <a href={`/mine/all/?open=${n.enoughId}#enough-${n.enoughId}`}>{n.description}</a>.{" "}
+              <a href={`/mine/all/?open=${n.enoughId}#worry-${n.id}`}>How does it look now?</a>
             </p>
             <form method="post" action="/put-away/">
               <input type="hidden" name="id" value={n.id} />

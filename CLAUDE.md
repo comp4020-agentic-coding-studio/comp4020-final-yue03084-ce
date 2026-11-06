@@ -107,16 +107,17 @@ commit (see "A feature lands with its test").
   and moves, and the page that sent the form not floating its own person:
   both checked in a browser.
 - **Worries are kept, and looked back on.** A worry is written when calling
-  something enough, or instead of checking it again ("Write it down" in "I
-  want to check it again"). It shows on that record in History at once, as
-  one more labelled part of it (a `dt`, no rule of its own), for its owner
-  only. A line on how it looks can be written any time ("How does it look
+  something enough, or in "I want to check it again": an optional line
+  above "Okay, I'll leave it" and "I'll check it anyway", kept whichever is
+  chosen (so a worry and leaving it counts as letting go). It goes on that
+  record in History, under More, labelled "Worried", for its owner only. A line on how it looks can be written any time ("How does it look
   now?", a quiet link); a week on (`WORRY_AFTER_DAYS`) the record asks it
   outright and a reminder at the top of You links there. The line stays
   beside the worry as "Later: …"; putting the reminder away keeps the
   worry. *(Same day: answering only after a week, while the worry showed at
   once, read as odd; and two rules round the worries made one record look
-  like three.)* No yes/no, no
+  like three. 2026-11-06: a separate "Write it down" beside the two choices
+  read as a third, unrelated thing, and counted as checking.)* No yes/no, no
   score, no "most of your worries didn't happen": seeing them in their own
   words is the point. *(2026-11-05: worries came back once a week later and
   were gone, and the drawer note for tomorrow came back once on You and was
@@ -129,6 +130,19 @@ commit (see "A feature lands with its test").
   the week, and the line on `db.ts`); `lasting.test.ts` (neither a worry
   nor a line on it reaches the log). **Not tested:** how it looks, checked
   in a browser.
+- **A record in History is its title and one line until opened.** The line
+  is when, shared or just you, and how long; More holds the time bar, the
+  feeling, the notes, the worries and what others said (only when they did:
+  no "No replies yet."). Labels that say what's plain from the thing itself
+  ("Time spent", "How it felt", the notes') are gone; "Worried" stays.
+  "I want to check it again" and Delete sit on one quiet line at the foot.
+  The count "Wanted to check it again… let it go…" is gone: Summary has it.
+  More opens by itself when a worry was just kept there, or a reminder on
+  You leads to one (`?open=`). *(2026-11-06: every part of a record shown
+  at once, each with its label and the counts between, read as a jumble.)*
+  **Guarded by:** `enough.test.ts` "worries" (under More; More open after a
+  worry is kept, folded otherwise), "rechecking" (the count on Summary, not
+  History). **Not tested:** how it looks, checked in a browser.
 - **One place to rest, come back or finish.** A thin status bar under the
   nav (`StatusBar.astro`), on every page and only for its signed-in owner:
   "Take a break: walk · tea · …", plus "Working" and Finish while working,
