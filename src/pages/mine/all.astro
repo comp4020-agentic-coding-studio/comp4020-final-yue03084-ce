@@ -31,6 +31,8 @@ const today = localDate(Date.now());
 // a record to open on arrival: a worry was just kept there, or a reminder
 // on You sent them to one
 const open = Astro.url.searchParams.get("open");
+// a record just left alone from Recheck: it says so, once, where its actions were
+const left = Astro.url.searchParams.get("left");
 ---
 
 <Page title="You">
@@ -139,7 +141,12 @@ const open = Astro.url.searchParams.get("open");
               </div>
             )}
           </details>
-          <div class="mine-actions">
+          {left === String(e.id) && (
+            <p class="mine-left" role="status">
+              Left it.
+            </p>
+          )}
+          <div class="mine-actions" hidden={left === String(e.id)}>
             {/* Recheck: shows what they wrote down when they called it enough,
                 and the note from the wall; they can write what's making them
                 want to, then leave it or check anyway. Either is recorded;
@@ -188,6 +195,13 @@ const open = Astro.url.searchParams.get("open");
     }
   </ol>
   <script>
+    // "Left it." shows once: off the address, so a reload brings the actions back
+    const here = new URL(location.href);
+    if (here.searchParams.has("left")) {
+      here.searchParams.delete("left");
+      history.replaceState(history.state, "", here);
+    }
+
     // with script, the urge opens as a dialog over the page rather than in place
     for (const details of document.querySelectorAll<HTMLDetailsElement>("details.urge")) {
       const body = details.querySelector<HTMLElement>(".urge-body");

@@ -638,8 +638,8 @@ describe("worries", () => {
     let res: Response | undefined;
     const received = await readStream(async () => (res = await author.urge(id, "let_go", note)), note, 1_500);
     expect(received).not.toContain(note);
-    // back to that record, its More open, the worry in it
-    expect(res?.headers.get("location")).toBe(`/mine/all/?open=${id}#enough-${id}`);
+    // back to that record, its More open, the worry in it, and "Left it."
+    expect(res?.headers.get("location")).toBe(`/mine/all/?open=${id}&left=${id}#enough-${id}`);
     const card = cardOf(await author.get(`/mine/all/?open=${id}`), id);
     expect(card).toMatch(/<details class="more" open/);
     expect(card).toContain(note);
@@ -651,6 +651,24 @@ describe("worries", () => {
     const other = await signedIn();
     for (const page of ["/", "/mine/", "/mine/all/"]) expect(await other.get(page)).not.toContain(note);
     expect(await browser().get("/")).not.toContain(note);
+  });
+
+  // Leaving a recheck says so, quietly, once, where the record's actions
+  // were; checking anyway is theirs to do, so it says nothing.
+  it("says Left it. on the record after leaving a recheck, and nothing after checking anyway", async () => {
+    const tag = marker();
+    const author = await signedIn();
+    await author.declare({ description: `leave ${tag}`, shared: "on" });
+    const id = await idOf(author, `leave ${tag}`);
+    const left = await author.urge(id, "let_go");
+    expect(left.headers.get("location")).toBe(`/mine/all/?left=${id}#enough-${id}`);
+    const card = cardOf(await author.get(`/mine/all/?left=${id}`), id);
+    expect(card).toMatch(/<p class="mine-left" role="status">\s*Left it\.\s*<\/p>/);
+    expect(card).toMatch(/<div class="mine-actions" hidden/);
+    // only on that record, and only that once
+    expect(cardOf(await author.get("/mine/all/"), id)).not.toContain("Left it.");
+    const checked = await author.urge(id, "checked");
+    expect(checked.headers.get("location")).toBe(`/mine/all/#enough-${id}`);
   });
 
   // A record reads like a product, not a story (2026-11-07): its own words

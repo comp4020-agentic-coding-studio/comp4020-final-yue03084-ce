@@ -953,6 +953,23 @@ fieldset.next small {
   opacity: 1;
 }
 
+/* "Left it.": where the actions were, once, after leaving a recheck */
+.mine-left {
+  min-height: 2.75rem;
+  margin: var(--s3) 0 0;
+  line-height: 2.75rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.more:not([open]) + .mine-left {
+  margin-top: 0;
+}
+
+.mine-actions[hidden] {
+  display: none;
+}
+
 /* an open Delete takes the whole line for its question */
 .mine-actions .delete[open] {
   flex-basis: 100%;

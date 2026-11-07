@@ -160,7 +160,11 @@ commit (see "A feature lands with its test").
   both redefined for dark), 14px at 500, the site's 8px `--radius`; it
   looks about 30px tall but its tap area stays 44px, and the keyboard's
   ring goes round the fill. Delete is quiet words right beside it, red on
-  hover, and asks again before anything goes.
+  hover, and asks again before anything goes. After Recheck's "Leave it",
+  the record says "Left it." in place of its actions, once (`?left=`, taken
+  off the address so a reload brings them back); "Check anyway" says
+  nothing, as checking is theirs to do. Either way the page comes back to
+  that record.
   The count "Wanted to check it again… let it go…" is gone: Summary has it.
   More opens by itself when a worry was just kept there, or a reminder on
   You leads to one (`?open=`). *(2026-11-06: every part of a record shown
@@ -174,7 +178,8 @@ commit (see "A feature lands with its test").
   8px radius kept.)*
   **Guarded by:** `enough.test.ts` "worries" (under More; More open after a
   worry is kept, folded otherwise; "shows a record plainly…"), "rechecking"
-  (the count on Summary, not History). **Not tested:** how it looks,
+  (the count on Summary, not History), "says Left it. on the record…".
+  **Not tested:** how it looks, and "Left it." going on a reload (a script),
   checked in a browser.
 - **One place to rest, come back or finish.** A thin status bar under the
   nav (`StatusBar.astro`), on every page and only for its signed-in owner:
