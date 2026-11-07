@@ -5,6 +5,7 @@ import {
   GLOW_FACTOR,
   SLOW_EVERY_MINUTES,
   SLOWEST_SPEED,
+  SNOOZE_MINUTES,
   SPEED_FACTOR,
   TOWER_AT_ALARM,
   TOWER_HEIGHT,
@@ -500,5 +501,51 @@ describe("the status bar", () => {
     const res = await me.rest({ kind: "walk", back: "/mine/" });
     expect(res.headers.get("location")).toBe("/mine/");
     expect((await me.rest({ end: "1", back: "/working/" })).headers.get("location")).toBe("/working/");
+  });
+});
+
+// The Enough alarm comes up on whatever page is open, not just Together
+// (AlarmPopup.astro, in the layout): its owner's own little one nodding off,
+// the ways to rest, and ten more minutes; either comes back to that page.
+describe("the Enough alarm", () => {
+  const PAGES = ["/", "/working/", "/mine/", "/mine/all/", "/mine/collection/", "/account/", "/enough/"];
+  const overlay = (html: string) => /<div class="alarm"[\s\S]*?<\/form>\s*<\/div>\s*<\/div>/.exec(html)?.[0] ?? "";
+
+  it("is ready on every page while its owner works with an alarm, and nowhere else", async () => {
+    const me = await signedIn();
+    for (const path of PAGES) expect(overlay(await me.get(path)), path).toBe("");
+    await me.work({ action: "start", tz: "660", alarm: "interval", minutes: "60" });
+    for (const path of PAGES) {
+      const o = overlay(await me.get(path));
+      expect(o, path).toContain("That's enough for now");
+      // their own little one, nodding off
+      expect(o, path).toMatch(/<svg class="alarm-one"[^>]*data-hair="brown"/);
+      expect(o, path).toContain('data-f="yawn"');
+      // the wording: no heading over the choices, and a short snooze
+      expect(o, path).toMatch(/<legend class="visually-hidden"[^>]*>How to rest/);
+      expect(o, path).toContain(`>${SNOOZE_MINUTES} more minutes<`);
+      expect(o, path).not.toMatch(/Give me/);
+      expect(o, path).toContain(`name="back" value="${path}"`);
+    }
+    // never anyone else's, and not on a break
+    const other = await signedIn();
+    expect(overlay(await other.get("/"))).toBe("");
+    await me.rest({ kind: "tea" });
+    expect(overlay(await me.get("/"))).toBe("");
+    await me.rest({ end: "1" });
+    await me.work({ action: "finish" });
+  });
+
+  it("comes back to the page it came up on, after resting or ten more minutes", async () => {
+    const me = await signedIn();
+    await me.work({ action: "start", tz: "660", alarm: "interval", minutes: "60" });
+    const snoozed = await me.work({ action: "snooze", back: "/mine/" });
+    expect(snoozed.headers.get("location")).toBe("/mine/");
+    const rested = await me.work({ action: "rest", kind: "walk", back: "/" });
+    expect(rested.headers.get("location")).toBe("/");
+    // somewhere else entirely: back to Together
+    await me.rest({ end: "1" });
+    expect((await me.work({ action: "snooze", back: "//elsewhere.example" })).headers.get("location")).toBe("/working/");
+    await me.work({ action: "finish" });
   });
 });

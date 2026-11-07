@@ -310,7 +310,9 @@ const css = `${paletteCss(".meadow", { weather: false })}\n${frameCss}\n${hairCs
     // a page opens. Every other page still sees them float down.
     let leaving = false;
     document.addEventListener("submit", (event) => {
-      if ((event.target as HTMLFormElement).action.endsWith("/break/")) leaving = true;
+      const form = event.target as HTMLFormElement;
+      // an ordinary break, or resting from the alarm's overlay
+      if (form.action.endsWith("/break/") || form.matches(".alarm-rest")) leaving = true;
     });
 
     const draw = (list: One[]) => {

@@ -181,6 +181,19 @@ commit (see "A feature lands with its test").
   (the count on Summary, not History), "says Left it. on the record…".
   **Not tested:** how it looks, and "Left it." going on a reload (a script),
   checked in a browser.
+- **The Enough alarm comes up on every page.** While its owner works with
+  an alarm, the overlay (`AlarmPopup.astro`, in the layout beside the status
+  bar) is on whatever page they have open: their own little one nodding off
+  (yawn, then eyes nearly shut, in their hair and what they wear; still with
+  reduced motion), the five ways to rest under a hidden legend, "Okay, go
+  and rest" (counts as resting when the alarm rang) and "10 more minutes".
+  Either comes back to the page it came up on (`back`, as the status bar's
+  forms do). A rest from it on the feed doesn't float its own sender down,
+  like any break. *(2026-11-07: it came up only on Together, and "Okay, go
+  and rest" was both its heading and its button.)*
+  **Guarded by:** `work.test.ts` "the Enough alarm"; `collection.test.ts`
+  "counts resting when the alarm rang…". **Not tested:** when it rings and
+  how it looks, checked in a browser.
 - **One place to rest, come back or finish.** A thin status bar under the
   nav (`StatusBar.astro`), on every page and only for its signed-in owner:
   "Take a break: walk · tea · …", plus "Working" and Finish while working,

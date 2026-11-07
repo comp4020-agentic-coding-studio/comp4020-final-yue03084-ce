@@ -1,0 +1,212 @@
+---
+import { BREAK_KINDS, SNOOZE_MINUTES } from "../lib/limits";
+import { hairCss, paletteCss } from "../lib/pixel";
+import { isWearable, frameSvg, KEEPER } from "../lib/sprites";
+import { outfitOf } from "../lib/outfit";
+import { hairOf } from "../lib/collection";
+import { signedInPerson } from "../lib/person";
+import { workView } from "../lib/work";
+
+// The Enough alarm, on every page while its owner is working (it's in the
+// layout, like the status bar): a notification at the moment, and, when they
+// look, a soft cover with their own little one nodding off. Go and rest (a
+// break that counts as resting when the alarm rang) or ten more minutes;
+// either comes back to the page they were on. Nothing here is anyone else's.
+const person = signedInPerson(Astro.cookies);
+const view = person ? workView(person.id) : null;
+const due = view && view.state !== "resting" && view.alarmAt ? view.alarmAt : null;
+const outfit = person && due ? outfitOf(person.id) : null;
+const here = Astro.url.pathname;
+// the little one nodding off: a yawn, then eyes nearly shut, in their hair
+// and wearing what they chose
+const worn = outfit ? [outfit.head, outfit.neck].filter((k): k is NonNullable<typeof k> => k !== null).filter(isWearable) : [];
+const frames = ["yawn", "stand~2"].map((name) => frameSvg(name, worn)).join("");
+const css = `${paletteCss(".alarm-one", { weather: false })}\n${hairCss(".alarm-one")}`;
+---
+
+{
+  due && outfit && (
+    <div class="alarm" data-alarm-at={due} hidden>
+      <div class="alarm-card" role="alertdialog" aria-modal="true" aria-labelledby="alarm-h" aria-describedby="alarm-p">
+        <style set:html={css}></style>
+        <svg
+          class="alarm-one"
+          data-hair={hairOf(outfit)}
+          data-frame="yawn"
+          viewBox={`0 0 ${KEEPER.width} ${KEEPER.height}`}
+          shape-rendering="crispEdges"
+          aria-hidden="true"
+          focusable="false"
+          set:html={frames}
+        />
+        <h2 id="alarm-h">That's enough for now</h2>
+        <p id="alarm-p">The little one is getting sleepy. You've put in plenty.</p>
+        <form method="post" action="/work/" class="alarm-rest">
+          <input type="hidden" name="action" value="rest" />
+          <input type="hidden" name="back" value={here} />
+          <fieldset class="choices">
+            {/* the group's name, for a screen reader; the button below says it */}
+            <legend class="visually-hidden">How to rest</legend>
+            {Object.entries(BREAK_KINDS).map(([key, k], i) => (
+              <label class="inline">
+                <input type="radio" name="kind" value={key} checked={i === 0} />
+                {k.label}
+              </label>
+            ))}
+          </fieldset>
+          <button type="submit">Okay, go and rest</button>
+        </form>
+        <form method="post" action="/work/" class="alarm-snooze">
+          <input type="hidden" name="action" value="snooze" />
+          <input type="hidden" name="back" value={here} />
+          <button type="submit" class="quiet">{SNOOZE_MINUTES} more minutes</button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+<script>
+  // the Enough alarm, while a page is open: a notification at the moment,
+  // and the overlay whenever they look at the page after it
+  const alarm = document.querySelector<HTMLElement>(".alarm");
+  if (alarm?.dataset.alarmAt) {
+    const at = Date.parse(alarm.dataset.alarmAt);
+    let notified = false;
+    const ring = () => {
+      if (Date.now() < at) return;
+      if (!notified) {
+        notified = true;
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("That's enough for now", { body: "The little one is getting sleepy. Time for a break?" });
+        }
+      }
+      if (document.visibilityState === "visible" && alarm.hidden) {
+        alarm.hidden = false;
+        // while it's up, the page behind it can't be tabbed to or read out:
+        // everything beside the overlay and its ancestors goes inert
+        for (let el: HTMLElement | null = alarm; el && el !== document.body; el = el.parentElement) {
+          for (const sib of el.parentElement?.children ?? []) if (sib !== el && sib instanceof HTMLElement) sib.inert = true;
+        }
+        alarm.querySelector<HTMLButtonElement>(".alarm-rest button")?.focus();
+        // the little one nods off: a yawn, then eyes nearly shut, slowly
+        const one = alarm.querySelector<SVGElement>(".alarm-one");
+        if (one && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          setInterval(() => (one.dataset.frame = one.dataset.frame === "yawn" ? "stand~2" : "yawn"), 1400);
+        }
+      }
+    };
+    ring();
+    setInterval(ring, 5_000);
+    document.addEventListener("visibilitychange", ring);
+  }
+</script>
+
+<style>
+  /* the alarm: a soft cover over the page, not a red siren */
+  .alarm {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    padding: var(--s3);
+    /* the page's own paper, nearly opaque, in light and dark */
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+  }
+
+  .alarm[hidden] {
+    display: none;
+  }
+
+  .alarm-card {
+    width: min(30rem, 100%);
+    padding: var(--s4);
+    border: 1px solid var(--line-strong);
+    border-radius: 0;
+    background: var(--card);
+    display: grid;
+    gap: var(--s3);
+  }
+
+  /* their own little one, nodding off, heading the card: whole pixels, 4×
+     on a phone, 5× with room */
+  .alarm-one {
+    justify-self: center;
+    width: 80px;
+    height: 96px;
+    image-rendering: pixelated;
+  }
+
+  @media (min-width: 46rem) {
+    .alarm-one {
+      width: 100px;
+      height: 120px;
+    }
+  }
+
+  .alarm-card h2,
+  .alarm-card > p {
+    text-align: center;
+  }
+
+  .alarm-one :global([data-f]) {
+    display: none;
+  }
+
+  .alarm-one[data-frame="yawn"] :global([data-f="yawn"]),
+  .alarm-one[data-frame="stand~2"] :global([data-f="stand~2"]) {
+    display: inline;
+  }
+
+  .alarm-card h2 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .alarm-card p {
+    margin: calc(-1 * var(--s2)) 0 0;
+    color: var(--muted);
+  }
+
+  .alarm-rest {
+    display: grid;
+    gap: var(--s3);
+  }
+
+  /* the five ways to rest, in two columns where there's room */
+  .alarm-rest .choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: 0 var(--s3);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .alarm-rest .choices label {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: 2.75rem;
+  }
+
+  .alarm-rest button {
+    min-height: 2.75rem;
+  }
+
+  .alarm-snooze button.quiet {
+    min-height: 2.75rem;
+    padding: 6px var(--s3);
+    border: 1px solid var(--line-strong);
+    border-radius: 0;
+    background: var(--card);
+    color: var(--fg);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .alarm-snooze button.quiet:hover {
+    background: var(--accent-soft);
+  }
+</style>

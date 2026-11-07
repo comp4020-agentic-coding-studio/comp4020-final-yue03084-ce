@@ -6,11 +6,12 @@ import { isBreakKind } from "../lib/limits";
 import { signedInPerson } from "../lib/person";
 import { finishWork, parseAlarm, parseTz, pauseWork, snooze, startWork } from "../lib/work";
 
-// A work session from Mine: start (with an optional Enough alarm), "Give me
-// 10 more minutes", "Okay, go and rest" (a break, through the same break as
-// anywhere else, so the feed's resting count goes up), and finish (to Call it
-// enough, with the time bar filled in). The owner's alone; nothing about it
-// goes on the stream except the resting count a break changes.
+// A work session: start (with an optional Enough alarm), "10 more minutes"
+// and "Okay, go and rest" from the alarm on any page (a break, through the
+// same break as anywhere else, so the feed's resting count goes up; both
+// come back to the page they were sent from), and finish (to Call it enough,
+// with the time bar filled in). The owner's alone; nothing about it goes on
+// the stream except the resting count a break changes.
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   // a POST with no form body (not one a page sends) is just ignored
   const form = await request.formData().catch(() => new FormData());
@@ -22,6 +23,9 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   }
   const field = (name: string) => String(form.get(name) ?? "");
   const action = field("action");
+  // back to the page the alarm came up on; Together otherwise
+  const asked = field("back");
+  const back = asked.startsWith("/") && !asked.startsWith("//") ? asked : "/working/";
 
   if (action === "start") {
     const alarm = parseAlarm(field("alarm"), field("minutes"), field("clock"));
@@ -46,5 +50,5 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       return redirect(`/enough/?session=${outcome.value.id}`, 303);
     }
   }
-  return wantsJson ? Response.json({ ok: true }) : redirect("/working/", 303);
+  return wantsJson ? Response.json({ ok: true }) : redirect(back, 303);
 };
