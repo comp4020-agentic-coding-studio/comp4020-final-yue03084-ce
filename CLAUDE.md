@@ -152,11 +152,15 @@ commit (see "A feature lands with its test").
   enough on…"; "Live with imperfection." stays, as the wall note). One
   column, every part (title, time bar, worries, actions) to the same right
   edge; spacing 8px within a group, 16px between groups, 24px between
-  records. Worries are a list, body size, a small dot each. Recheck is the
-  one button: it looks small (about 30px, 6px 14px, the site's 8px
-  `--radius`, as the record's primary action) but its tap area stays 44px;
-  Delete is quiet words right beside it, red on hover, and asks again
-  before anything goes.
+  records. Type in three steps: the title (Lora, 20px), the worries and
+  "Later" (15px, 1.6), and everything small at 13px in the muted grey (the
+  line under the title, More/Less, "Worried", the "Later" label, the time
+  bar's hours). Worries are a list with a small dot each. Recheck is the
+  one button: no border, a quiet fill (`--button-soft`, darker on hover,
+  both redefined for dark), 14px at 500, the site's 8px `--radius`; it
+  looks about 30px tall but its tap area stays 44px, and the keyboard's
+  ring goes round the fill. Delete is quiet words right beside it, red on
+  hover, and asks again before anything goes.
   The count "Wanted to check it again… let it go…" is gone: Summary has it.
   More opens by itself when a worry was just kept there, or a reminder on
   You leads to one (`?open=`). *(2026-11-06: every part of a record shown
@@ -164,7 +168,10 @@ commit (see "A feature lands with its test").
   2026-11-07: quotes and "I want to…" read as a story card, not a product;
   then a half-width time bar, a 44px-looking Recheck and Delete far off to
   the right read as untidy. A 30px tap area and a new 4–6px corner were
-  asked for; she kept 44px and the one radius.)*
+  asked for; she kept 44px and the one radius. Then the bordered Recheck
+  read as a text field, and the sizes were too close to tell title, words
+  and small print apart; a 6px corner was asked for again and the one
+  8px radius kept.)*
   **Guarded by:** `enough.test.ts` "worries" (under More; More open after a
   worry is kept, folded otherwise; "shows a record plainly…"), "rechecking"
   (the count on Summary, not History). **Not tested:** how it looks,

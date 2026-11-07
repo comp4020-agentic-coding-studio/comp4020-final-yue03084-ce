@@ -19,6 +19,9 @@
   --accent-hover: #6f4634;
   /* a hover or a quiet button: a neutral tint, not a brown one */
   --accent-soft: #efede9;
+  /* a quiet filled button (History's Recheck), and its hover */
+  --button-soft: #efece6;
+  --button-soft-hover: #e6e2da;
   --warn: #9a3412;
   /* the one shadow a card may have, instead of a border, never both */
   --paper-shadow: 0 1px 2px rgb(58 53 47 / 0.08);
@@ -54,6 +57,8 @@
     --accent: #d9a68e;
     --accent-hover: #e6bba6;
     --accent-soft: #2e2d2b;
+    --button-soft: #2f2d2a;
+    --button-soft-hover: #3a3834;
     --warn: #f0a27e;
     --paper-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
   }
@@ -774,11 +779,13 @@ fieldset.next small {
   padding-top: var(--s3);
 }
 
-/* the record's own words, unquoted, in the title face */
+/* the record's own words, unquoted, in the title face, a step above the
+   rest (17.6px + 2px) */
 .mine-title {
   margin: 0;
   font-family: var(--font-head);
-  font-size: 1.1rem;
+  font-size: 1.25rem;
+  line-height: 1.3;
 }
 
 .feed.mine .when {
@@ -821,9 +828,26 @@ fieldset.next small {
   color: var(--accent);
 }
 
-/* open, the 44px row's lower half is the gap to what it opened (8px) */
+/* the small things on a record, one size (13px), in the muted grey: its
+   line, Less/More, "Worried", "Later", and the time bar's hours. Delete
+   keeps its own. */
+.feed.mine .when,
+.feed.mine .more > summary,
+.feed.mine .worries dt,
+.feed.mine .worry-since-label,
+.feed.mine .minibar-ends {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+/* Less/More keeps its 44px tap row at the smaller size */
+.feed.mine .more > summary {
+  line-height: 2.75rem;
+}
+
+/* open, the 44px row's lower part becomes the 8px gap to what it opened */
 .more[open] > summary {
-  margin-bottom: calc(var(--s2) - 0.875rem);
+  margin-bottom: calc(var(--s2) - (2.75rem - 0.8125rem * 1.6) / 2);
 }
 
 /* groups under More, 16px apart */
@@ -859,21 +883,23 @@ fieldset.next small {
   margin-top: 0;
 }
 
-/* Recheck: the record's one action. It looks small (about 30px, 6px 14px)
-   but, like the site's other small marks, its tap area stays 44px: the
-   button is that tall, its box drawn inside by a shadow inset 7px. The one
-   corner is the site's --radius. */
+/* Recheck: the record's one action, a quiet filled button (no border,
+   --button-soft, 6px 12px, 14px at 500, the site's one --radius). It looks
+   about 30px tall, but like the site's other small marks its tap area
+   stays 44px: the fill is drawn inside the button, 7px from top and bottom. */
 .mine-actions .urge-open,
 .mine-actions .urge > summary {
   position: relative;
+  z-index: 0;
   display: inline-block;
   min-height: 2.75rem;
-  padding: 0 14px;
+  padding: 0 12px;
   border: 0;
   background: none;
   color: var(--fg);
   font: inherit;
   font-size: 0.875rem;
+  font-weight: 500;
   line-height: 2.75rem;
   cursor: pointer;
   list-style: none;
@@ -883,25 +909,29 @@ fieldset.next small {
 .mine-actions .urge > summary::before {
   content: "";
   position: absolute;
+  z-index: -1;
   inset: 7px 0;
-  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
+  background: var(--button-soft);
+  transition: background-color 150ms ease-out;
   pointer-events: none;
 }
 
 .mine-actions .urge-open:hover::before,
 .mine-actions .urge > summary:hover::before {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  z-index: -1;
+  background: var(--button-soft-hover);
 }
 
-.mine-actions .urge-open:focus-visible {
+/* the keyboard's ring goes round the fill, not the whole tap area */
+.mine-actions .urge-open:focus-visible,
+.mine-actions .urge > summary:focus-visible {
   outline: none;
 }
 
-.mine-actions .urge-open:focus-visible::before {
-  box-shadow: 0 0 0 2px var(--accent);
+.mine-actions .urge-open:focus-visible::before,
+.mine-actions .urge > summary:focus-visible::before {
+  outline: 2px solid var(--line-strong);
+  outline-offset: 2px;
 }
 
 /* Delete: quiet words beside it, red on hover, and asks first */
@@ -1561,8 +1591,8 @@ button[type="submit"].wide {
   position: relative;
   margin: 0;
   padding-left: var(--s3);
-  font-size: 1rem;
-  line-height: 1.5;
+  font-size: 0.9375rem;
+  line-height: 1.6;
   overflow-wrap: anywhere;
 }
 
