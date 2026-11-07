@@ -3,7 +3,7 @@ import { mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { asksNow, isDue, weekLater } from "../src/lib/later.ts";
-import { BREAK_KINDS, DESCRIPTION_MAX, PASSWORD_MIN, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE, WORRY_AFTER_DAYS, WORRY_MAX } from "../src/lib/limits.ts";
+import { BREAK_KINDS, DESCRIPTION_MAX, PASSWORD_MIN, URGE_CHOICES, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE, WORRY_AFTER_DAYS, WORRY_MAX } from "../src/lib/limits.ts";
 import { periodLabel, periodRange, summarise } from "../src/lib/summary.ts";
 
 // The product rules that can be checked, against the running app: a shared
@@ -651,6 +651,25 @@ describe("worries", () => {
     const other = await signedIn();
     for (const page of ["/", "/mine/", "/mine/all/"]) expect(await other.get(page)).not.toContain(note);
     expect(await browser().get("/")).not.toContain(note);
+  });
+
+  // A record reads like a product, not a story (2026-11-07): its own words
+  // unquoted, More/Less, short neutral verbs, Recheck the one bordered action
+  // and Delete quiet, asking first.
+  it("shows a record plainly: no quotes, More and Less, Recheck, and a quiet Delete that asks first", async () => {
+    const tag = marker();
+    const author = await signedIn();
+    await author.declare({ description: `plain ${tag}`, shared: "on", worry: `a worry qz${tag}` });
+    const id = await idOf(author, `plain ${tag}`);
+    const card = cardOf(await author.get("/mine/all/"), id);
+    expect(card).toContain(`<p class="mine-title">plain ${tag}</p>`);
+    expect(card).not.toMatch(/<q>|[“”]/);
+    expect(card).toMatch(/<summary>\s*<span class="when-closed">More ▾<\/span>\s*<span class="when-open">Less ▴<\/span>/);
+    expect(card).toContain("<summary>Recheck</summary>");
+    expect(card).not.toMatch(/I want to|I'll |You called/);
+    for (const label of Object.values(URGE_CHOICES)) expect(card).toContain(label);
+    // Delete is a fold that asks again before anything goes
+    expect(card).toMatch(/<details class="delete"><summary>Delete<\/summary><form method="post" action="\/delete\/">/);
   });
 
   it(`keeps nothing for one over ${WORRY_MAX} characters or on someone else's enough, and no worry for an empty one`, async () => {

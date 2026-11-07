@@ -764,8 +764,11 @@ fieldset.next small {
 
 /* History: a record at a glance, everything else under More, and its two
    actions on one quiet line at the foot */
+/* the record's own words, unquoted, in the title face */
 .mine-title {
   margin: 0;
+  font-family: var(--font-head);
+  font-size: 1.1rem;
 }
 
 /* More and the two actions read as one line of small words: More's tap
@@ -799,12 +802,14 @@ fieldset.next small {
   display: none;
 }
 
-.more > summary::after {
-  content: " ▸";
+/* "More ▾" folded, "Less ▴" open */
+.more > summary .when-open,
+.more[open] > summary .when-closed {
+  display: none;
 }
 
-.more[open] > summary::after {
-  content: " ▾";
+.more[open] > summary .when-open {
+  display: inline;
 }
 
 .more > summary:hover,
@@ -833,18 +838,58 @@ fieldset.next small {
 .mine-actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--s4);
+  align-items: flex-start;
+  gap: var(--s2) var(--s4);
+  margin-block: var(--s1) var(--s3);
 }
 
+/* both the same 44px line, so Recheck's box and Delete's words sit level */
+.mine-actions > .urge-open,
+.mine-actions > details > summary {
+  box-sizing: border-box;
+  height: 2.75rem;
+  line-height: calc(2.75rem - 2px);
+}
+
+.mine-actions > .delete > summary {
+  border: 1px solid transparent;
+}
+
+/* Recheck: the record's one action, a bordered button */
+.mine-actions .urge-open,
+.mine-actions .urge > summary {
+  padding: 0 var(--s3);
+  border: 1px solid var(--line-strong);
+  color: var(--fg);
+}
+
+.mine-actions .urge-open:hover,
+.mine-actions .urge > summary:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+
+/* Delete: quiet, at the far end, red on hover, and asks first */
 .mine-actions .delete {
-  margin: 0;
+  margin: 0 0 0 auto;
   font-size: 0.875rem;
+}
+
+.mine-actions .delete > summary {
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.mine-actions .delete > summary:hover {
+  color: var(--warn);
+  opacity: 1;
 }
 
 /* an open Delete takes the whole line for its question */
 .mine-actions .delete[open] {
   flex-basis: 100%;
+  margin-left: 0;
 }
 
 .urge-body p {
@@ -1482,7 +1527,13 @@ button[type="submit"].wide {
   margin-bottom: var(--s3);
 }
 
-/* later: set in a step, so it reads as the answer to the line above */
+/* later: set in a step, so it reads as the answer to the lines above */
+.worry-since-label {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin-right: var(--s1);
+}
+
 .worry-since {
   margin-top: var(--s1) !important;
   padding-left: var(--s3);

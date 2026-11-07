@@ -79,8 +79,8 @@ export const MEADOW_MAX = 7;
 // 2026-11-06 may say "tomorrow" (the drawer) or "worry" (writing it down
 // instead of choosing); both count as wanting to check, not as letting go.
 export const URGE_CHOICES = {
-  let_go: "Okay, I'll leave it",
-  checked: "I'll check it anyway",
+  let_go: "Leave it",
+  checked: "Check anyway",
 } as const;
 export type UrgeChoice = keyof typeof URGE_CHOICES;
 export const isUrgeChoice = (key: string): key is UrgeChoice => Object.hasOwn(URGE_CHOICES, key);

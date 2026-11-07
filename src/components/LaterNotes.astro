@@ -22,7 +22,7 @@ const back = Astro.url.pathname;
       <ul>
         {due.map((n) => (
           <li>
-            <p class="drawer-note">A week ago you worried: “{n.text}”</p>
+            <p class="drawer-note">{n.text}</p>
             <p class="drawer-about">
               about <a href={`/mine/all/?open=${n.enoughId}#enough-${n.enoughId}`}>{n.description}</a>.{" "}
               <a href={`/mine/all/?open=${n.enoughId}#enough-${n.enoughId}`}>How does it look now?</a>

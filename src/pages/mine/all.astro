@@ -42,9 +42,7 @@ const open = Astro.url.searchParams.get("open");
       rows.map((e) => (
         <li class="card" id={`enough-${e.id}`} data-enough={e.id}>
           {/* at a glance: what it was, and one line of when, who sees it, how long */}
-          <p class="mine-title">
-            <q>{e.description}</q>
-          </p>
+          <p class="mine-title">{e.description}</p>
           <p class="when">
             <time datetime={e.createdAt} title={fullWhen(e.createdAt)}>{relativeWhen(e.createdAt)}</time>
             {" · "}
@@ -54,7 +52,10 @@ const open = Astro.url.searchParams.get("open");
           {/* everything else, folded: open when a worry was just kept here, a
               reminder on You sent them to one, or a worry's week has come */}
           <details class="more" open={open === String(e.id) || asksNow(e.worries, today)}>
-            <summary>More</summary>
+            <summary>
+              <span class="when-closed">More ▾</span>
+              <span class="when-open">Less ▴</span>
+            </summary>
             {e.spans &&
               (() => {
                 const bar = miniBar(e.spans);
@@ -88,11 +89,15 @@ const open = Astro.url.searchParams.get("open");
                   <dl class="worries">
                     <dt>Worried</dt>
                     {before.map((w) => (
-                      <dd id={`worry-${w.id}`}>“{w.text}”</dd>
+                      <dd id={`worry-${w.id}`}>{w.text}</dd>
                     ))}
-                    {e.lookBack && <dd class="worry-since">Later: “{e.lookBack.text}”</dd>}
+                    {e.lookBack && (
+                      <dd class="worry-since">
+                        <span class="worry-since-label">Later</span> {e.lookBack.text}
+                      </dd>
+                    )}
                     {since.map((w) => (
-                      <dd id={`worry-${w.id}`}>“{w.text}”</dd>
+                      <dd id={`worry-${w.id}`}>{w.text}</dd>
                     ))}
                     {/* a week on, a small box asks how they look now; written
                         before, what they wrote is there to change */}
@@ -101,7 +106,7 @@ const open = Astro.url.searchParams.get("open");
                         <form method="post" action="/look-back/" class="worry-since-form">
                           <input type="hidden" name="enough" value={e.id} />
                           <label>
-                            A week on, how does it look now? <small>(up to {WORRY_MAX} characters)</small>
+                            A week on: how does it look now? <small>(up to {WORRY_MAX} characters)</small>
                             <input name="text" required maxlength={WORRY_MAX} value={e.lookBack?.text ?? ""} />
                           </label>
                           <button type="submit">Keep this</button>
@@ -135,27 +140,26 @@ const open = Astro.url.searchParams.get("open");
             )}
           </details>
           <div class="mine-actions">
-            {/* "I want to check it again": shows what they wrote down when they
-                called it enough, and the note from the wall; they can write
-                what's making them want to, then leave it or check anyway.
-                Either is recorded; neither stops them. Works as a plain
-                <details> without script. */}
+            {/* Recheck: shows what they wrote down when they called it enough,
+                and the note from the wall; they can write what's making them
+                want to, then leave it or check anyway. Either is recorded;
+                neither stops them. Works as a plain <details> without script. */}
             <details class="urge">
-              <summary>I want to check it again</summary>
+              <summary>Recheck</summary>
               <div class="urge-body">
-                <p>You called this enough on {when(e.createdAt)}.</p>
+                <p>Called enough on {when(e.createdAt)}.</p>
                 {e.notes && (
                   <>
-                    <p class="hint">What you did and checked then:</p>
+                    <p class="hint">Notes then:</p>
                     {isHtml(e.notes) ? <div class="notes rich then" set:html={e.notes} /> : <p class="notes then">{e.notes}</p>}
                   </>
                 )}
-                {e.hours !== null && <p class="hint">Time you put in: {e.spans ? inHalves(e.hours) : `${e.hours} hours`}.</p>}
+                {e.hours !== null && <p class="hint">Time: {e.spans ? inHalves(e.hours) : `${e.hours} hours`}.</p>}
                 <p class="wall">Live with imperfection.</p>
                 <form method="post" action="/urge/" class="urge-choices">
                   <input type="hidden" name="enough" value={e.id} />
                   <label class="urge-worry">
-                    What's making you want to check? <small>(optional, up to {WORRY_MAX} characters; kept here as a worry)</small>
+                    What's the worry? <small>(optional, up to {WORRY_MAX} characters; kept on this record)</small>
                     <input name="note" maxlength={WORRY_MAX} placeholder="e.g. the references, one more time" />
                   </label>
                   <div class="urge-buttons">
@@ -174,8 +178,8 @@ const open = Astro.url.searchParams.get("open");
               <summary>Delete</summary>
               <form method="post" action="/delete/">
                 <input type="hidden" name="enough" value={e.id} />
-                <span>This can't be undone{e.shared ? ", and it comes off the feed for everyone" : ""}.</span>
-                <button type="submit" class="danger">Delete it</button>
+                <span>Delete for good{e.shared ? ", and from the feed" : ""}?</span>
+                <button type="submit" class="danger">Delete</button>
               </form>
             </details>
           </div>
@@ -191,7 +195,7 @@ const open = Astro.url.searchParams.get("open");
       if (!body || !summary) continue;
       const dialog = document.createElement("dialog");
       dialog.className = "urge-dialog";
-      dialog.setAttribute("aria-label", "You want to check it again");
+      dialog.setAttribute("aria-label", "Recheck");
       const close = document.createElement("button");
       close.type = "button";
       close.className = "close";
