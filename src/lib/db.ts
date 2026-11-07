@@ -234,8 +234,9 @@ export interface Worry {
   id: number;
   text: string;
   createdAt: string;
-  // the day a reminder on You asks how it looks now
+  // the day a reminder on You asks how it looks now, and when it was put away
   openFrom: string;
+  dismissedAt: string | null;
 }
 // How an enough's worries look now, in a line; one per enough.
 export interface LookBack {
@@ -253,7 +254,7 @@ function worriesOn(personId: number, ids: number[]): Map<number, Worry[]> {
     .all();
   for (const w of rows) {
     const list = out.get(w.enoughId) ?? [];
-    list.push({ id: w.id, text: w.text, createdAt: w.createdAt, openFrom: w.openFrom });
+    list.push({ id: w.id, text: w.text, createdAt: w.createdAt, openFrom: w.openFrom, dismissedAt: w.dismissedAt });
     out.set(w.enoughId, list);
   }
   return out;
@@ -465,8 +466,8 @@ export function recordUrge(personId: number, enoughId: number, choice: UrgeChoic
   return { ok: true, value: { worried: text !== "" } };
 }
 
-// How an enough's worries look now, in a line: one for the whole enough, any
-// time, though it's a week on that a reminder asks. Their own enough only,
+// How an enough's worries look now, in a line: one for the whole enough,
+// asked a week on (asksNow in later.ts). Their own enough only,
 // and only one with a worry on it; written again, it replaces what was
 // there. Writing it puts away the reminders for that enough's worries.
 export function writeLookBack(personId: number, enoughId: number, input: string): Outcome<null> {

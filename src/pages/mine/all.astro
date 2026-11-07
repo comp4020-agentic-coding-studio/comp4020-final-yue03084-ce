@@ -3,7 +3,7 @@ import MineTop from "../../components/MineTop.astro";
 import Page from "../../layouts/Page.astro";
 import { mine } from "../../lib/db";
 import { PRESET_REPLIES, type PresetKey, URGE_CHOICES, WORRY_MAX } from "../../lib/limits";
-import { isDue } from "../../lib/later";
+import { asksNow } from "../../lib/later";
 import { localDate } from "../../lib/summary";
 import { fullWhen, relativeWhen } from "../../lib/when";
 import { isHtml } from "../../lib/notes";
@@ -51,9 +51,9 @@ const open = Astro.url.searchParams.get("open");
             {e.shared ? "shared" : "just you"}
             {e.hours !== null && <> · {e.spans ? inHalves(e.hours) : `${e.hours} ${e.hours === 1 ? "hour" : "hours"}`}</>}
           </p>
-          {/* everything else, folded: open when a worry was just kept here, or a
-              reminder on You sent them to one */}
-          <details class="more" open={open === String(e.id)}>
+          {/* everything else, folded: open when a worry was just kept here, a
+              reminder on You sent them to one, or a worry's week has come */}
+          <details class="more" open={open === String(e.id) || asksNow(e.worries, today)}>
             <summary>More</summary>
             {e.spans &&
               (() => {
@@ -78,47 +78,39 @@ const open = Astro.url.searchParams.get("open");
             {e.feeling && <p class="feeling">{e.feeling}</p>}
             {/* cleaned on the way in (cleanNotes), so it's safe to render as HTML */}
             {e.notes && (isHtml(e.notes) ? <div class="notes rich" set:html={e.notes} /> : <p class="notes">{e.notes}</p>)}
-            {e.worries.length > 0 && (
-              <dl class="worries">
-                <dt>Worried</dt>
-                {e.worries.map((w) => (
-                  <dd id={`worry-${w.id}`}>“{w.text}”</dd>
-                ))}
-                {/* one line for how they all look now, under them: any time, and
-                    asked outright once the first is a week old */}
-                {e.lookBack ? (
-                  <dd class="worry-since">Later: “{e.lookBack.text}”</dd>
-                ) : (
-                  (() => {
-                    const due = e.worries.some((w) => isDue(w.openFrom, today));
-                    const ask = (
-                      <form method="post" action="/look-back/" class="worry-since-form">
-                        <input type="hidden" name="enough" value={e.id} />
-                        <label>
-                          {due ? "A week on, how does it look now?" : "How does it look now?"}{" "}
-                          <small>(up to {WORRY_MAX} characters)</small>
-                          <input name="text" required maxlength={WORRY_MAX} />
-                        </label>
-                        <button type="submit">Keep this</button>
-                      </form>
-                    );
-                    return (
-                      <dd>
-                        {due ? (
-                          ask
-                        ) : (
-                          // before its week, a quiet link that opens the same line
-                          <details class="worry-ask">
-                            <summary>How does it look now?</summary>
-                            {ask}
-                          </details>
-                        )}
+            {e.worries.length > 0 &&
+              (() => {
+                // the line on how they look sits after the worries it was
+                // written about; a worry written since comes after it
+                const before = e.lookBack ? e.worries.filter((w) => w.createdAt <= e.lookBack!.createdAt) : e.worries;
+                const since = e.lookBack ? e.worries.filter((w) => w.createdAt > e.lookBack!.createdAt) : [];
+                return (
+                  <dl class="worries">
+                    <dt>Worried</dt>
+                    {before.map((w) => (
+                      <dd id={`worry-${w.id}`}>“{w.text}”</dd>
+                    ))}
+                    {e.lookBack && <dd class="worry-since">Later: “{e.lookBack.text}”</dd>}
+                    {since.map((w) => (
+                      <dd id={`worry-${w.id}`}>“{w.text}”</dd>
+                    ))}
+                    {/* a week on, a small box asks how they look now; written
+                        before, what they wrote is there to change */}
+                    {asksNow(e.worries, today) && (
+                      <dd class="worry-prompt">
+                        <form method="post" action="/look-back/" class="worry-since-form">
+                          <input type="hidden" name="enough" value={e.id} />
+                          <label>
+                            A week on, how does it look now? <small>(up to {WORRY_MAX} characters)</small>
+                            <input name="text" required maxlength={WORRY_MAX} value={e.lookBack?.text ?? ""} />
+                          </label>
+                          <button type="submit">Keep this</button>
+                        </form>
                       </dd>
-                    );
-                  })()
-                )}
-              </dl>
-            )}
+                    )}
+                  </dl>
+                );
+              })()}
             {/* what others said, only when they have */}
             {e.shared && (Object.keys(e.replies).length > 0 || e.comments.length > 0) && (
               <div class="others">

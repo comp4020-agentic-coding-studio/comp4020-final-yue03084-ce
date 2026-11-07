@@ -1525,23 +1525,16 @@ button[type="submit"].wide {
   border-color: var(--accent);
 }
 
-/* before its week: a small link that opens the same line */
-.worry-ask summary {
-  display: inline-block;
-  min-height: 2.75rem;
-  line-height: 2.75rem;
-  color: var(--accent);
-  font-size: 0.875rem;
-  cursor: pointer;
-  list-style: none;
+/* a week on: a small box under the worries, asking how they look now */
+.worry-prompt {
+  margin-top: var(--s2) !important;
+  padding: 12px var(--s3);
+  border: 1px solid var(--line);
+  background: var(--card);
 }
 
-.worry-ask summary::-webkit-details-marker {
-  display: none;
-}
-
-.worry-ask[open] summary {
-  display: none;
+.worry-prompt .worry-since-form {
+  margin: 0;
 }
 
 /* the reminder at the top of You: worries from a week ago */

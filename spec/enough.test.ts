@@ -2,7 +2,7 @@ import { describe, expect, inject, it } from "vitest";
 import { mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
-import { isDue, weekLater } from "../src/lib/later.ts";
+import { asksNow, isDue, weekLater } from "../src/lib/later.ts";
 import { BREAK_KINDS, DESCRIPTION_MAX, PASSWORD_MIN, NOTES_MAX, REPLY_MAX, REPORTS_TO_HIDE, WORRY_AFTER_DAYS, WORRY_MAX } from "../src/lib/limits.ts";
 import { periodLabel, periodRange, summarise } from "../src/lib/summary.ts";
 
@@ -619,14 +619,11 @@ describe("worries", () => {
     expect(more).toContain("<dt>Worried</dt>");
     expect(more).toContain(worry);
     expect(card).toContain(worry);
-    // before its week: a line can be written, but it isn't asked
-    expect(card).toContain("<summary>How does it look now?</summary>");
-    expect(card).not.toContain("A week on, how does it look now?");
-    // one for the record, however many worries it has
+    // before its week, nothing asks how it looks, and More stays folded
+    expect(card).not.toMatch(/how does it look now/i);
+    expect(card).not.toMatch(/<details class="more" open/);
     await author.urge(id, "let_go", `and another qz${tag}`);
-    const two = cardOf(await author.get("/mine/all/"), id);
-    expect(two).toContain(`and another qz${tag}`);
-    expect(two.match(/<summary>How does it look now\?<\/summary>/g)).toHaveLength(1);
+    expect(cardOf(await author.get("/mine/all/"), id)).not.toMatch(/how does it look now/i);
     // and on nobody else's pages
     const other = await signedIn();
     for (const page of ["/", "/mine/", "/mine/all/"]) expect(await other.get(page)).not.toContain(worry);
@@ -684,6 +681,18 @@ describe("worries", () => {
     expect(await browser().get("/")).not.toContain(`too worried ${tag}`);
   });
 
+  it("ask how they look a week on, until it's written or put away, and again for a newer one (later.ts)", () => {
+    const w = (openFrom: string, dismissedAt: string | null = null) => ({ openFrom, dismissedAt });
+    expect(asksNow([], "2026-11-12")).toBe(false);
+    expect(asksNow([w("2026-11-12")], "2026-11-11")).toBe(false);
+    expect(asksNow([w("2026-11-12")], "2026-11-12")).toBe(true);
+    // written or put away: settled
+    expect(asksNow([w("2026-11-12", "2026-11-12T03:00:00.000Z")], "2026-11-20")).toBe(false);
+    // a newer worry's week: asked again
+    expect(asksNow([w("2026-11-12", "2026-11-12T03:00:00.000Z"), w("2026-11-19")], "2026-11-18")).toBe(false);
+    expect(asksNow([w("2026-11-12", "2026-11-12T03:00:00.000Z"), w("2026-11-19")], "2026-11-19")).toBe(true);
+  });
+
   it(`come back ${WORRY_AFTER_DAYS} Sydney days on (later.ts)`, () => {
     // 13:30 UTC on the 27th is already 00:30 on the 28th in Sydney
     expect(weekLater("2026-10-27T13:30:00.000Z")).toBe("2026-11-04");
@@ -696,7 +705,7 @@ describe("worries", () => {
   // The app's clock can't be moved from the spec, so what shows when, and who
   // can answer or put away, is checked on db.ts itself, with its own
   // throwaway database in this test process.
-  it("take one line on how they look for the whole enough, any time, and only for their owner (db.ts)", async () => {
+  it("take one line on how they look for the whole enough, and only for their owner (db.ts)", async () => {
     process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "spec-worries-"));
     const db = await import("../src/lib/db.ts");
     const { localDate } = await import("../src/lib/summary.ts");

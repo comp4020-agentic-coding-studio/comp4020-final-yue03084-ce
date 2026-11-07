@@ -111,17 +111,22 @@ commit (see "A feature lands with its test").
   above "Okay, I'll leave it" and "I'll check it anyway", kept whichever is
   chosen (so a worry and leaving it counts as letting go). It goes on that
   record in History, under More, labelled "Worried", for its owner only.
-  Under all a record's worries there's one line on how they look now
-  (`look_backs`, one per record): a quiet "How does it look now?" any time,
-  asked outright once the first worry is a week old (`WORRY_AFTER_DAYS`),
-  when a reminder at the top of You links there too. It shows as "Later:
-  …"; writing it puts that record's reminders away, and putting a reminder
-  away keeps the worry. *(Same day: answering only after a week, while the worry showed at
+  A record has one line on how its worries look now (`look_backs`, one per
+  record), asked only a week on (`WORRY_AFTER_DAYS`): then More opens by
+  itself with a small box under the worries, and a reminder at the top of
+  You links there (`asksNow` in `later.ts`, the same rule for both). It
+  shows as "Later: …", after the worries it was written about; a worry
+  written since comes after it, and when that one's week comes the box asks
+  again with the last line in it to change. Writing it, or putting the
+  reminder away, settles it; the worry stays. *(Same day: answering only after a week, while the worry showed at
   once, read as odd; and two rules round the worries made one record look
   like three. 2026-11-06: a separate "Write it down" beside the two choices
   read as a third, unrelated thing, and counted as checking. 2026-11-07: a
   "How does it look now?" under every worry was too many; one per record,
-  and migration 0013 moved the lines written per worry there.)* No yes/no, no
+  and migration 0013 moved the lines written per worry there. Then a link
+  on every record before anything was due read as clutter, and a worry
+  written after the line looked answered by it: so asked only a week on,
+  in time order.)* No yes/no, no
   score, no "most of your worries didn't happen": seeing them in their own
   words is the point. *(2026-11-05: worries came back once a week later and
   were gone, and the drawer note for tomorrow came back once on You and was
