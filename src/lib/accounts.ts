@@ -6,6 +6,7 @@ import {
   breaks,
   comments,
   drawerNotes,
+  lookBacks,
   enoughs,
   outfits,
   type Person,
@@ -294,6 +295,7 @@ export function deleteAccount(person: Person, password: string, now = Date.now()
     tx.delete(urges).where(eq(urges.personId, id)).run();
     tx.delete(drawerNotes).where(eq(drawerNotes.personId, id)).run();
     tx.delete(worries).where(eq(worries.personId, id)).run();
+    tx.delete(lookBacks).where(eq(lookBacks.personId, id)).run();
     tx.delete(breaks).where(eq(breaks.personId, id)).run();
     const work = tx.select({ id: workSessions.id }).from(workSessions).where(eq(workSessions.personId, id)).all().map((w) => w.id);
     if (work.length) tx.delete(workStretches).where(inArray(workStretches.sessionId, work)).run();

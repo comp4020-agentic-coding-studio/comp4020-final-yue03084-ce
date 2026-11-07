@@ -1474,15 +1474,12 @@ button[type="submit"].wide {
 
 .worries dd {
   margin: 0 0 var(--s1);
+  overflow-wrap: anywhere;
 }
 
 /* the space after the last one is the record's, before its replies */
 .worries {
   margin-bottom: var(--s3);
-}
-
-.worries p {
-  margin: 0;
 }
 
 /* later: set in a step, so it reads as the answer to the line above */

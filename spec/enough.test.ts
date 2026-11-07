@@ -282,7 +282,9 @@ describe("time spans", () => {
     const res = await author.declare({ description: `spans ${tag}`, shared: "on", hours: "99", spans: "540-690,840-900" });
     expect(res.status).toBe(303);
     const own = await author.get("/mine/all/");
-    expect(own).toContain("about 3½ hours");
+    // to the half-hour, without "about" (History's one line, 2026-11-07)
+    expect(own).toContain("3½ hours");
+    expect(own).not.toContain("about 3½ hours");
     expect(own).toContain("9:00–11:30");
     expect(own).toContain("14:00–15:00");
     expect(own).not.toContain("99 hours");
@@ -620,6 +622,11 @@ describe("worries", () => {
     // before its week: a line can be written, but it isn't asked
     expect(card).toContain("<summary>How does it look now?</summary>");
     expect(card).not.toContain("A week on, how does it look now?");
+    // one for the record, however many worries it has
+    await author.urge(id, "let_go", `and another qz${tag}`);
+    const two = cardOf(await author.get("/mine/all/"), id);
+    expect(two).toContain(`and another qz${tag}`);
+    expect(two.match(/<summary>How does it look now\?<\/summary>/g)).toHaveLength(1);
     // and on nobody else's pages
     const other = await signedIn();
     for (const page of ["/", "/mine/", "/mine/all/"]) expect(await other.get(page)).not.toContain(worry);
@@ -689,7 +696,7 @@ describe("worries", () => {
   // The app's clock can't be moved from the spec, so what shows when, and who
   // can answer or put away, is checked on db.ts itself, with its own
   // throwaway database in this test process.
-  it("take a line on how it looks any time, ask a week on, and only for their owner (db.ts)", async () => {
+  it("take one line on how they look for the whole enough, any time, and only for their owner (db.ts)", async () => {
     process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "spec-worries-"));
     const db = await import("../src/lib/db.ts");
     const { localDate } = await import("../src/lib/summary.ts");
@@ -712,26 +719,34 @@ describe("worries", () => {
     expect(db.dueLater(owner.id, week).map((n) => n.text)).toEqual(["the colours", "check the margins"]);
     expect(db.dueLater(other.id, week)).toEqual([]);
 
-    // any time, but never someone else's or empty; then kept, and its reminder goes
-    const [first, second] = kept;
-    expect(db.writeSince(other.id, first.id, "nobody noticed").ok).toBe(false);
-    expect(db.writeSince(owner.id, first.id, "   ").ok).toBe(false);
-    expect(db.writeSince(owner.id, first.id, "nobody noticed").ok).toBe(true);
-    expect(db.mine(owner.id)[0].worries[0]).toMatchObject({ text: "the colours", since: "nobody noticed" });
+    // putting one reminder away keeps the worry on its enough
+    const [first] = kept;
+    expect(db.putAway(other.id, first.id).ok).toBe(false);
+    expect(db.putAway(owner.id, first.id).ok).toBe(true);
+    expect(db.putAway(owner.id, first.id).ok).toBe(false);
     expect(db.dueLater(owner.id, week).map((n) => n.text)).toEqual(["check the margins"]);
-
-    // putting the reminder away keeps the worry on its enough
-    expect(db.putAway(other.id, second.id).ok).toBe(false);
-    expect(db.putAway(owner.id, second.id).ok).toBe(true);
-    expect(db.putAway(owner.id, second.id).ok).toBe(false);
-    expect(db.dueLater(owner.id, week)).toEqual([]);
     expect(db.mine(owner.id)[0].worries).toHaveLength(2);
 
+    // one line for how they all look now: any time, but never someone else's,
+    // never empty, and only where there's a worry; it puts away the rest
+    expect(db.writeLookBack(other.id, enough.id, "nobody noticed").ok).toBe(false);
+    expect(db.writeLookBack(owner.id, enough.id, "   ").ok).toBe(false);
+    const plain = db.declareEnough(owner.id, { ...base, description: "no worry", worry: "" });
+    if (!plain.ok) throw new Error(plain.reason);
+    expect(db.writeLookBack(owner.id, plain.value.id, "nothing to say").ok).toBe(false);
+    expect(db.writeLookBack(owner.id, enough.id, "nobody noticed").ok).toBe(true);
+    expect(db.mine(owner.id).find((e) => e.id === enough.id)?.lookBack?.text).toBe("nobody noticed");
+    expect(db.dueLater(owner.id, week)).toEqual([]);
+    // written again, it replaces what was there
+    expect(db.writeLookBack(owner.id, enough.id, "still fine").ok).toBe(true);
+    expect(db.mine(owner.id).find((e) => e.id === enough.id)?.lookBack?.text).toBe("still fine");
+
     // a worry written on the way to leaving it counts as letting go
-    expect(db.mine(owner.id)[0].urges).toEqual({ letGo: 1, checked: 0 });
-    // deleting the enough takes its worries too
+    expect(db.mine(owner.id).find((e) => e.id === enough.id)?.urges).toEqual({ letGo: 1, checked: 0 });
+    // deleting the enough takes its worries and the line too
     expect(db.deleteEnough(owner.id, enough.id).ok).toBe(true);
     expect(db.dueLater(owner.id, week)).toEqual([]);
+    expect(db.mine(owner.id).map((e) => e.id)).not.toContain(enough.id);
   });
 });
 
@@ -790,7 +805,7 @@ describe("without an account", () => {
       "/break/": { kind: "walk" },
       "/urge/": { enough: id, choice: "let_go", note: `anon note ${tag}` },
       "/put-away/": { id: "1" },
-      "/since/": { worry: "1", since: `anon since ${tag}` },
+      "/look-back/": { enough: id, text: `anon look back ${tag}` },
       "/work/": { action: "start", alarm: "none" },
       "/scene/": { thing: "lamp", weather: "rain" },
       "/outfit/": { head: "strawhat" },

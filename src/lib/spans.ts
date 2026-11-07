@@ -39,11 +39,15 @@ export const hoursIn = (spans: Span[]) => spans.reduce((sum, s) => sum + (s.to -
 const clock = (minutes: number) => `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
 export const describeSpan = (s: Span) => `${clock(s.from)}–${clock(s.to)}`;
 
-// "about 3½ hours": the bar is roughly, so the words are too
-export function roughly(hours: number): string {
+// "3½ hours", to the half-hour, as the bar is
+export function inHalves(hours: number): string {
   const whole = Math.floor(hours);
   const half = hours - whole >= 0.5;
-  if (whole === 0 && half) return "about half an hour";
+  if (whole === 0 && half) return "half an hour";
   const n = `${whole}${half ? "½" : ""}`;
-  return `about ${n} ${whole === 1 && !half ? "hour" : "hours"}`;
+  return `${n} ${whole === 1 && !half ? "hour" : "hours"}`;
 }
+
+// "about 3½ hours": the bar is roughly, so the words are too (where they're
+// a sentence; History's one line says just the time, inHalves)
+export const roughly = (hours: number) => `about ${inHalves(hours)}`;

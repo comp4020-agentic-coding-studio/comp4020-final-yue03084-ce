@@ -213,11 +213,11 @@ export const drawerNotes = sqliteTable("drawer_notes", {
 
 // A worry about an enough, written when calling it enough or, later, when
 // wanting to check it again: kept on that enough for its owner to look back
-// on. A week on (openFrom, WORRY_AFTER_DAYS Sydney days after) it asks "how
-// does it look now?", and what they write goes in `since`. Never on the feed
-// or the stream; kept apart from enoughs so no query of the feed can reach it.
-// Until 2026-11-05 there was one per enough and drawer notes were their own
-// table; migration 0012 moved those in.
+// on. A week on (openFrom, WORRY_AFTER_DAYS Sydney days after) a reminder on
+// You asks how it looks now; the answer is one line for the enough
+// (lookBacks). Never on the feed or the stream; kept apart from enoughs so no
+// query of the feed can reach it. Until 2026-11-05 there was one per enough
+// and drawer notes were their own table; migration 0012 moved those in.
 export const worries = sqliteTable("worries", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   personId: integer("person_id")
@@ -230,9 +230,23 @@ export const worries = sqliteTable("worries", {
   openFrom: text("open_from").notNull(),
   // the reminder at the top of You, put away
   dismissedAt: text("dismissed_at"),
-  // what they wrote a week on, and when
-  since: text("since"),
-  sinceAt: text("since_at"),
+  createdAt: createdAt(),
+});
+
+// How an enough's worries look now, in its owner's words: one line for the
+// whole enough, written any time and asked for a week on. Private, like the
+// worries; written again, it replaces what was there. (Until 2026-11-07 a
+// line per worry, in worries.since; migration 0013 moved those here.)
+export const lookBacks = sqliteTable("look_backs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  personId: integer("person_id")
+    .notNull()
+    .references(() => people.id),
+  enoughId: integer("enough_id")
+    .notNull()
+    .unique()
+    .references(() => enoughs.id),
+  text: text("text").notNull(),
   createdAt: createdAt(),
 });
 

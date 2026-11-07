@@ -28,6 +28,7 @@ import {
   drawerNotes,
   type Enough,
   enoughs,
+  lookBacks,
   type Person,
   people,
   replies,
@@ -209,6 +210,7 @@ export function mine(
   comments: PublicComment[];
   urges: { letGo: number; checked: number };
   worries: Worry[];
+  lookBack: LookBack | null;
 })[] {
   const rows = db.select().from(enoughs).where(eq(enoughs.personId, personId)).orderBy(desc(enoughs.id)).all();
   const ids = rows.map((r) => r.id);
@@ -216,25 +218,29 @@ export function mine(
   const said = visibleComments(ids);
   const tally = urgeCounts(ids);
   const worried = worriesOn(personId, ids);
+  const looked = lookBacksOn(personId, ids);
   return rows.map((row) => ({
     ...row,
     replies: counts.get(row.id) ?? {},
     comments: said.get(row.id) ?? [],
     urges: tally.get(row.id) ?? { letGo: 0, checked: 0 },
     worries: worried.get(row.id) ?? [],
+    lookBack: looked.get(row.id) ?? null,
   }));
 }
 
-// The worries kept on an enough, oldest first, each with what its owner
-// wrote a week on (if they did). Only ever the owner's own.
+// The worries kept on an enough, oldest first. Only ever the owner's own.
 export interface Worry {
   id: number;
   text: string;
   createdAt: string;
-  // the day it asks "how does it look now?"
+  // the day a reminder on You asks how it looks now
   openFrom: string;
-  since: string | null;
-  sinceAt: string | null;
+}
+// How an enough's worries look now, in a line; one per enough.
+export interface LookBack {
+  text: string;
+  createdAt: string;
 }
 function worriesOn(personId: number, ids: number[]): Map<number, Worry[]> {
   const out = new Map<number, Worry[]>();
@@ -247,9 +253,20 @@ function worriesOn(personId: number, ids: number[]): Map<number, Worry[]> {
     .all();
   for (const w of rows) {
     const list = out.get(w.enoughId) ?? [];
-    list.push({ id: w.id, text: w.text, createdAt: w.createdAt, openFrom: w.openFrom, since: w.since, sinceAt: w.sinceAt });
+    list.push({ id: w.id, text: w.text, createdAt: w.createdAt, openFrom: w.openFrom });
     out.set(w.enoughId, list);
   }
+  return out;
+}
+function lookBacksOn(personId: number, ids: number[]): Map<number, LookBack> {
+  const out = new Map<number, LookBack>();
+  if (ids.length === 0) return out;
+  const rows = db
+    .select()
+    .from(lookBacks)
+    .where(and(eq(lookBacks.personId, personId), inArray(lookBacks.enoughId, ids)))
+    .all();
+  for (const r of rows) out.set(r.enoughId, { text: r.text, createdAt: r.createdAt });
   return out;
 }
 
@@ -327,6 +344,7 @@ export function deleteEnough(personId: number, enoughId: number): Outcome<{ wasS
     tx.delete(urges).where(eq(urges.enoughId, enoughId)).run();
     tx.delete(drawerNotes).where(eq(drawerNotes.enoughId, enoughId)).run();
     tx.delete(worries).where(eq(worries.enoughId, enoughId)).run();
+    tx.delete(lookBacks).where(eq(lookBacks.enoughId, enoughId)).run();
     tx.update(breaks).set({ enoughId: null }).where(eq(breaks.enoughId, enoughId)).run();
     tx.delete(replies).where(eq(replies.enoughId, enoughId)).run();
     tx.delete(enoughs).where(eq(enoughs.id, enoughId)).run();
@@ -447,19 +465,31 @@ export function recordUrge(personId: number, enoughId: number, choice: UrgeChoic
   return { ok: true, value: { worried: text !== "" } };
 }
 
-// What they make of a worry now, in a line: any time, though it's a week on
-// that History asks. Their own worry only; written again, it replaces what
-// was there. Answering puts its reminder away.
-export function writeSince(personId: number, worryId: number, input: string): Outcome<null> {
+// How an enough's worries look now, in a line: one for the whole enough, any
+// time, though it's a week on that a reminder asks. Their own enough only,
+// and only one with a worry on it; written again, it replaces what was
+// there. Writing it puts away the reminders for that enough's worries.
+export function writeLookBack(personId: number, enoughId: number, input: string): Outcome<null> {
   const text = tidy(input);
   if (text === "") return { ok: false, reason: "Write a few words first." };
   if ([...text].length > WORRY_MAX) return { ok: false, reason: `Keep it to ${WORRY_MAX} characters or fewer.` };
-  const w = db.select().from(worries).where(and(eq(worries.id, worryId), eq(worries.personId, personId))).get();
-  if (!w) return { ok: false, reason: "That isn't one of yours." };
-  db.update(worries)
-    .set({ since: text, sinceAt: sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`, dismissedAt: w.dismissedAt ?? sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))` })
-    .where(eq(worries.id, worryId))
-    .run();
+  const worried = db
+    .select({ id: worries.id })
+    .from(worries)
+    .where(and(eq(worries.enoughId, enoughId), eq(worries.personId, personId)))
+    .get();
+  if (!worried) return { ok: false, reason: "That isn't one of yours." };
+  const now = sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`;
+  db.transaction((tx) => {
+    tx.insert(lookBacks)
+      .values({ personId, enoughId, text })
+      .onConflictDoUpdate({ target: lookBacks.enoughId, set: { text, createdAt: now } })
+      .run();
+    tx.update(worries)
+      .set({ dismissedAt: now })
+      .where(and(eq(worries.enoughId, enoughId), eq(worries.personId, personId), isNull(worries.dismissedAt)))
+      .run();
+  });
   return { ok: true, value: null };
 }
 

@@ -7,7 +7,7 @@ import { isDue } from "../../lib/later";
 import { localDate } from "../../lib/summary";
 import { fullWhen, relativeWhen } from "../../lib/when";
 import { isHtml } from "../../lib/notes";
-import { describeSpan, parseSpans, roughly } from "../../lib/spans";
+import { describeSpan, inHalves, parseSpans } from "../../lib/spans";
 import { currentPerson } from "../../lib/person";
 
 // History (Each one until 2026-11-05): everything this person has said was enough, private fields
@@ -49,7 +49,7 @@ const open = Astro.url.searchParams.get("open");
             <time datetime={e.createdAt} title={fullWhen(e.createdAt)}>{relativeWhen(e.createdAt)}</time>
             {" · "}
             {e.shared ? "shared" : "just you"}
-            {e.hours !== null && <> · {e.spans ? roughly(e.hours) : `${e.hours} ${e.hours === 1 ? "hour" : "hours"}`}</>}
+            {e.hours !== null && <> · {e.spans ? inHalves(e.hours) : `${e.hours} ${e.hours === 1 ? "hour" : "hours"}`}</>}
           </p>
           {/* everything else, folded: open when a worry was just kept here, or a
               reminder on You sent them to one */}
@@ -81,37 +81,42 @@ const open = Astro.url.searchParams.get("open");
             {e.worries.length > 0 && (
               <dl class="worries">
                 <dt>Worried</dt>
-                {e.worries.map((w) => {
-                  const due = isDue(w.openFrom, today);
-                  const ask = (
-                    <form method="post" action="/since/" class="worry-since-form">
-                      <input type="hidden" name="worry" value={w.id} />
-                      <input type="hidden" name="enough" value={e.id} />
-                      <label>
-                        {due ? "A week on, how does it look now?" : "How does it look now?"}{" "}
-                        <small>(up to {WORRY_MAX} characters)</small>
-                        <input name="since" required maxlength={WORRY_MAX} />
-                      </label>
-                      <button type="submit">Keep this</button>
-                    </form>
-                  );
-                  return (
-                    <dd id={`worry-${w.id}`}>
-                      <p class="worry-text">“{w.text}”</p>
-                      {w.since ? (
-                        <p class="worry-since">Later: “{w.since}”</p>
-                      ) : due ? (
-                        ask
-                      ) : (
-                        // before its week, a quiet link that opens the same line
-                        <details class="worry-ask">
-                          <summary>How does it look now?</summary>
-                          {ask}
-                        </details>
-                      )}
-                    </dd>
-                  );
-                })}
+                {e.worries.map((w) => (
+                  <dd id={`worry-${w.id}`}>“{w.text}”</dd>
+                ))}
+                {/* one line for how they all look now, under them: any time, and
+                    asked outright once the first is a week old */}
+                {e.lookBack ? (
+                  <dd class="worry-since">Later: “{e.lookBack.text}”</dd>
+                ) : (
+                  (() => {
+                    const due = e.worries.some((w) => isDue(w.openFrom, today));
+                    const ask = (
+                      <form method="post" action="/look-back/" class="worry-since-form">
+                        <input type="hidden" name="enough" value={e.id} />
+                        <label>
+                          {due ? "A week on, how does it look now?" : "How does it look now?"}{" "}
+                          <small>(up to {WORRY_MAX} characters)</small>
+                          <input name="text" required maxlength={WORRY_MAX} />
+                        </label>
+                        <button type="submit">Keep this</button>
+                      </form>
+                    );
+                    return (
+                      <dd>
+                        {due ? (
+                          ask
+                        ) : (
+                          // before its week, a quiet link that opens the same line
+                          <details class="worry-ask">
+                            <summary>How does it look now?</summary>
+                            {ask}
+                          </details>
+                        )}
+                      </dd>
+                    );
+                  })()
+                )}
               </dl>
             )}
             {/* what others said, only when they have */}
@@ -153,7 +158,7 @@ const open = Astro.url.searchParams.get("open");
                     {isHtml(e.notes) ? <div class="notes rich then" set:html={e.notes} /> : <p class="notes then">{e.notes}</p>}
                   </>
                 )}
-                {e.hours !== null && <p class="hint">Time you put in: {e.spans ? roughly(e.hours) : `${e.hours} hours`}.</p>}
+                {e.hours !== null && <p class="hint">Time you put in: {e.spans ? inHalves(e.hours) : `${e.hours} hours`}.</p>}
                 <p class="wall">Live with imperfection.</p>
                 <form method="post" action="/urge/" class="urge-choices">
                   <input type="hidden" name="enough" value={e.id} />

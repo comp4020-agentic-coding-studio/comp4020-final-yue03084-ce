@@ -134,11 +134,9 @@ describe("what lasts and what's logged", () => {
     await other.send("/comment/", { enough: id, text: secret.comment });
     await other.send("/reply/", { enough: id, preset: "seen" });
     await writer.send("/urge/", { enough: id, choice: "let_go", note: secret.drawer });
-    // a line on how a worry looks now: logged by block and worry, never its words
-    const worryId = /id="worry-(\d+)"/.exec(await writer.get("/mine/all/"))?.[1] ?? "";
-    expect(worryId).not.toBe("");
-    await writer.send("/since/", { worry: worryId, enough: id, since: secret.since });
-    expect(output).toMatch(/worry_looked_back block=\d+ worry=\d+/);
+    // a line on how its worries look now: logged by block and enough, never its words
+    await writer.send("/look-back/", { enough: id, text: secret.since });
+    expect(output).toMatch(/worry_looked_back block=\d+ enough=\d+/);
     await writer.send("/break/", { end: "1" });
     // a recovery code, used to set a new password: neither may reach the log
     const made = await (await writer.send("/account/", { action: "code" })).text();

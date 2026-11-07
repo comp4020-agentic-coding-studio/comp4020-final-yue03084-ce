@@ -3,8 +3,9 @@ import { dueLater } from "../lib/db";
 import { localDate } from "../lib/summary";
 
 // The reminder at the top of You: worries whose week has come, each linking
-// to its enough on History, where the worry is kept and they can say how it
-// looks now. Putting the reminder away leaves the worry where it is.
+// to its enough on History, where the worry is kept and they can say, in one
+// line for that enough, how it looks now. Putting the reminder away leaves
+// the worry where it is.
 // Rendered only for the signed-in owner, from their own rows.
 interface Props {
   personId: number;
@@ -24,7 +25,7 @@ const back = Astro.url.pathname;
             <p class="drawer-note">A week ago you worried: “{n.text}”</p>
             <p class="drawer-about">
               about <a href={`/mine/all/?open=${n.enoughId}#enough-${n.enoughId}`}>{n.description}</a>.{" "}
-              <a href={`/mine/all/?open=${n.enoughId}#worry-${n.id}`}>How does it look now?</a>
+              <a href={`/mine/all/?open=${n.enoughId}#enough-${n.enoughId}`}>How does it look now?</a>
             </p>
             <form method="post" action="/put-away/">
               <input type="hidden" name="id" value={n.id} />
