@@ -39,10 +39,11 @@ a little one for each person on a break, doing what they went to do, live for
 everyone and never saying who. When nobody is resting, the meadow stays,
 empty. You has three pages: Summary adds up a day, week
 or month for you alone (what you called enough, how it felt, when you worked,
-how often you wanted to check again), and History keeps every record in full.
-There, "I want to check it again" shows what you wrote when you stopped, then
-lets you leave it or check anyway, or write it down for tomorrow, when it comes
-back to you. A worry written when you stop comes back a week later. The third
+how often you wanted to check again), and History keeps every record, each
+folded to a line until you open it. There, Recheck shows what you wrote when you
+stopped, then lets you leave it or check anyway, and keep what's worrying you on
+that record. A week on, it asks how the worries look now, so you can see later
+how few came to anything. The third
 page, Collection, fills with small things that come only from stopping
 (breaks, letting a recheck go, resting when the alarm rings, days spent here),
 and what you choose to wear shows on your little one and on the meadow. You
