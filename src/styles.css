@@ -763,7 +763,17 @@ fieldset.next small {
 }
 
 /* History: a record at a glance, everything else under More, and its two
-   actions on one quiet line at the foot */
+   actions at the foot. One column, every part to the same right edge, and
+   one spacing scale: 8px within a group (--s2), 16px between groups
+   (--s3), 24px between records (--s4). */
+.feed.mine .card {
+  padding-block: var(--s4);
+}
+
+.feed.mine .card:first-child {
+  padding-top: var(--s3);
+}
+
 /* the record's own words, unquoted, in the title face */
 .mine-title {
   margin: 0;
@@ -771,25 +781,20 @@ fieldset.next small {
   font-size: 1.1rem;
 }
 
-/* More and the two actions read as one line of small words: More's tap
-   area runs into the line below rather than leaving a gap */
-.more {
-  margin-top: 0;
-}
-
-.more:not([open]) + .mine-actions {
-  margin-top: calc(-1 * var(--s3));
+.feed.mine .when {
+  margin-top: 2px;
 }
 
 .more > summary,
-.mine-actions summary,
-.mine-actions .urge-open {
+.mine-actions .delete > summary,
+.mine-actions .delete summary {
   display: inline-block;
+  /* a 44px tap area round small words */
   min-height: 2.75rem;
+  line-height: 2.75rem;
   padding: 0;
   border: 0;
   background: none;
-  line-height: 2.75rem;
   color: var(--muted);
   font: inherit;
   font-size: 0.875rem;
@@ -812,72 +817,104 @@ fieldset.next small {
   display: inline;
 }
 
-.more > summary:hover,
-.mine-actions .urge-open:hover,
-.mine-actions summary:hover {
+.more > summary:hover {
   color: var(--accent);
-  background: none;
+}
+
+/* open, the 44px row's lower half is the gap to what it opened (8px) */
+.more[open] > summary {
+  margin-bottom: calc(var(--s2) - 0.875rem);
+}
+
+/* groups under More, 16px apart */
+.more > :not(summary) + :not(summary) {
+  margin-top: var(--s3);
 }
 
 .more > :not(summary) {
-  margin-block: 0 var(--s2);
-}
-
-.more[open] > summary {
-  margin-bottom: var(--s1);
+  margin-bottom: 0;
 }
 
 .more .feeling {
   color: var(--muted);
 }
 
-.others {
-  margin-top: var(--s2);
+/* the time bar, as wide as the record's column */
+.more .minibar {
+  max-width: none;
+  margin: 0;
 }
 
+/* Recheck and Delete side by side, 12px apart, 16px under what's above */
 .mine-actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--s2) var(--s4);
-  margin-block: var(--s1) var(--s3);
+  align-items: center;
+  gap: var(--s2) 12px;
+  margin-top: var(--s3);
 }
 
-/* both the same 44px line, so Recheck's box and Delete's words sit level */
-.mine-actions > .urge-open,
-.mine-actions > details > summary {
-  box-sizing: border-box;
-  height: 2.75rem;
-  line-height: calc(2.75rem - 2px);
+/* folded, More's own 44px row is the space above the actions */
+.feed.mine .more:not([open]) + .mine-actions {
+  margin-top: 0;
 }
 
-.mine-actions > .delete > summary {
-  border: 1px solid transparent;
-}
-
-/* Recheck: the record's one action, a bordered button */
+/* Recheck: the record's one action. It looks small (about 30px, 6px 14px)
+   but, like the site's other small marks, its tap area stays 44px: the
+   button is that tall, its box drawn inside by a shadow inset 7px. The one
+   corner is the site's --radius. */
 .mine-actions .urge-open,
 .mine-actions .urge > summary {
-  padding: 0 var(--s3);
-  border: 1px solid var(--line-strong);
+  position: relative;
+  display: inline-block;
+  min-height: 2.75rem;
+  padding: 0 14px;
+  border: 0;
+  background: none;
   color: var(--fg);
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 2.75rem;
+  cursor: pointer;
+  list-style: none;
 }
 
-.mine-actions .urge-open:hover,
-.mine-actions .urge > summary:hover {
+.mine-actions .urge-open::before,
+.mine-actions .urge > summary::before {
+  content: "";
+  position: absolute;
+  inset: 7px 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+
+.mine-actions .urge-open:hover::before,
+.mine-actions .urge > summary:hover::before {
   border-color: var(--accent);
   background: var(--accent-soft);
-  color: var(--fg);
+  z-index: -1;
 }
 
-/* Delete: quiet, at the far end, red on hover, and asks first */
+.mine-actions .urge-open:focus-visible {
+  outline: none;
+}
+
+.mine-actions .urge-open:focus-visible::before {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* Delete: quiet words beside it, red on hover, and asks first */
 .mine-actions .delete {
-  margin: 0 0 0 auto;
+  margin: 0;
   font-size: 0.875rem;
 }
 
+/* the same 44px line as Recheck, so their words sit level (the general
+   .delete summary further up pads its own) */
 .mine-actions .delete > summary {
-  color: var(--muted);
+  padding-block: 0;
+  line-height: 2.75rem;
   opacity: 0.8;
 }
 
@@ -889,7 +926,6 @@ fieldset.next small {
 /* an open Delete takes the whole line for its question */
 .mine-actions .delete[open] {
   flex-basis: 100%;
-  margin-left: 0;
 }
 
 .urge-body p {
@@ -1510,21 +1546,39 @@ button[type="submit"].wide {
   transform: translateX(-100%);
 }
 
-/* the worries kept on a record (History): one more part of the record,
-   labelled like the others (dt), with no rule of its own, so it never looks
-   like a record of its own. A line written later sits in a step under it. */
+/* the worries kept on a record (History): a list of plain lines at the
+   body's size, each with a small dot, 8px apart; the line on how they look
+   now set in a step below, the box that asks for it 8px under that. */
 .worries {
-  margin: 0.25rem 0 0;
+  margin: 0;
+}
+
+.worries dt {
+  margin-bottom: var(--s1);
 }
 
 .worries dd {
-  margin: 0 0 var(--s1);
+  position: relative;
+  margin: 0;
+  padding-left: var(--s3);
+  font-size: 1rem;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
-/* the space after the last one is the record's, before its replies */
-.worries {
-  margin-bottom: var(--s3);
+.worries dd + dd {
+  margin-top: var(--s2);
+}
+
+.worries dd[id^="worry-"]::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0.65em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--muted);
 }
 
 /* later: set in a step, so it reads as the answer to the lines above */
@@ -1534,18 +1588,19 @@ button[type="submit"].wide {
   margin-right: var(--s1);
 }
 
+/* the later line's rule sits under the dots, its words with the worries' */
 .worry-since {
-  margin-top: var(--s1) !important;
-  padding-left: var(--s3);
   border-left: 2px solid var(--line-strong);
+  margin-left: 5px;
+  padding-left: calc(var(--s3) - 7px) !important;
 }
 
 .worry-since-form {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 0.5rem;
-  margin-top: var(--s1);
+  gap: var(--s2);
+  margin: 0;
 }
 
 .worry-since-form label {
@@ -1578,8 +1633,7 @@ button[type="submit"].wide {
 
 /* a week on: a small box under the worries, asking how they look now */
 .worry-prompt {
-  margin-top: var(--s2) !important;
-  padding: 12px var(--s3);
+  padding: 12px var(--s3) !important;
   border: 1px solid var(--line);
   background: var(--card);
 }

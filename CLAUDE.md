@@ -149,14 +149,22 @@ commit (see "A feature lands with its test").
   Its words are shown as they were written, never in quotes; the fold reads
   "More ▾" and "Less ▴"; the wording is short and neutral, never a
   first-person sentence ("Recheck", "Leave it", "Check anyway", "Called
-  enough on…"; "Live with imperfection." stays, as the wall note). Recheck
-  is the one bordered button; Delete is quiet words at the far end, red on
-  hover, and asks again before anything goes.
+  enough on…"; "Live with imperfection." stays, as the wall note). One
+  column, every part (title, time bar, worries, actions) to the same right
+  edge; spacing 8px within a group, 16px between groups, 24px between
+  records. Worries are a list, body size, a small dot each. Recheck is the
+  one button: it looks small (about 30px, 6px 14px, the site's 8px
+  `--radius`, as the record's primary action) but its tap area stays 44px;
+  Delete is quiet words right beside it, red on hover, and asks again
+  before anything goes.
   The count "Wanted to check it again… let it go…" is gone: Summary has it.
   More opens by itself when a worry was just kept there, or a reminder on
   You leads to one (`?open=`). *(2026-11-06: every part of a record shown
   at once, each with its label and the counts between, read as a jumble.
-  2026-11-07: quotes and "I want to…" read as a story card, not a product.)*
+  2026-11-07: quotes and "I want to…" read as a story card, not a product;
+  then a half-width time bar, a 44px-looking Recheck and Delete far off to
+  the right read as untidy. A 30px tap area and a new 4–6px corner were
+  asked for; she kept 44px and the one radius.)*
   **Guarded by:** `enough.test.ts` "worries" (under More; More open after a
   worry is kept, folded otherwise; "shows a record plainly…"), "rechecking"
   (the count on Summary, not History). **Not tested:** how it looks,
