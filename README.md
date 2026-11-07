@@ -49,7 +49,8 @@ page, Collection, fills with small things that come only from stopping
 and what you choose to wear shows on your little one and on the meadow. You
 can delete anything you've written.
 
-On Together, you can start a stretch of work and set an Enough alarm,
+On Together, you can start a stretch of work, with a line on what you mean to
+do, and set an Enough alarm,
 after a number of minutes or at a time of day. A little one builds a crooked
 tower alongside you, in a small pixel picture. Each time
 you start, the tower begins again, sized to your alarm. The sky
