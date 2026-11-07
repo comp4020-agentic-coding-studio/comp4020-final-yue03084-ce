@@ -158,6 +158,9 @@ export const workSessions = sqliteTable("work_sessions", {
   snoozes: integer("snoozes").notNull().default(0),
   pausedAt: text("paused_at"),
   pauseKind: text("pause_kind"),
+  // what they set out to do, in a line, if they said: theirs alone, shown
+  // under the little one and offered as the description on Call it enough
+  intent: text("intent"),
 });
 
 // The working parts of a session, between breaks. sleepyFrom is when the

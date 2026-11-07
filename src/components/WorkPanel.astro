@@ -1,5 +1,5 @@
 ---
-import { ALARM_DEFAULT_MINUTES, ALARM_INTERVALS, ALARM_MAX_MINUTES, SNOOZE_MINUTES } from "../lib/limits";
+import { ALARM_DEFAULT_MINUTES, ALARM_INTERVALS, ALARM_MAX_MINUTES, DESCRIPTION_MAX, SNOOZE_MINUTES } from "../lib/limits";
 import type { Outfit } from "../lib/collection";
 import type { Scene } from "../lib/scene";
 import type { WorkView } from "../lib/work";
@@ -34,6 +34,10 @@ const resting = view?.state === "resting";
           The little one works alongside you. Set an alarm for when you'd like to stop, and it will start to get sleepy
           then.
         </p>
+        <label class="intent">
+          What are you setting out to do? <small>(optional, up to {DESCRIPTION_MAX} characters; just for you)</small>
+          <input name="intent" maxlength={DESCRIPTION_MAX} placeholder="e.g. finish the intro" />
+        </label>
         <fieldset class="choices">
           <legend>Enough alarm</legend>
           <label class="inline">
@@ -75,6 +79,11 @@ const resting = view?.state === "resting";
           <LittleOne view={view} scene={scene} outfit={outfit} sunflower={sunflower} />
           <p class="hint away-note" hidden>The little one is in its own small window, beside whatever you're working on.</p>
         </div>
+        {view.intent && (
+          <p class="work-intent">
+            <span class="work-intent-label">Setting out to</span> {view.intent}
+          </p>
+        )}
         <p class="work-status" aria-live="polite">
           {resting
             ? `You're on a break (${view.restLabel?.toLowerCase() ?? "resting"}). The little one is resting too.`
@@ -211,6 +220,22 @@ const resting = view?.state === "resting";
 
   :global(body.pip .little-one svg) {
     width: 100%;
+  }
+
+  .intent {
+    display: grid;
+    gap: var(--s1);
+  }
+
+  /* what they set out to do, under the little one: theirs, plainly */
+  .work-intent {
+    margin: var(--s2) 0 0;
+  }
+
+  .work-intent-label {
+    margin-right: var(--s1);
+    color: var(--muted);
+    font-size: 0.8125rem;
   }
 
   .work-status {

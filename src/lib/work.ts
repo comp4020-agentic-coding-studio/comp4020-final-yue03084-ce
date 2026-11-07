@@ -1,6 +1,14 @@
 import { and, asc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db, type Outcome } from "./db";
-import { ALARM_MAX_MINUTES, BREAK_KINDS, type BreakKind, DAY_MINUTES, SNOOZE_MINUTES, TOWER_PLAN_MINUTES } from "./limits";
+import {
+  ALARM_MAX_MINUTES,
+  BREAK_KINDS,
+  type BreakKind,
+  DAY_MINUTES,
+  DESCRIPTION_MAX,
+  SNOOZE_MINUTES,
+  TOWER_PLAN_MINUTES,
+} from "./limits";
 import { workSessions, workStretches } from "./schema";
 import type { Span } from "./spans";
 import {
@@ -64,9 +72,22 @@ export const parseTz = (text: string) => {
   return Number.isInteger(tz) && Math.abs(tz) <= 14 * 60 ? tz : 0;
 };
 
-// Start working. One open session per person: starting while one is open
-// changes nothing.
-export function startWork(personId: number, tz: number, alarm: Alarm | null, now = Date.now()): Outcome<WorkSession> {
+// What someone sets out to do, tidied to one line; over DESCRIPTION_MAX it's
+// cut there, as it becomes the description on Call it enough.
+export const parseIntent = (text: string) => {
+  const line = text.trim().replace(/\s+/g, " ");
+  return line === "" ? null : [...line].slice(0, DESCRIPTION_MAX).join("");
+};
+
+// Start working, with what they set out to do if they said. One open session
+// per person: starting while one is open changes nothing.
+export function startWork(
+  personId: number,
+  tz: number,
+  alarm: Alarm | null,
+  now = Date.now(),
+  intent: string | null = null,
+): Outcome<WorkSession> {
   const already = openSession(personId);
   if (already) return { ok: false, reason: "You're already working." };
   const alarmAt = nextAlarm(alarm, now, tz, false);
@@ -80,6 +101,7 @@ export function startWork(personId: number, tz: number, alarm: Alarm | null, now
       alarmKind: alarm?.kind ?? null,
       alarmValue: alarm ? (alarm.kind === "interval" ? alarm.minutes : alarm.minute) : null,
       alarmAt: alarmAt === null ? null : iso(alarmAt),
+      intent,
     })
     .returning()
     .get();
@@ -165,7 +187,7 @@ export function finishWork(personId: number, now = Date.now()): Outcome<WorkSess
 // The crayon spans a finished session pre-fills on Call it enough: its
 // working stretches, breaks left out, in the owner's local time. Someone
 // else's session, or one still going, gives nothing.
-export function finishedSpans(personId: number, sessionId: number): { spans: Span[] } | null {
+export function finishedSpans(personId: number, sessionId: number): { spans: Span[]; intent: string | null } | null {
   const s = db
     .select()
     .from(workSessions)
@@ -175,7 +197,7 @@ export function finishedSpans(personId: number, sessionId: number): { spans: Spa
   const parts = stretchesOf(s.id)
     .filter((st) => st.endedAt !== null)
     .map((st) => ({ from: ms(st.startedAt), to: ms(st.endedAt as string) }));
-  return { spans: spansFor(parts, s.tz) };
+  return { spans: spansFor(parts, s.tz), intent: s.intent };
 }
 
 // What Mine draws for the little one right now, and what its script needs to
@@ -198,6 +220,8 @@ export interface WorkView {
   worked: number;
   startedAt: string;
   alarmLabel: string | null;
+  // what they set out to do, if they said
+  intent: string | null;
 }
 
 export function workView(personId: number, now = Date.now()): WorkView | null {
@@ -232,5 +256,6 @@ export function workView(personId: number, now = Date.now()): WorkView | null {
     worked,
     startedAt: s.startedAt,
     alarmLabel: !alarm ? null : alarm.kind === "interval" ? `after ${alarm.minutes} minutes` : `at ${clock(alarm.minute)}`,
+    intent: s.intent,
   };
 }

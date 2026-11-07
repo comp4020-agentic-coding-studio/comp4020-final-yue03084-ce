@@ -4,7 +4,7 @@ import { startBreak } from "../lib/db";
 import { emitResting } from "../lib/events";
 import { isBreakKind } from "../lib/limits";
 import { signedInPerson } from "../lib/person";
-import { finishWork, parseAlarm, parseTz, pauseWork, snooze, startWork } from "../lib/work";
+import { finishWork, parseAlarm, parseIntent, parseTz, pauseWork, snooze, startWork } from "../lib/work";
 
 // A work session: start (with an optional Enough alarm), "10 more minutes"
 // and "Okay, go and rest" from the alarm on any page (a break, through the
@@ -29,8 +29,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
   if (action === "start") {
     const alarm = parseAlarm(field("alarm"), field("minutes"), field("clock"));
-    startWork(person.id, parseTz(field("tz")), alarm);
-    logEvent("work_started", { block: person.id, alarm: alarm ? alarm.kind : "none" });
+    const intent = parseIntent(field("intent"));
+    startWork(person.id, parseTz(field("tz")), alarm, Date.now(), intent);
+    // whether they said what they set out to do, never what it was
+    logEvent("work_started", { block: person.id, alarm: alarm ? alarm.kind : "none", intent: intent ? "yes" : "no" });
   } else if (action === "snooze") {
     snooze(person.id);
     logEvent("alarm_snoozed", { block: person.id });

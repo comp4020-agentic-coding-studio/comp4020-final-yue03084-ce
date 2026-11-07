@@ -181,6 +181,18 @@ commit (see "A feature lands with its test").
   (the count on Summary, not History), "says Left it. on the record…".
   **Not tested:** how it looks, and "Left it." going on a reload (a script),
   checked in a browser.
+- **What you set out to do is one line, yours alone, never ticked off.**
+  Start working has an optional "What are you setting out to do?"
+  (`DESCRIPTION_MAX`, as it becomes the description). It shows under the
+  little one ("Setting out to …") and Finish offers it as the description
+  on Call it enough, to change. Never on the feed, the stream or the log
+  (the log says only whether there was one), and never ticked, counted or
+  compared: no "done", no rate. *(2026-11-07: she felt recording only the
+  stop cut the work's thread; the drawer-to-plan loop was turned down, as
+  today's work needn't follow yesterday's. README's "tools that look forward
+  didn't suit me" is hers to update.)*
+  **Guarded by:** `work.test.ts` "keeps what they set out to do…", "cuts
+  what they set out to do…"; `lasting.test.ts` (never its words in the log).
 - **The Enough alarm comes up on every page.** While its owner works with
   an alarm, the overlay (`AlarmPopup.astro`, in the layout beside the status
   bar) is on whatever page they have open: their own little one nodding off

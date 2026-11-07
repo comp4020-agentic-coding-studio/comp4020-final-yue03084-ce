@@ -91,6 +91,7 @@ const secret = {
   comment: `say ${tag}`.slice(0, 30),
   drawer: `drawer ${tag}`,
   since: `since ${tag}`,
+  intent: `intent ${tag}`,
 };
 
 const enoughId = (html: string, text: string) => {
@@ -138,6 +139,10 @@ describe("what lasts and what's logged", () => {
     await writer.send("/look-back/", { enough: id, text: secret.since });
     expect(output).toMatch(/worry_looked_back block=\d+ enough=\d+/);
     await writer.send("/break/", { end: "1" });
+    // what they set out to do: logged as said or not, never what
+    await writer.send("/work/", { action: "start", tz: "660", intent: secret.intent });
+    expect(output).toMatch(/work_started block=\d+ alarm=none intent=yes/);
+    await writer.send("/work/", { action: "finish" });
     // a recovery code, used to set a new password: neither may reach the log
     const made = await (await writer.send("/account/", { action: "code" })).text();
     const code = /data-code[^>]*>\s*([a-z0-9-]+)\s*</.exec(made)?.[1] ?? "";

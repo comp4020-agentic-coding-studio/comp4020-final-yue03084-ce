@@ -26,6 +26,8 @@ import {
   towerPlan,
 } from "../src/lib/worktime.ts";
 import { CROUCH_BELOW, KEEPER, LADDER_ABOVE, ladderRows, reachFor } from "../src/lib/sprites.ts";
+import { parseIntent } from "../src/lib/work.ts";
+import { DESCRIPTION_MAX } from "../src/lib/limits.ts";
 
 // Work sessions, the little one and the Enough alarm. Against the running
 // app: they're the owner's alone (never on the feed or the stream, another
@@ -116,6 +118,41 @@ describe("a work session", () => {
     // anyone else asking for that session gets an empty bar
     const other = await signedIn();
     expect(spansIn(await other.get(to))).toBe("");
+  });
+
+  // What they set out to do (2026-11-07): one optional line at Start, shown
+  // under the little one, offered as the description on Call it enough. Never
+  // ticked off or counted, and never anyone else's.
+  it("keeps what they set out to do for them alone, and offers it on Call it enough", async () => {
+    const me = await signedIn();
+    const intent = `finish the intro qz${Math.random().toString(36).slice(2, 8)}`;
+    const received = await readStream(
+      () => me.work({ action: "start", tz: "660", alarm: "interval", minutes: "90", intent: `  ${intent}  ` }),
+      1_000,
+    );
+    expect(received).not.toContain(intent);
+    const working = await me.get("/working/");
+    expect(working).toMatch(new RegExp(`Setting out to</span> ${intent}`));
+    // never anyone else's, and nothing to tick
+    const other = await signedIn();
+    for (const page of ["/", "/working/", "/mine/", "/mine/all/"]) expect(await other.get(page)).not.toContain(intent);
+    expect(await browser().get("/")).not.toContain(intent);
+    expect(working).not.toMatch(/type="checkbox"[^>]*intent|done|completed/i);
+    // finishing offers it as the description, to change as they like
+    const done = await me.work({ action: "finish" });
+    const to = done.headers.get("location") ?? "";
+    expect(await me.get(to)).toMatch(new RegExp(`name="description"[^>]*value="${intent}"`));
+    expect(await other.get(to)).not.toContain(intent);
+  });
+
+  it(`cuts what they set out to do at ${DESCRIPTION_MAX} characters, and leaves it out when blank`, async () => {
+    expect(parseIntent("   ")).toBeNull();
+    expect(parseIntent("  two   words  ")).toBe("two words");
+    expect([...(parseIntent("x".repeat(DESCRIPTION_MAX + 20)) ?? "")]).toHaveLength(DESCRIPTION_MAX);
+    const me = await signedIn();
+    await me.work({ action: "start", tz: "660" });
+    expect(await me.get("/working/")).not.toContain("Setting out to");
+    await me.work({ action: "finish" });
   });
 
   it("is one at a time: starting again while working changes nothing", async () => {
