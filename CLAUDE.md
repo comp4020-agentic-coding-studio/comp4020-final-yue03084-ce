@@ -189,9 +189,14 @@ commit (see "A feature lands with its test").
   and rest" (counts as resting when the alarm rang) and "10 more minutes".
   Either comes back to the page it came up on (`back`, as the status bar's
   forms do). A rest from it on the feed doesn't float its own sender down,
-  like any break. *(2026-11-07: it came up only on Together, and "Okay, go
-  and rest" was both its heading and its button.)*
-  **Guarded by:** `work.test.ts` "the Enough alarm"; `collection.test.ts`
+  like any break. Start working begins on an alarm, after
+  `ALARM_DEFAULT_MINUTES` (90); "No alarm" is still a choice, but with it
+  the little one never gets sleepy and nothing comes up. *(2026-11-07: it
+  came up only on Together, and "Okay, go and rest" was both its heading
+  and its button. No alarm had been the default, so by default nothing
+  ever asked anyone to stop.)*
+  **Guarded by:** `work.test.ts` "the Enough alarm" (on every page, back
+  to it, and the default); `collection.test.ts`
   "counts resting when the alarm rang…". **Not tested:** when it rings and
   how it looks, checked in a browser.
 - **One place to rest, come back or finish.** A thin status bar under the

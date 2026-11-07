@@ -159,8 +159,12 @@ export const DEFAULT_WEATHER: Weather = "clear";
 // how long one trip to the tower takes when it's fresh
 export const CARRY_SECONDS = 4;
 // the Enough alarm: quick intervals to pick from, the longest allowed, and how
-// long "Give me 10 more minutes" waits before asking again
+// long "10 more minutes" waits before asking again
 export const ALARM_INTERVALS = [60, 90, 120] as const;
+// The interval Start working begins on. An alarm is the default, so the
+// little one gets sleepy and the overlay comes up unless someone chooses
+// not to; "No alarm" is still there (2026-11-07).
+export const ALARM_DEFAULT_MINUTES = 90;
 export const ALARM_MAX_MINUTES = 12 * 60;
 export const SNOOZE_MINUTES = 10;
 // The Collection: things that come from stopping, never from working

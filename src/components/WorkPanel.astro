@@ -1,5 +1,5 @@
 ---
-import { ALARM_INTERVALS, ALARM_MAX_MINUTES, SNOOZE_MINUTES } from "../lib/limits";
+import { ALARM_DEFAULT_MINUTES, ALARM_INTERVALS, ALARM_MAX_MINUTES, SNOOZE_MINUTES } from "../lib/limits";
 import type { Outfit } from "../lib/collection";
 import type { Scene } from "../lib/scene";
 import type { WorkView } from "../lib/work";
@@ -37,13 +37,13 @@ const resting = view?.state === "resting";
         <fieldset class="choices">
           <legend>Enough alarm</legend>
           <label class="inline">
-            <input type="radio" name="alarm" value="" checked /> No alarm
+            <input type="radio" name="alarm" value="" /> No alarm
           </label>
           <label class="inline">
-            <input type="radio" name="alarm" value="interval" /> After
+            <input type="radio" name="alarm" value="interval" checked /> After
             <select name="minutes" aria-label="Minutes">
               {ALARM_INTERVALS.map((m) => (
-                <option value={m} selected={m === 90}>
+                <option value={m} selected={m === ALARM_DEFAULT_MINUTES}>
                   {m} minutes
                 </option>
               ))}

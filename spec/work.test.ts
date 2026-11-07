@@ -6,6 +6,7 @@ import {
   SLOW_EVERY_MINUTES,
   SLOWEST_SPEED,
   SNOOZE_MINUTES,
+  ALARM_DEFAULT_MINUTES,
   SPEED_FACTOR,
   TOWER_AT_ALARM,
   TOWER_HEIGHT,
@@ -508,6 +509,17 @@ describe("the status bar", () => {
 // (AlarmPopup.astro, in the layout): its owner's own little one nodding off,
 // the ways to rest, and ten more minutes; either comes back to that page.
 describe("the Enough alarm", () => {
+  // An alarm is the default, so the little one gets sleepy and the overlay
+  // comes up unless someone chooses not to (2026-11-07); No alarm is still there.
+  it("starts on an alarm after the default minutes, with No alarm still a choice", async () => {
+    const me = await signedIn();
+    const html = await me.get("/working/");
+    expect(html).toMatch(/<input type="radio" name="alarm" value="interval" checked/);
+    expect(html).not.toMatch(/<input type="radio" name="alarm" value="" checked/);
+    expect(html).toMatch(/<input type="radio" name="alarm" value=""[^>]*> No alarm/);
+    expect(html).toMatch(new RegExp(`<option value="${ALARM_DEFAULT_MINUTES}" selected`));
+  });
+
   const PAGES = ["/", "/working/", "/mine/", "/mine/all/", "/mine/collection/", "/account/", "/enough/"];
   const overlay = (html: string) => /<div class="alarm"[\s\S]*?<\/form>\s*<\/div>\s*<\/div>/.exec(html)?.[0] ?? "";
 
