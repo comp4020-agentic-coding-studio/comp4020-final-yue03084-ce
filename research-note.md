@@ -43,7 +43,7 @@ when. Each time I fixed a bug and kept the lesson, I never asked.
 repositories set up for coding agents and found context files far ahead of
 everything else, often the only mechanism, with skills and subagents rare. My
 harness fits, except that I don't think I ever chose. My `CLAUDE.md` grew from
-1,179 words in mid-October to 5,788 by early November. I wanted each lesson down
+1,179 words in mid-October to 5,855 by early November. I wanted each lesson down
 quickly, never noticed a choice, and the agent didn't raise it.
 Browser-screenshot steps that only some sessions needed sat there instead of in
 a skill. By the end I had stopped reading it; after a few days away, I read my
@@ -60,8 +60,8 @@ so it belongs in a test, and one now exists. That the colour belongs to the
 account is needed whenever the agent touches that code, so it earns one line in
 `CLAUDE.md`. That hair went by queue position until 3 November, as a sub-agent's
 default, matters only when someone asks why, so it belongs in git. My
-`CLAUDE.md` holds all three in one paragraph, and that is typical: 49 such notes
-of history in italics make up about 1,300 of its 5,788 words.
+`CLAUDE.md` holds all three in one paragraph, and that is typical: 50 such notes
+of history in italics make up about 1,350 of its 5,855 words.
 
 ## Two objections
 
