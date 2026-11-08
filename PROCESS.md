@@ -68,20 +68,26 @@ your attention; I changed that to how you felt about your effort. It also
 corrected me: when I wanted the list of what you did to be public, it pointed
 out the clash with my own rule, and I kept it private.
 
-For the last round I wanted to try a different workflow, one where I didn't
-have to follow every step. I settled all the details first, then the agent
-split the work among sub-agents running in parallel, and merged and checked
-what came back ([5a94a16](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5a94a16), [ac4dc97](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/ac4dc97), [53eeed5](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/53eeed5)). It was more
-efficient, and while the agents worked I could do other things. But some
-details were decided by the agents themselves [NEW: the hair-by-place bug
-(b0ae3db) as the example]. Those need my review and testing afterwards. Without
-watching each step, details slip more easily, and every time I come back my
-brain has to reload the context. Settling the details before starting still
-has a lot of room to improve. I think it's a trade-off, and the point is
-finding the balance.
+For one round I wanted to try a different workflow, one where I didn't have
+to follow every step. I settled all the details first, then the agent split
+the work among sub-agents running in parallel, and merged and checked what
+came back ([5a94a16](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5a94a16), [ac4dc97](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/ac4dc97), [53eeed5](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/53eeed5)).
+It was more efficient, and while the agents worked I could do other things.
+But with so many tasks, some details were quietly decided by the agents
+themselves, and a cognitive debt built up between us. A week later, testing
+with three windows myself, I saw other people's little ones change whenever
+someone came or went. The page can't say who anyone is, and a sub-agent had
+taken that to mean a little one needn't be anyone's: hair was given out by
+place in the line, and changing what you were doing on a break sent you to the
+back. I made the little one the account's, the same everywhere, with specs
+that check it stays put, and wrote in `CLAUDE.md` that the old way had been a
+sub-agent's choice, not mine ([b0ae3db](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/b0ae3db)). A spec can only guard
+what I've already decided; this one I only caught by using it. Every time I
+come back, my brain has to reload the context. I think it's a trade-off, and
+the point is finding the balance.
 
-[NEW: what the hair bug changed. Since then: screenshots every round, stop and ask on a clash
-(48b1091), the daily log.]
+[NEW: since then: screenshots every round, stop and ask on a clash (48b1091),
+the daily log. Maybe in The harness.]
 
 Some problems only a person could see. The pixel little one's stretch had arms
 like poles past its head; the agent saw nothing wrong, and I found it strange
