@@ -15,19 +15,19 @@ you put in. When you keep reopening a task, your mind tells you that you haven't
 done enough; your own record is there to answer it.
 
 - **Checked by tests:** your hours, feelings, checks and worries reach nobody
-  else, even when you share; the feed shows no totals, streaks or rankings; the
+  else, even when you share; the feed shows no totals, streaks or ranks; the
   Collection unlocks only from stopping, never from work; and the server log
   holds nothing anyone wrote.
-- **Judged:** whether anyone feels less anxious. A few people tried
-  it. They liked the small touches and suggested more, such as a newcomer
-  parachuting onto the meadow, which I built. But they weren't perfectionists,
-  so whether it helps the people it's for is still open.
+- **Judged:** whether anyone feels less anxious. A few people tried it. Those
+  who aren't perfectionists suggested design touches, like a newcomer
+  parachuting onto the meadow; a perfectionist said the way it works really
+  would encourage her to rest more.
 
 ## What's there now
 
 Anyone can read; writing needs an account, with a recovery code, not
 email. You call something enough in one line and choose whether to share it.
-Others see it live and can reply in a few words; each post gets a made-up name
+Others see it live and can reply briefly; each post gets a made-up name
 like "Sage pebble". Just for you, you can colour in the hours you worked, say
 how it felt and note what you checked.
 

@@ -14,6 +14,17 @@ how long it took. Time spent, how it felt and what you checked stay
 private, as evidence for when your mind says you haven't done enough
 ([ADR 0002](docs/adr/0002-what-others-see.md), [8791f7a](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/8791f7a)).
 
+## What I read, and where I stand
+
+Sloan's home-cooked app is for four people he knows. Mine is public, but the
+group it's for is still narrow, and like his it leaves out what a wider audience
+would expect: circles of people you know, rankings, totals. Curran and Hill
+found the steepest rise is in feeling that others expect more of you; here, all
+you see of others is that they stopped. Weiser and Brown's calm technology fits
+the little one best. It gets on with its own work beside you, and its slowing
+down is both company and a reminder to rest; only when the alarm rings does it
+come to the centre. When people rest, the meadow is quiet too.
+
 ## Stack
 
 In crit 8 I went with the agent's suggestion because I didn't know how to
