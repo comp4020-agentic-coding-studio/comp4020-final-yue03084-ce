@@ -2,89 +2,71 @@
 
 *Live with imperfection.*
 
-A public, anonymous space for people who take their work seriously and lean
-towards perfectionism. When you finish something, you record that it's
-"enough", and choose whether to share it. Others see these moments of stopping
-and can leave a line in reply. The core idea is learning to stop and rest,
-together: a place where people like me keep "live with imperfection" up for
-each other.
+For people who take their work seriously and lean towards perfectionism, like
+me: I keep reopening and rechecking things, never sure they're good enough. Here
+you record that something is "enough", choose whether to share it, and see other
+people stop too. It's a public, anonymous place where we keep "live with
+imperfection" up together.
 
 ## What good means
 
-After using it, people have a more objective sense of how much they put in,
-and the anxiety perfectionism brings eases. When you keep reopening a task,
-your mind tricks you into thinking you haven't done enough. The record is
-there to speak for you at that moment.
+Good means stopping and resting come more easily, with a truer sense of how much
+you put in. When you keep reopening a task, your mind tells you that you haven't
+done enough; your own record is there to answer it.
 
-- **Checked by tests:** what is public and what is private. Time spent, how it
-  felt and the record of checks are visible only to you; anything you don't
-  share never reaches anyone else.
-- **Judged:** whether people really see their effort more objectively, and
-  whether the anxiety eases. Code can't check this. I can only ask people and
-  watch, starting with my pod at the crit.
+- **Checked by tests:** your hours, feelings, checks and worries reach nobody
+  else, even when you share; the feed shows no totals, streaks or rankings; the
+  Collection unlocks only from stopping, never from work; and the server log
+  holds nothing anyone wrote.
+- **Judged:** whether anyone feels less anxious. A few people tried
+  it. They liked the small touches and suggested more, such as a newcomer
+  parachuting onto the meadow, which I built. But they weren't perfectionists,
+  so whether it helps the people it's for is still open.
 
 ## What's there now
 
-Anyone can read; writing needs an account, but no email: when you sign up you
-get a recovery code, the only way back in if you forget your password. You can
-call something enough, with a one-line description, and choose
-whether to share it. Just for you, you can colour in the hours you worked on a
-time bar with a crayon, say how it felt, and note what you did and checked.
-Others see what's shared appear live, and can reply with a preset response or a
-short comment; three reports hide a comment. Each shared enough and comment
-gets its own name, like "Sage pebble", so two by the same person can't be told
-apart. You can take a break from a thin bar under the menu, on every page; it
-also shows whether you're working or on a break, with one place to finish or
-come back. The feed shows how many people are resting and, after a shared "enough", where they
-went, never for how long. Under the resting count, a small pixel meadow shows
-a little one for each person on a break, doing what they went to do, live for
-everyone and never saying who. When nobody is resting, the meadow stays,
-empty. You has three pages: Summary adds up a day, week
-or month for you alone (what you called enough, how it felt, when you worked,
-how often you wanted to check again), and History keeps every record, each
-folded to a line until you open it. There, Recheck shows what you wrote when you
-stopped, then lets you leave it or check anyway, and keep what's worrying you on
-that record. A week on, it asks how the worries look now, so you can see later
-how few came to anything. The third
-page, Collection, fills with small things that come only from stopping
-(breaks, letting a recheck go, resting when the alarm rings, days spent here),
-and what you choose to wear shows on your little one and on the meadow. You
-can delete anything you've written.
+Anyone can read; writing needs an account, with a recovery code, not
+email. You call something enough in one line and choose whether to share it.
+Others see it live and can reply in a few words; each post gets a made-up name
+like "Sage pebble". Just for you, you can colour in the hours you worked, say
+how it felt and note what you checked.
 
-On Together, you can start a stretch of work, with a line on what you mean to
-do, and set an Enough alarm,
-after a number of minutes or at a time of day. A little one builds a crooked
-tower alongside you, in a small pixel picture. Each time
-you start, the tower begins again, sized to your alarm. The sky
-follows your clock, and you can choose the scene (a lamp, a plant, or an open
-view) and the weather. When the alarm goes, it gets
-sleepy: it slows down, carries smaller blocks and yawns, and the lamp dims or
-the plant droops, and a soft reminder asks whether to go and rest or take ten
-more minutes. In Chrome or Edge, the little one can come out into a small
-window that stays on top of whatever else you're working on. Finishing takes
-you to Call it enough with the time already coloured in. The site follows your
-system's dark mode, and can be added to a phone's home screen to open like an
-app.
+To check something again, Recheck shows what you wrote when you
+stopped and lets you leave it or check anyway, keeping the worry. A week on, it
+asks how the worry looks now.
 
-## Where the idea came from
+On Together, a pixel little one builds a crooked tower while you work, and gets
+sleepy when your Enough alarm goes. A thin bar on every page lets you take a
+break, and on the feed a pixel meadow shows a little one for each person
+resting, never saying who. The Collection fills with small things to wear, which
+come only from stopping.
 
-- A note on my bedroom wall: "Live with imperfection" (与不完美共存). Whenever
-  I'm about to go down a rabbit hole, seeing it helps a lot.
-- Tools I've used, such as Notion, a Pomodoro timer and Forest. They all look
-  forward: they record what you plan to do and push you to get it done. They
-  didn't suit me.
+## What I read, and where the idea came from
+
+- A note on my bedroom wall, "Live with imperfection" (与不完美共存), which
+  pulls me out of rabbit holes.
+- Notion, a Pomodoro timer and Forest, which all push you to finish what you
+  planned. They didn't suit me.
+- Robin Sloan, [An app can be a home-cooked meal](https://www.robinsloan.com/notes/home-cooked-app/)
+  (2020): software for a known few can drop what everyone else needs. Good
+  here means good for people like me.
+- Thomas Curran and Andrew Hill, [Perfectionism is increasing over time](https://doi.org/10.1037/bul0000138)
+  (2019): perfectionism among students has risen since 1989, most of all the
+  sense that others expect more of you. That's why others see only the
+  stopping, never what or how much someone finished.
+- Mark Weiser and John Seely Brown, [Designing Calm Technology](https://calmtech.com/papers/designing-calm-technology.html)
+  (1995): good technology sits at the edge of your attention and comes to the
+  centre only when needed. The yawning little one, the thin status bar and
+  the meadow work that way, instead of ringing at you.
 
 ## What I chose not to build
 
-Streaks, rankings and public numbers. They turn a record into another source of
-anxiety.
+Streaks, rankings and public totals: they turn a record into another source of
+anxiety. Groups or a sharing layer, though my tutor suggested them: once people
+know each other, they compare.
 
 ## Honest notes
 
-- Not everyone reads it this way: some people see others finish and push even
-  harder. This app is designed for people like me.
-- Community culture can't be guaranteed by restrictions. Reporting is only a
-  backstop.
-- The Collection rewards only stopping, never working.
-- The little one's slowing down is a metaphor I chose for diminishing returns,
-  not something measured. The numbers behind it are in `src/lib/limits.ts`.
+- Some people see others finish and push even harder. This is built for people
+  like me.
+- The little one slowing down is a metaphor, not a measurement.
