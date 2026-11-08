@@ -96,9 +96,18 @@ Accounts started as optional ([faf32c2](https://github.com/comp4020-agentic-codi
 record-keeping, I changed that: anyone can read, but writing needs an account
 ([7804228](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/7804228), [ADR 0003](docs/adr/0003-who-sees-and-changes-what.md)).
 
-[NEW: the three looks called "too AI", then a plain page (380360c...b69aa82);
-no email, a recovery code (381ab4f); no groups, though the tutor asked;
-"Did it happen?" turned down. For each: the obvious choice, and why not.]
+When the tutor suggested groups or a sharing layer, I turned it down: once
+people know each other, or aren't anonymous, they compare, which runs against
+the whole idea. That's what I told the tutor.
+
+The obvious look for a gentle app about rest is warm colours and handmade
+touches, and that's what the agent kept giving me, from its own favourite
+palettes, piling on whatever I asked for. As elements grew, it stopped feeling
+usable, unlike the sites I actually use. So I changed it to a plain white page
+with the pixel art as the only signature
+([380360c...b69aa82](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/compare/380360c...b69aa82)), and went on to plainer
+button words ([6a46d59](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/6a46d59)) and record cards with a clear order of
+title, words and small print ([441ba56](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/441ba56), [83559fa](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/83559fa)).
 
 ## The little one
 
