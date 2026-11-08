@@ -504,6 +504,12 @@ reload"; `lasting.test.ts` "keeps what was written through a restart".
 - Never show the contents of `mise.local.toml` or any token in command output.
 - Changing live data (deleting data, or writing through a remote shell) needs
   my permission first.
+- Never run the spec against the live site (`APP_URL=…fly.dev pnpm check`),
+  even when a skill such as preflight says to: it registers accounts, calls
+  things enough and rests, all for real. *(On 2026-11-08 a preflight run left
+  121 test accounts, 39 enoughs of gibberish on the feed and a full meadow the
+  night before the final; they were deleted by hand, with a backup at
+  `/data/enough.db.bak-20261108`.)*
 - Keep the README's "What's there now" and the Honest notes in step with
   what's shipped. *(On 2026-10-14 it still described the night-before version
   after six features had gone live, and it named reporting before reporting
