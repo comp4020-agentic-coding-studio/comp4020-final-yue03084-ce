@@ -34,7 +34,7 @@ app many times ([ADR 0001](docs/adr/0001-stack.md), [55f87d5](https://github.com
 
 The course gives every project the same shape: one small machine with 256 MB
 of memory, and one disk at `/data`, the only thing that survives a restart or
-a redeploy. There's no separate database server. I knew this when I chose, and
+a redeploy. I knew this when I chose, and
 it's why the stack fits: SQLite is a single file on that disk, and the live
 updates are broadcast from the server's own memory. It's simple and fast, and
 the cost is that it can only ever run on one machine, so it can't grow by
