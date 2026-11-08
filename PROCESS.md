@@ -43,17 +43,19 @@ over, and added product rules, such as
 "show stopping, never finishing" ([e34cc4a](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/e34cc4a)). The tests check the
 ones that can be checked: nothing private reaches anyone else.
 
-[NEW: every decision names its spec (Guarded by / Not tested); the route spec
-that finds every write page found /delete/, /put-away/, /urge/ refusing the
-wrong way (207fc19, 0074eea).]
+As the app grew, I worried that with more features things would break more
+easily, and the tests wouldn't keep up. So I had the agent check my tests
+against `CLAUDE.md`, and rewrote every decision there to name the spec that
+guards it, or to say plainly that nothing does ([207fc19](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/207fc19)). One new
+spec finds every page that writes and tries it signed out; it caught three
+that refused the wrong way ([0074eea](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/0074eea)). Now, when I come back after
+days away, I can see what was decided, what guards it, and which parts only I
+can check, by looking.
 
 Some corrections went into the harness so they wouldn't happen again: CI went
 red once because a test's hours "7.5" matched inside a timestamp, and that rule
 is now in `CLAUDE.md`
 ([5ada816](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5ada816)).
-
-[NEW: specs failing now and then because they share one server, so they run
-one file at a time (7dd26f3, 5dcf563).]
 
 ## How I directed the agent
 
@@ -77,9 +79,6 @@ sub-agent's choice, not mine ([b0ae3db](https://github.com/comp4020-agentic-codi
 what I've already decided; this one I only caught by using it. Every time I
 come back, my brain has to reload the context. I think it's a trade-off, and
 the point is finding the balance.
-
-[NEW: since then: screenshots every round, stop and ask on a clash (48b1091),
-the daily log. Maybe in The harness.]
 
 Some problems only a person could see. The pixel little one's stretch had arms
 like poles past its head; the agent saw nothing wrong, and I found it strange
