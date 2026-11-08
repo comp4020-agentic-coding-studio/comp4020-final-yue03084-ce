@@ -5,7 +5,9 @@
 A public, anonymous space for people who take their work seriously and lean
 towards perfectionism. When you finish something, you record that it's
 "enough", and choose whether to share it. Others see these moments of stopping
-and can leave a line in reply. The core idea is learning to stop and rest.
+and can leave a line in reply. The core idea is learning to stop and rest,
+together: a place where people like me keep "live with imperfection" up for
+each other.
 
 ## What good means
 
@@ -71,8 +73,6 @@ app.
 - Tools I've used, such as Notion, a Pomodoro timer and Forest. They all look
   forward: they record what you plan to do and push you to get it done. They
   didn't suit me.
-- When I see the people around me put their work down, I feel I can rest too,
-  with a clear conscience.
 
 ## What I chose not to build
 
