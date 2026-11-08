@@ -19,8 +19,7 @@ private, as evidence for when your mind says you haven't done enough
 In crit 8 I went with the agent's suggestion because I didn't know how to
 choose. This time I chose myself: Astro and SQLite, because organising pages
 and adjusting the design went smoothly in crit 7, and I expect to polish this
-app many times ([ADR 0001](docs/adr/0001-stack.md), [55f87d5](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/55f87d5)). The
-agent then built the first real-time version ([0c23536](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/0c23536)).
+app many times ([ADR 0001](docs/adr/0001-stack.md), [55f87d5](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/55f87d5)).
 
 The course gives every project the same shape: one small machine with 256 MB
 of memory, and one disk at `/data`, the only thing that survives a restart or
@@ -31,10 +30,6 @@ the cost is that it can only ever run on one machine, so it can't grow by
 adding more. For this project that's the right trade. I can't say my
 sense of it runs deep, though, because I haven't used other stacks in depth to
 compare.
-
-## What I read, and where I stand
-
-[NEW: position on the sources cited in README; waits for the citations.]
 
 ## The harness
 
@@ -52,15 +47,7 @@ that refused the wrong way ([0074eea](https://github.com/comp4020-agentic-coding
 days away, I can see what was decided, what guards it, and which parts only I
 can check, by looking.
 
-Some corrections went into the harness so they wouldn't happen again: CI went
-red once because a test's hours "7.5" matched inside a timestamp, and that rule
-is now in `CLAUDE.md`
-([5ada816](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5ada816)).
-
 ## How I directed the agent
-
-Once the agent corrected me: when I wanted the list of what you did to be
-public, it pointed out the clash with my own rule, and I kept it private.
 
 For one round I wanted to try a different workflow, one where I didn't have
 to follow every step. I settled all the details first, then the agent split
@@ -85,10 +72,7 @@ like poles past its head; the agent saw nothing wrong, and I found it strange
 at a glance ([afde72b](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/afde72b)). Trying it once, I found its tower filled up
 within minutes on my second session, and that tending the tower looked like
 doing squats ([0920474](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/0920474)). It was a little funny, and it showed me I can't
-rely on the agent for this. I think from a screenshot the agent infers what
-the little one is doing from the things around it and its pose, so it assumes
-it's carrying blocks. In crit 10, the little one was only sliding sideways for
-the same reason ([134e2ea](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/134e2ea)).
+rely on the agent for this.
 
 ## What I turned down
 
@@ -111,14 +95,10 @@ title, words and small print ([441ba56](https://github.com/comp4020-agentic-codi
 
 ## The little one
 
-When I first thought of a companion, I wanted it in the pixel style of
-Stardew Valley, a game I love. Pixel art also leaves more room to play later:
-it can wear things.
-
-I also wanted a reminder you can see, not just an alarm: people mean to rest
+I wanted a reminder you can see, not just an alarm: people mean to rest
 after a while, then get absorbed and forget. So a little one builds a tower
 while you work and slows down as you get tired ([240c133](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/240c133)).
 
-The room to play became the Collection ([5ed8c66](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5ed8c66)). It looks like
+The Collection ([5ed8c66](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5ed8c66)) looks like
 a reward, and I don't build rewards, but things come only from stopping, never
 from work.
