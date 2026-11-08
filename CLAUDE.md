@@ -21,9 +21,10 @@ commit (see "A feature lands with its test").
 - **Show stopping, never finishing.** What other people see is someone
   stopping: "enough" on one thing, or taking time away. Never what they
   finished, how many things, how long they spent or how much they put in.
-  *(The app is for perfectionists who pace themselves by the people around
-  them; seeing others finish pushes some people to work harder, which is the
-  opposite of the point. Decided 2026-10-12.)*
+  *(The app is an anonymous, public space where perfectionists who don't
+  know how to rest keep "live with imperfection" up together; seeing others
+  finish pushes some people to work harder, which is the opposite of the
+  point. Decided 2026-10-12.)*
   **Guarded by:** `enough.test.ts` "an unshared enough reaches nobody else,
   on the feed or the stream"; "shows no running total, streak or ranking".
 - **Effort and check records are private.** How much someone put in (hours,
