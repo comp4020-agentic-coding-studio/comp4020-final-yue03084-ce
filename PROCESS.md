@@ -57,16 +57,8 @@ one file at a time (7dd26f3, 5dcf563).]
 
 ## How I directed the agent
 
-Most features are one small commit each, checked with `pnpm check` and
-deployed by CI on every push ([310c75a...949f48a](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/compare/310c75a...949f48a)).
-For the bigger login system, a sub-agent built it on a separate branch, and I
-checked it myself before it was merged ([faf32c2](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/faf32c2)).
-
-I corrected the agent several times. It read my dislike of anxious
-record-keeping as being against records altogether, and it suggested scoring
-your attention; I changed that to how you felt about your effort. It also
-corrected me: when I wanted the list of what you did to be public, it pointed
-out the clash with my own rule, and I kept it private.
+Once the agent corrected me: when I wanted the list of what you did to be
+public, it pointed out the clash with my own rule, and I kept it private.
 
 For one round I wanted to try a different workflow, one where I didn't have
 to follow every step. I settled all the details first, then the agent split
@@ -101,10 +93,9 @@ the same reason ([134e2ea](https://github.com/comp4020-agentic-coding-studio/com
 
 ## What I turned down
 
-With so much personal record-keeping, a site without accounts felt very
-incomplete. Accounts started as optional ([faf32c2](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/faf32c2)), then I changed the decision:
-anyone can read, but writing needs an account ([7804228](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/7804228),
-[ADR 0003](docs/adr/0003-who-sees-and-changes-what.md)).
+Accounts started as optional ([faf32c2](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/faf32c2)); with so much personal
+record-keeping, I changed that: anyone can read, but writing needs an account
+([7804228](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/7804228), [ADR 0003](docs/adr/0003-who-sees-and-changes-what.md)).
 
 [NEW: the three looks called "too AI", then a plain page (380360c...b69aa82);
 no email, a recovery code (381ab4f); no groups, though the tutor asked;
@@ -120,9 +111,6 @@ I also wanted a reminder you can see, not just an alarm: people mean to rest
 after a while, then get absorbed and forget. So a little one builds a tower
 while you work and slows down as you get tired ([240c133](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/240c133)).
 
-The room to play became the Collection: hats, a scarf, a tabby cat
-([5ed8c66](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5ed8c66)). It looks like a reward, and I don't build rewards. But the
-core idea is helping people learn to rest more wisely, so underneath there's
-no clash: things come only from stopping (breaks, letting a recheck go,
-resting when the alarm rings, days spent here, never in a row), and never from
-work.
+The room to play became the Collection ([5ed8c66](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/5ed8c66)). It looks like
+a reward, and I don't build rewards, but things come only from stopping, never
+from work.
