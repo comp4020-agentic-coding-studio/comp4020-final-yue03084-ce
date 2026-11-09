@@ -1,6 +1,10 @@
 # Crooked Tower
 
-*Live with imperfection.*
+*Live with imperfection.* Live at https://comp4020-final-yue03084-ce.fly.dev/
+
+Try it: sign up and keep the recovery code. On Together, set a one-minute
+alarm; the little one gets sleepy. Share an enough on the feed, then take a
+break from the top bar to join the meadow.
 
 For people who take their work seriously and lean towards perfectionism, like
 me: I keep reopening and rechecking things, never sure they're good enough. Here
@@ -18,28 +22,25 @@ done enough; your own record is there to answer it.
   else, even when you share; the feed shows no totals, streaks or ranks; the
   Collection unlocks only from stopping, never from work; and the server log
   holds nothing anyone wrote.
-- **Judged:** whether anyone feels less anxious. A few people tried it. Those
-  who aren't perfectionists suggested design touches, like a newcomer
-  parachuting onto the meadow; a perfectionist said the way it works really
-  would encourage her to rest more.
+- **Judged:** whether anyone feels less anxious. Non-perfectionist testers
+  suggested touches like the parachute; a perfectionist said it really would
+  encourage her to rest more.
 
 ## What's there now
 
-Anyone can read; writing needs an account, with a recovery code, not
-email. You call something enough in one line and choose whether to share it.
-Others see it live and can reply briefly; each post gets a made-up name
-like "Sage pebble". Just for you, you can colour in the hours you worked, say
-how it felt and note what you checked.
+Anyone can read; writing needs an account (no email). You call something
+enough in one line and choose whether to share it. Others see it live and can
+reply briefly; each post gets a made-up name like "Sage pebble". Privately,
+you can colour in your hours, say how it felt and note what you checked.
 
-To check something again, Recheck shows what you wrote when you
-stopped and lets you leave it or check anyway, keeping the worry. A week on, it
-asks how the worry looks now.
+Recheck shows your notes from then and asks for the worry, kept whether you
+leave it or check anyway. A week on, it asks how the worry looks now.
 
 On Together, a pixel little one builds a crooked tower while you work, and gets
 sleepy when your Enough alarm goes. A thin bar on every page lets you take a
 break, and on the feed a pixel meadow shows a little one for each person
-resting, never saying who. The Collection fills with small things to wear, which
-come only from stopping.
+resting, never saying who. The Collection's small things to wear come only from
+stopping.
 
 ## What I read, and where the idea came from
 
@@ -56,17 +57,11 @@ come only from stopping.
   stopping, never what or how much someone finished.
 - Mark Weiser and John Seely Brown, [Designing Calm Technology](https://calmtech.com/papers/designing-calm-technology.html)
   (1995): good technology sits at the edge of your attention and comes to the
-  centre only when needed. The yawning little one, the thin status bar and
+  centre only when needed. The yawning little one, the status bar and
   the meadow work that way, instead of ringing at you.
 
 ## What I chose not to build
 
 Streaks, rankings and public totals: they turn a record into another source of
-anxiety. Groups or a sharing layer, though my tutor suggested them: once people
-know each other, they compare.
-
-## Honest notes
-
-- Some people see others finish and push even harder. This is built for people
-  like me.
-- The little one slowing down is a metaphor, not a measurement.
+anxiety. Groups, though my tutor suggested them: once people know each other,
+they compare.
