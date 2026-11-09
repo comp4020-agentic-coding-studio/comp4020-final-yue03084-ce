@@ -2,16 +2,12 @@
 
 ## Where the idea came from
 
-I've used Notion, a Pomodoro timer and Forest, and they all look forward: they
-record what you plan to do and push you to do it. What I struggle with is the
-other side. With AI-assisted work I keep reopening and rechecking things, never
-sure they're good enough. On my bedroom wall there's a note, "Live with
-imperfection" (与不完美共存), and seeing it pulls me out of that loop. I want people like me,
-who lean towards perfectionism and don't know how to rest, to have a space that
-is anonymous yet public, where we keep that idea up together and make it
-stronger. So people see only the stopping, never how much someone finished or
-how long it took. Time spent, how it felt and what you checked stay
-private, as evidence for when your mind says you haven't done enough
+With AI-assisted work I keep reopening and rechecking things, and the note on
+my wall, "Live with imperfection", pulls me out of that loop; I wanted a space
+where people like me keep that idea up together. One decision shaped the build:
+people see only the stopping, never how much someone finished or how long it
+took. Time spent, how it felt and what you checked stay private, as evidence for
+when your mind says you haven't done enough
 ([ADR 0002](docs/adr/0002-what-others-see.md), [8791f7a](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/8791f7a)).
 
 ## What I read, and where I stand
