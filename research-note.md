@@ -46,19 +46,18 @@ harness fits, except that I don't think I ever chose. My `CLAUDE.md` grew from
 1,179 words in mid-October to 5,851 by early November. I wanted each lesson down
 quickly, never noticed a choice, and the agent didn't raise it.
 Browser-screenshot steps that only some sessions needed sat there instead of in
-a skill. By the end I had stopped reading it; after a few days away, I read my
-log and asked the agent. [Storey
+a skill. By the end I had stopped reading it. [Storey
 (2026b)](https://margaretstorey.com/blog/2026/02/18/cognitive-debt-revisited/)
 warns that documents are "not sufficient if they are not living artifacts that
 teams actively engage with". Mine was living only for the agent, and the gap
 between what it said and what I understood was cognitive debt again, inside the
 harness.
 
-Asked afterwards, the question splits the hair-colour fix three ways. That a
-character must not change when someone else leaves can be checked by a machine,
-so it belongs in a test, and one now exists. That the colour belongs to the
-account is needed whenever the agent touches that code, so it earns one line in
-`CLAUDE.md`. That hair went by queue position until 3 November, as a sub-agent's
+Asked afterwards, the question splits the fix that made each character its
+account's three ways. That a character must not change when someone else leaves
+can be checked by a machine, so it belongs in a test, and one now exists. That a
+character belongs to its account is needed whenever the agent touches that code,
+so it earns one line in `CLAUDE.md`. That hair went by queue position until 3 November, as a sub-agent's
 default, matters only when someone asks why, so it belongs in git. My
 `CLAUDE.md` holds all three in one paragraph, and that is typical: 50 such notes
 of history in italics make up about 1,350 of its 5,851 words.
