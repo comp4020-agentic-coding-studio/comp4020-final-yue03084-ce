@@ -510,10 +510,9 @@ reload"; `lasting.test.ts` "keeps what was written through a restart".
   121 test accounts, 39 enoughs of gibberish on the feed and a full meadow the
   night before the final; they were deleted by hand, with a backup at
   `/data/enough.db.bak-20261108`.)*
-- Keep the README's "What's there now" and the Honest notes in step with
-  what's shipped. *(On 2026-10-14 it still described the night-before version
-  after six features had gone live, and it named reporting before reporting
-  existed.)*
+- Keep the README's "What's there now" in step with what's shipped. *(On
+  2026-10-14 it still described the night-before version after six features
+  had gone live, and it named reporting before reporting existed.)*
 
 ## Keeping this file honest
 
