@@ -52,7 +52,10 @@ guards it, or to say plainly that nothing does ([207fc19](https://github.com/com
 spec finds every page that writes and tries it signed out; it caught three
 that refused the wrong way ([0074eea](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/0074eea)). Now, when I come back after
 days away, I can see what was decided, what guards it, and which parts only I
-can check, by looking.
+can check, by looking. And whenever the agent got something wrong, I had it
+write the fix as a rule, with its date and the failure it came from in
+italics, so I could later tell a live rule from a dead one
+([e34cc4a](https://github.com/comp4020-agentic-coding-studio/comp4020-final-yue03084-ce/commit/e34cc4a)).
 
 ## How I directed the agent
 
