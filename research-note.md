@@ -20,9 +20,10 @@ heads, and intent debt, the goals, constraints and reasons nobody wrote down.
 The idea goes back to [Naur
 (1985)](https://gwern.net/doc/cs/algorithm/1985-naur.pdf): a program is a theory
 held by the people who built it. My site never shows who anyone is. A sub-agent
-took that to mean the pixel characters needn't belong to anyone, so it gave out
-hair colour by position in a queue, and whenever one person left, everyone
-else's character changed. No test failed, because I had never decided how it
+took that to mean the pixel characters needn't belong to anyone, so a
+character's look went by its place in a queue, and whenever one person left,
+the characters behind them changed. I saw it in hair colour, as nobody had
+unlocked anything else yet. No test failed, because I had never decided how it
 should work. The agent hadn't misunderstood me; it had filled a gap with a
 default. Intent debt came first, cognitive debt after. The same happens to the
 harness: a decision nobody makes gets made by default.
